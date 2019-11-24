@@ -8,6 +8,9 @@ discord_token = ENV["STACKCOIN_DISCORD_TOKEN"]
 discord_channel_id = ENV["STACKCOIN_DISCORD_CLIENT_ID"].to_u64
 
 client = Discord::Client.new(token: "Bot #{discord_token}", client_id: discord_channel_id)
+cache = Discord::Cache.new(client)
+client.cache = cache
+
 redis = Redis.new
 
 client.on_message_create do |message|
@@ -19,7 +22,7 @@ client.on_message_create do |message|
 
   begin
     if msg.starts_with? "s!"
-      coin = Coin.new(client, redis, message)
+      coin = Coin.new(client, cache, redis, message)
 
       if msg.starts_with? "s!send"
         coin.send

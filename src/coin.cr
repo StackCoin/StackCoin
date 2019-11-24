@@ -2,15 +2,26 @@ require "discordcr"
 require "redis"
 
 class Coin
-    def initialize(client : Discord::Client, redis : Redis, message : Discord::Message)
+    def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, message : Discord::Message)
         @client = client
+        @cache = cache
         @redis = redis
         @message = message
         @dole = 10
     end
 
-    def send_msg(text)
-        @client.create_message @message.channel_id, text
+    def send_msg(content)
+        @client.create_message @message.channel_id, content
+    end
+
+    def send_emb(content, emb)
+        emb.colour = 16773120
+        emb.timestamp = Time.now
+        emb.footer = Discord::EmbedFooter.new(
+            text: "StackCoin™",
+            icon_url: "https://i.imgur.com/CsVxtvM.png"
+        )
+        @client.create_message @message.channel_id, content, emb
     end
 
     def send
@@ -33,10 +44,17 @@ class Coin
 
                 amount = Int32.new(0)
 
+                msg_parts = @message.content.split(" ")
+
+                if msg_parts.size > 3
+                    send_msg "Too many arguments in message, found #{msg_parts.size}"
+                    return
+                end
+
                 begin
-                    amount = @message.content.split(" ").last.to_i
+                    amount = msg_parts.last.to_i
                 rescue
-                    send_msg "Invalid amount: #{@message.content.split(" ").last}"
+                    send_msg "Invalid amount: #{msg_parts.last}"
                     return
                 end
 
@@ -48,7 +66,7 @@ class Coin
                     return
                 end
 
-                p @redis.eval "
+                redis_resp = @redis.eval "
                     local author_bal = redis.call('get',KEYS[1])
                     local collector_bal = redis.call('get',KEYS[2])
 
@@ -64,6 +82,27 @@ class Coin
 
                     return {1, author_bal, collector_bal}
                 ", [author_bal_key, collector_bal_key], [amount]
+                new_author_bal = redis_resp[1]
+                new_collector_bal = redis_resp[2]
+
+                if redis_resp[0] == 0
+                    collector = @cache.resolve_user(mention.id)
+
+                    send_emb "Transaction complete!", Discord::Embed.new(
+                        fields: [
+                            Discord::EmbedField.new(
+                                name: "#{@message.author.username}",
+                                value: "New bal: #{new_author_bal}",
+                            ),
+                            Discord::EmbedField.new(
+                                name: "#{collector.username}",
+                                value: "New bal: #{new_collector_bal}",
+                            ),
+                        ],
+                    )
+                elsif
+                    send_msg "fail"
+                end
             end
         else
             send_msg "Too many/little mentions in your message!"
@@ -75,7 +114,16 @@ class Coin
         bal = @redis.get "#{usr_id}:bal"
 
         if bal.is_a? String
-            send_msg "<@#{@message.author.id}> Balance: #{bal.as(String)}"
+            send_emb "", Discord::Embed.new(
+                colour: 16773120,
+                timestamp: Time.now,
+                fields: [
+                    Discord::EmbedField.new(
+                        name: "#{@message.author.username}",
+                        value: "Bal: #{bal}",
+                    ),
+                ],
+            )
         else
             send_msg "You don't have a balance, run 's!dole' to collect some coin!"
         end
