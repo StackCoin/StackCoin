@@ -1,6 +1,8 @@
 require "discordcr"
 require "dotenv"
 require "redis"
+require "kemal"
+
 require "./coin"
 
 Dotenv.load
@@ -44,6 +46,10 @@ client.on_message_create do |message|
     puts ex.inspect_with_backtrace
     client.create_message message.channel_id, "```#{ex.inspect_with_backtrace}```"
   end
+end
+
+get "/" do
+  "Hello World!"
 end
 
 client.run

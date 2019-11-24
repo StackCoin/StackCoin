@@ -8,6 +8,8 @@ dependencies:
   discordcr:
     github: meew0/discordcr
     branch: master
+  kemal:
+    github: kemalcr/kemal
   dotenv:
     github: gdotdesign/cr-dotenv
   redis:

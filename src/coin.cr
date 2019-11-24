@@ -115,14 +115,10 @@ class Coin
 
         if bal.is_a? String
             send_emb "", Discord::Embed.new(
-                colour: 16773120,
-                timestamp: Time.now,
-                fields: [
-                    Discord::EmbedField.new(
-                        name: "#{@message.author.username}",
-                        value: "Bal: #{bal}",
-                    ),
-                ],
+                fields: [Discord::EmbedField.new(
+                    name: "#{@message.author.username}",
+                    value: "Bal: #{bal}",
+                )]
             )
         else
             send_msg "You don't have a balance, run 's!dole' to collect some coin!"
