@@ -2,34 +2,51 @@ require "discordcr"
 require "redis"
 
 class Coin
-    def initialize(client : Discord::Client, redis : Redis)
+    def initialize(client : Discord::Client, redis : Redis, message : Discord::Message)
         @client = client
         @redis = redis
+        @message = message
         @dole = 10
     end
 
-    def grab_usr_id(payload)
-        return payload.author.id.to_u64.to_s
+    def send_msg(text)
+        @client.create_message @message.channel_id, text
     end
 
-    def send_msg(payload, text)
-        @client.create_message payload.channel_id, text
-    end
-
-    def send(payload)
-        mentions = Discord::Mention.parse payload.content
+    def send
+        mentions = Discord::Mention.parse @message.content
         if mentions.size == 1
             mention = mentions[0]
             if mention.is_a? Discord::Mention::User
-                author_bal_key = "#{payload.author.id}:bal"
-                collector_bal_key = "#{mention.id}:bal"
-
-                if @redis.get(collector_bal_key).is_a? Nil
-                    send_msg payload, "Collector of funds has no balance yet!, ask them to at least run 's!dole' once."
+                if mention.id == @message.author.id
+                    send_msg "You can't send money to yourself!"
                     return
                 end
 
-                amount = payload.content.split(" ").last.to_i
+                author_bal_key = "#{@message.author.id}:bal"
+                collector_bal_key = "#{mention.id}:bal"
+
+                if @redis.get(collector_bal_key).is_a? Nil
+                    send_msg "Collector of funds has no balance yet!, ask them to at least run 's!dole' once."
+                    return
+                end
+
+                amount = Int32.new(0)
+
+                begin
+                    amount = @message.content.split(" ").last.to_i
+                rescue
+                    send_msg "Invalid amount: #{@message.content.split(" ").last}"
+                    return
+                end
+
+                if amount < 0
+                    send_msg "The amount must be greater than 0!"
+                    return
+                elsif amount > 10000
+                    send_msg "The amount can't be greater than 10000!"
+                    return
+                end
 
                 p @redis.eval "
                     local author_bal = redis.call('get',KEYS[1])
@@ -49,28 +66,28 @@ class Coin
                 ", [author_bal_key, collector_bal_key], [amount]
             end
         else
-            send_msg payload, "Too many/little mentions in your message!"
+            send_msg "Too many/little mentions in your message!"
         end
     end
 
-    def bal(payload)
-        usr_id = payload.author.id.to_u64.to_s
+    def bal
+        usr_id = @message.author.id.to_u64.to_s
         bal = @redis.get "#{usr_id}:bal"
 
         if bal.is_a? String
-            send_msg payload, "<@#{payload.author.id}> Balance: #{bal.as(String)}"
+            send_msg "<@#{@message.author.id}> Balance: #{bal.as(String)}"
         else
-            send_msg payload, "You don't have a balance, run 's!dole' to collect some coin!"
+            send_msg "You don't have a balance, run 's!dole' to collect some coin!"
         end
     end
 
-    def incr_bal(payload, amount)
-        usr_id = payload.author.id.to_u64.to_s
+    def incr_bal(amount)
+        usr_id = @message.author.id.to_u64.to_s
         return @redis.incrby "#{usr_id}:bal", amount
     end
 
-    def dole(payload)
-        usr_id = payload.author.id.to_u64.to_s
+    def dole
+        usr_id = @message.author.id.to_u64.to_s
 
         dole_key = "#{usr_id}:dole_date"
         now = Time.utc
@@ -82,24 +99,24 @@ class Coin
         end
 
         if last_given.value.is_a? Nil
-            give_dole payload
+            give_dole
         elsif last_given.value.is_a? String
             last_given = Time.unix last_given.value.as(String).to_u64
 
             if last_given.day != now.day
-                give_dole payload
+                give_dole
             else
-                deny_dole payload
+                deny_dole
             end
         end
     end
 
-    def give_dole(payload)
-        new_bal = incr_bal(payload, @dole)
-        @client.create_message(payload.channel_id, "Dole given, new bal #{new_bal}")
+    def give_dole
+        new_bal = incr_bal @dole
+        send_msg "Dole given, new bal #{new_bal}"
     end
 
-    def deny_dole(payload)
-        @client.create_message(payload.channel_id, "Dole already given today!")
+    def deny_dole
+        send_msg "Dole already given today!"
     end
 end
