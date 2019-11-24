@@ -19,6 +19,10 @@ end
 client.on_message_create do |payload|
   msg = payload.content
 
+  if msg.starts_with? "s!send"
+    coin.send(payload)
+  end
+
   if msg.compare("s!dole") == 0
     coin.dole(payload)
   end
