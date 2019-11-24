@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  redis:
+    image: redis:5-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    hostname: redis
+    volumes:
+      - stackcoin_redis_data:/data
+
+volumes:
+  stackcoin_redis_data:
+    external: true

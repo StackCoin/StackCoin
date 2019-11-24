@@ -1,0 +1,15 @@
+name: stackcoin
+version: 0.1.0
+
+authors:
+  - name <me@jackharrhy.com>
+
+dependencies:
+  discordcr:
+    github: meew0/discordcr
+    branch: master
+  dotenv:
+    github: gdotdesign/cr-dotenv
+  redis:
+    github: stefanwille/crystal-redis
+    version: ~> 2.3.0
