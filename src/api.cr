@@ -11,7 +11,7 @@ client = Discord::Client.new(token: "Bot #{discord_token}", client_id: discord_c
 cache = Discord::Cache.new(client)
 client.cache = cache
 
-redis = Redis.new
+redis = Redis.new(host: ENV["STACKCOIN_REDIS_HOST"])
 
 get "/user/:id" do |env|
     id = env.params.url["id"]

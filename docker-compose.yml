@@ -6,8 +6,14 @@ services:
     environment:
       - STACKCOIN_DISCORD_TOKEN=
       - STACKCOIN_DISCORD_CLIENT_ID=
+      - STACKCOIN_REDIS_HOST=redis
     ports:
       - "3000:3000"
+    networks:
+      - redis
+    depends_on:
+      - redis
+
   redis:
     image: redis:5-alpine
     restart: always
@@ -15,8 +21,13 @@ services:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
     hostname: redis
+    networks:
+      - redis
     volumes:
       - stackcoin_redis_data:/data
+
+networks:
+  redis:
 
 volumes:
   stackcoin_redis_data:

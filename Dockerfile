@@ -42,6 +42,5 @@ ADD ./supervisord.conf /etc/
 
 COPY --from=crystalbuilder /src/bot /app/bot
 COPY --from=crystalbuilder /src/api /app/api
-RUN touch /app/.env
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
