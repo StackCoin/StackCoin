@@ -19,6 +19,8 @@ get "/user/:id" do |env|
 end
 
 get "/user/" do |env|
+    include_usernames = env.params.query.has_key? "usernames"
+
     bals = Hash(String, Hash(String, String)).new
     redis.keys("*:bal").each do |bal_key|
         if bal_key.is_a? String
@@ -26,13 +28,21 @@ get "/user/" do |env|
             if bal.is_a? String
                 id = bal_key.split(":").first
                 bals[id] = Hash(String, String).new
-                if env.params.query.has_key? "usernames"
+                if include_usernames
                     bals[id]["username"] = cache.resolve_user(id.to_u64).username
                 end
                 bals[id]["bal"] = bal
             end
         end
     end
+
+    head = env.request.headers
+    if head.has_key? "Accept"
+        if head["Accept"].split(',').includes? "text/html"
+            next render "src/views/user.ecr"
+        end
+    end
+
     bals.to_json
 end
 
