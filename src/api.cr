@@ -13,6 +13,10 @@ client.cache = cache
 
 redis = Redis.new(host: ENV["STACKCOIN_REDIS_HOST"])
 
+get "/" do |env|
+    render "src/views/home.ecr"
+end
+
 get "/user/:id" do |env|
     id = env.params.url["id"]
     redis.get("#{id}:bal")
