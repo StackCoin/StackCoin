@@ -16,7 +16,7 @@ class Coin
 
     def send_emb(content, emb)
         emb.colour = 16773120
-        emb.timestamp = Time.now
+        emb.timestamp = Time.utc
         emb.footer = Discord::EmbedFooter.new(
             text: "StackCoin™",
             icon_url: "https://i.imgur.com/CsVxtvM.png"
