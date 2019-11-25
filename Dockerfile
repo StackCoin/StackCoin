@@ -25,6 +25,7 @@ WORKDIR /src
 ADD . /src
 COPY .env.dist /src/.env
 
+RUN shards
 RUN crystal build src/bot.cr --release --static -o bot
 RUN crystal build src/api.cr --release --static -o api
 
