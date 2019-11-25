@@ -1,7 +1,6 @@
 require "discordcr"
 require "dotenv"
 require "redis"
-require "kemal"
 
 require "./coin"
 
@@ -28,28 +27,38 @@ client.on_message_create do |message|
 
       if msg.starts_with? "s!send"
         coin.send
+        next
       end
 
       if msg.compare("s!dole") == 0
         coin.dole
+        next
       end
 
       if msg.compare("s!bal") == 0
         coin.bal
+        next
+      end
+
+      if msg.compare("s!key") == 0
+        channel = cache.resolve_channel message.channel_id
+        if channel.type.dm?
+          client.create_message message.channel_id, "stub :)"
+          next
+        end
+        client.create_message message.channel_id, "I only send out keys wihtin direct messages!"
+        next
       end
 
       if msg.starts_with? "s!ping"
         client.create_message message.channel_id, "Pong!"
+        next
       end
     end
   rescue ex
     puts ex.inspect_with_backtrace
     client.create_message message.channel_id, "```#{ex.inspect_with_backtrace}```"
   end
-end
-
-get "/" do
-  "Hello World!"
 end
 
 client.run

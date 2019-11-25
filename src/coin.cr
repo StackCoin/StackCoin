@@ -43,7 +43,6 @@ class Coin
                 end
 
                 amount = Int32.new(0)
-
                 msg_parts = @message.content.split(" ")
 
                 if msg_parts.size > 3
