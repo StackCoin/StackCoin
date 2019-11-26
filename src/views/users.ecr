@@ -1,0 +1,15 @@
+<%= render "src/views/header.ecr" %>
+
+<%- if !include_usernames %>
+<a href="../user/?usernames">Include usernames in results</a>
+<%- end -%>
+
+<%- users.each do |id, details| -%>
+<div class="bal">
+    <%- if details.has_key? "username" %>
+    <p>Username: <%= details["username"] %></p>
+    <%- end -%>
+    <a href="<%= id %>/?usernames"><p>ID: <%= id %></p></a>
+    <p>Bal: <%= details["bal"] %></p>
+</div>
+<%- end -%>
