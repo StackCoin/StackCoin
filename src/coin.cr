@@ -37,6 +37,11 @@ class Coin
                 author_bal_key = "#{@message.author.id}:bal"
                 collector_bal_key = "#{mention.id}:bal"
 
+                if @redis.get(author_bal_key).is_a? Nil
+                    send_msg "You don't have any funds to give yet!, run 's!dole' to collect some."
+                    return
+                end
+
                 if @redis.get(collector_bal_key).is_a? Nil
                     send_msg "Collector of funds has no balance yet!, ask them to at least run 's!dole' once."
                     return
