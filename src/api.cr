@@ -34,10 +34,12 @@ get "/user/:id" do |env|
 
   user = Hash(String, Union(String, Nil)).new
   user["id"] = id
-  user["bal"] = redis.get("#{id}:bal")
-  if include_usernames
-    user["username"] = cache.resolve_user(id.to_u64).username
-  end
+
+  bal = redis.get("#{id}:bal")
+  halt env, status_code: 404 if bal.is_a? Nil
+  user["bal"] = bal
+
+  user["username"] = cache.resolve_user(id.to_u64).username if include_usernames
 
   next render "src/views/user.ecr" if should_return_html env
   user.to_json
@@ -48,17 +50,15 @@ get "/user/" do |env|
 
   users = Hash(String, Hash(String, String)).new
   redis.keys("*:bal").each do |bal_key|
-    if bal_key.is_a? String
-      bal = redis.get bal_key
-      if bal.is_a? String
-        id = bal_key.split(":").first
-        users[id] = Hash(String, String).new
-        if include_usernames
-          users[id]["username"] = cache.resolve_user(id.to_u64).username
-        end
-        users[id]["bal"] = bal
-      end
-    end
+    break if !bal_key.is_a? String
+
+    bal = redis.get bal_key
+    break if !bal.is_a? String
+
+    id = bal_key.split(":").first
+    users[id] = Hash(String, String).new
+    users[id]["username"] = cache.resolve_user(id.to_u64).username if include_usernames
+    users[id]["bal"] = bal
   end
 
   next render "src/views/users.ecr" if should_return_html env
