@@ -2,11 +2,12 @@ require "discordcr"
 require "redis"
 
 class Coin
-  def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, message : Discord::Message)
+  def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, message : Discord::Message, prefix : String)
     @client = client
     @cache = cache
     @redis = redis
     @message = message
+    @prefix = prefix
     @dole = 10
   end
 
@@ -28,6 +29,7 @@ class Coin
     mentions = Discord::Mention.parse @message.content
     if mentions.size != 1
       send_msg "Too many/little mentions in your message!"
+      return
     end
 
     mention = mentions[0]
@@ -45,12 +47,12 @@ class Coin
     collector_bal_key = "#{mention.id}:bal"
 
     if @redis.get(author_bal_key).is_a? Nil
-      send_msg "You don't have any funds to give yet!, run 's!dole' to collect some."
+      send_msg "You don't have any funds to give yet!, run '#{@prefix}dole' to collect some."
       return
     end
 
     if @redis.get(collector_bal_key).is_a? Nil
-      send_msg "Collector of funds has no balance yet!, ask them to at least run 's!dole' once."
+      send_msg "Collector of funds has no balance yet!, ask them to at least run '#{@prefix}dole' once."
       return
     end
 
@@ -127,7 +129,7 @@ class Coin
         )]
       )
     else
-      send_msg "You don't have a balance, run 's!dole' to collect some coin!"
+      send_msg "You don't have a balance, run '#{@prefix}dole' to collect some coin!"
     end
   end
 
