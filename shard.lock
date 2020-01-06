@@ -1,5 +1,9 @@
 version: 1.0
 shards:
+  db:
+    github: crystal-lang/crystal-db
+    version: 0.8.0
+
   discordcr:
     github: meew0/discordcr
     commit: 2fefc6c544c23475252438a6ca29d763eb1755fa
@@ -14,7 +18,7 @@ shards:
 
   kemal:
     github: kemalcr/kemal
-    version: 0.26.0
+    version: 0.26.1
 
   kilt:
     github: jeromegn/kilt
@@ -31,4 +35,8 @@ shards:
   redis:
     github: stefanwille/crystal-redis
     version: 2.3.0
+
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
+    version: 0.15.0
 
