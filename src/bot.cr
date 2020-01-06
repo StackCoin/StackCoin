@@ -1,10 +1,15 @@
 require "discordcr"
 require "dotenv"
 require "redis"
+require "sqlite3"
+require "db"
 
 require "./coin"
 
 Dotenv.load
+
+prefix = ENV["STACKCOIN_PREFIX"]
+
 discord_token = ENV["STACKCOIN_DISCORD_TOKEN"]
 discord_channel_id = ENV["STACKCOIN_DISCORD_CLIENT_ID"].to_u64
 
@@ -14,7 +19,9 @@ client.cache = cache
 
 redis = Redis.new(host: ENV["STACKCOIN_REDIS_HOST"])
 
-prefix = ENV["STACKCOIN_PREFIX"]
+db = DB.open ENV["STACKCOIN_DATABASE_URL"]
+
+coin = Coin.new(client, cache, redis, db, prefix)
 
 client.on_message_create do |message|
   next if message.author.bot
@@ -24,11 +31,9 @@ client.on_message_create do |message|
   begin
     next if !msg.starts_with? prefix
 
-    coin = Coin.new(client, cache, redis, message, prefix)
-
-    coin.send if msg.starts_with? "#{prefix}send"
-    coin.dole if msg.compare("#{prefix}dole") == 0
-    coin.bal if msg.compare("#{prefix}bal") == 0
+    coin.send message if msg.starts_with? "#{prefix}send"
+    coin.dole message if msg.compare("#{prefix}dole") == 0
+    coin.bal message if msg.compare("#{prefix}bal") == 0
 
     client.create_message message.channel_id, "Pong!" if msg.starts_with? "#{prefix}ping"
 
@@ -45,6 +50,12 @@ client.on_message_create do |message|
     puts ex.inspect_with_backtrace
     client.create_message message.channel_id, "```#{ex.inspect_with_backtrace}```"
   end
+end
+
+Signal::INT.trap do
+  puts "stack coin killed .-."
+  db.close
+  exit
 end
 
 client.run
