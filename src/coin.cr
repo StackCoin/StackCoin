@@ -2,80 +2,69 @@ require "discordcr"
 require "redis"
 
 class Coin
-  def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, message : Discord::Message)
+  def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, db : DB::Database, prefix : String)
     @client = client
     @cache = cache
     @redis = redis
-    @message = message
+    @db = db
+    @prefix = prefix
     @dole = 10
   end
 
-  def send_msg(content)
-    @client.create_message @message.channel_id, content
+  def send_msg(message, content)
+    @client.create_message message.channel_id, content
   end
 
-  def send_emb(content, emb)
+  def send_emb(message, content, emb)
     emb.colour = 16773120
     emb.timestamp = Time.utc
     emb.footer = Discord::EmbedFooter.new(
       text: "StackCoin™",
       icon_url: "https://i.imgur.com/CsVxtvM.png"
     )
-    @client.create_message @message.channel_id, content, emb
+    @client.create_message message.channel_id, content, emb
   end
 
-  def send
-    mentions = Discord::Mention.parse @message.content
-    if mentions.size != 1
-      send_msg "Too many/little mentions in your message!"
-    end
+  def check(message, condition, check_failed_message)
+    send_msg message, check_failed_message if condition
+    return condition
+  end
+
+  def send(message)
+    mentions = Discord::Mention.parse message.content
+
+    return if check(message, mentions.size != 1, "Too many/little mentions in your message!")
 
     mention = mentions[0]
+
     if !mention.is_a? Discord::Mention::User
-      send_msg "Mentioned entity isn't a User"
+      send_msg message, "Mentioned entity isn't a User"
       return
     end
 
-    if mention.id == @message.author.id
-      send_msg "You can't send money to yourself!"
-      return
-    end
+    return if check(message, mention.id == message.author.id, "You can't send money to yourself!")
 
-    author_bal_key = "#{@message.author.id}:bal"
+    author_bal_key = "#{message.author.id}:bal"
     collector_bal_key = "#{mention.id}:bal"
 
-    if @redis.get(author_bal_key).is_a? Nil
-      send_msg "You don't have any funds to give yet!, run 's!dole' to collect some."
-      return
-    end
+    return if check(message, @redis.get(author_bal_key).is_a? Nil, "You don't have any funds to give yet!, run '#{@prefix}dole' to collect some.")
 
-    if @redis.get(collector_bal_key).is_a? Nil
-      send_msg "Collector of funds has no balance yet!, ask them to at least run 's!dole' once."
-      return
-    end
+    return if check(message, @redis.get(collector_bal_key).is_a? Nil, "Collector of funds has no balance yet!, ask them to at least run '#{@prefix}dole' once.")
 
     amount = Int32.new(0)
-    msg_parts = @message.content.split(" ")
+    msg_parts = message.content.split(" ")
 
-    if msg_parts.size > 3
-      send_msg "Too many arguments in message, found #{msg_parts.size}"
-      return
-    end
+    return if check(message, msg_parts.size > 3, "Too many arguments in message, found #{msg_parts.size}")
 
     begin
       amount = msg_parts.last.to_i
     rescue
-      send_msg "Invalid amount: #{msg_parts.last}"
+      send_msg message, "Invalid amount: #{msg_parts.last}"
       return
     end
 
-    if amount < 0
-      send_msg "The amount must be greater than 0!"
-      return
-    elsif amount > 10000
-      send_msg "The amount can't be greater than 10000!"
-      return
-    end
+    return if check(message, amount <= 0, "The amount must be greater than 0!")
+    return if check(message, amount > 10000, "The amount can't be greater than 10000!")
 
     redis_resp = @redis.eval "
       local author_bal = redis.call('get',KEYS[1])
@@ -95,49 +84,47 @@ class Coin
     new_author_bal = redis_resp[1]
     new_collector_bal = redis_resp[2]
 
-    if redis_resp[0] == 0
-      collector = @cache.resolve_user(mention.id)
+    return if check(message, redis_resp[0] != 0, "Failed to transfer funds!")
 
-      send_emb "Transaction complete!", Discord::Embed.new(
-        fields: [
-          Discord::EmbedField.new(
-            name: "#{@message.author.username}",
-            value: "New bal: #{new_author_bal}",
-          ),
-          Discord::EmbedField.new(
-            name: "#{collector.username}",
-            value: "New bal: #{new_collector_bal}",
-          ),
-        ],
-      )
-    elsif
-      send_msg "fail"
-    end
+    collector = @cache.resolve_user(mention.id)
+
+    send_emb message, "Transaction complete!", Discord::Embed.new(
+      fields: [
+        Discord::EmbedField.new(
+          name: "#{message.author.username}",
+          value: "New bal: #{new_author_bal}",
+        ),
+        Discord::EmbedField.new(
+          name: "#{collector.username}",
+          value: "New bal: #{new_collector_bal}",
+        ),
+      ],
+    )
   end
 
-  def bal
-    usr_id = @message.author.id.to_u64.to_s
+  def bal(message)
+    usr_id = message.author.id.to_u64.to_s
     bal = @redis.get "#{usr_id}:bal"
 
     if bal.is_a? String
-      send_emb "", Discord::Embed.new(
+      send_emb message, "", Discord::Embed.new(
         fields: [Discord::EmbedField.new(
-          name: "#{@message.author.username}",
+          name: "#{message.author.username}",
           value: "Bal: #{bal}",
         )]
       )
     else
-      send_msg "You don't have a balance, run 's!dole' to collect some coin!"
+      send_msg message, "You don't have a balance, run '#{@prefix}dole' to collect some coin!"
     end
   end
 
-  def incr_bal(amount)
-    usr_id = @message.author.id.to_u64.to_s
+  def incr_bal(message, amount)
+    usr_id = message.author.id.to_u64.to_s
     return @redis.incrby "#{usr_id}:bal", amount
   end
 
-  def dole
-    usr_id = @message.author.id.to_u64.to_s
+  def dole(message)
+    usr_id = message.author.id.to_u64.to_s
 
     dole_key = "#{usr_id}:dole_date"
     now = Time.utc
@@ -149,24 +136,24 @@ class Coin
     end
 
     if last_given.value.is_a? Nil
-      give_dole
+      give_dole message
     elsif last_given.value.is_a? String
       last_given = Time.unix last_given.value.as(String).to_u64
 
       if last_given.day != now.day
-        give_dole
+        give_dole message
       else
-        deny_dole
+        deny_dole message
       end
     end
   end
 
-  def give_dole
-    new_bal = incr_bal @dole
-    send_msg "Dole given, new bal #{new_bal}"
+  def give_dole(message)
+    new_bal = incr_bal(message, @dole)
+    send_msg message, "Dole given, new bal #{new_bal}"
   end
 
-  def deny_dole
-    send_msg "Dole already given today!"
+  def deny_dole(message)
+    send_msg message, "Dole already given today!"
   end
 end

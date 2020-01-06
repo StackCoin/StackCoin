@@ -12,6 +12,8 @@ dependencies:
     github: kemalcr/kemal
   dotenv:
     github: gdotdesign/cr-dotenv
+  sqlite3:
+    github: crystal-lang/crystal-sqlite3
   redis:
     github: stefanwille/crystal-redis
     version: ~> 2.3.0
