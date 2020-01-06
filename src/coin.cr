@@ -31,6 +31,12 @@ class Coin
   end
 
   def send(message)
+    guild_id = message.guild_id
+    if !guild_id.is_a? Discord::Snowflake
+      send_msg message, "This command is only valid within a guild!"
+      return
+    end
+
     mentions = Discord::Mention.parse message.content
 
     return if check(message, mentions.size != 1, "Too many/little mentions in your message!")
@@ -81,12 +87,29 @@ class Coin
       end
 
       return {1, author_bal, collector_bal}", [author_bal_key, collector_bal_key], [amount]
+
     new_author_bal = redis_resp[1]
+    raise "new_author_bal isn't a String" if !new_author_bal.is_a?(String)
+
     new_collector_bal = redis_resp[2]
+    raise "new_collector_bal isn't a String" if !new_collector_bal.is_a?(String)
 
     return if check(message, redis_resp[0] != 0, "Failed to transfer funds!")
 
     collector = @cache.resolve_user(mention.id)
+
+    trans = [] of DB::Any
+    trans << guild_id.to_u64.to_i64
+    trans << message.author.id.to_u64.to_i64
+    trans << message.author.username
+    trans << new_author_bal
+    trans << collector.id.to_u64.to_i64
+    trans << collector.username
+    trans << new_collector_bal
+    trans << amount
+    trans << Time.utc
+
+    @db.exec "INSERT INTO ledger VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", args: trans
 
     send_emb message, "Transaction complete!", Discord::Embed.new(
       fields: [
