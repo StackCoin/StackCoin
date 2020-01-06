@@ -63,7 +63,7 @@ class Coin
       return
     end
 
-    return if check(message, amount < 0, "The amount must be greater than 0!")
+    return if check(message, amount <= 0, "The amount must be greater than 0!")
     return if check(message, amount > 10000, "The amount can't be greater than 10000!")
 
     redis_resp = @redis.eval "
