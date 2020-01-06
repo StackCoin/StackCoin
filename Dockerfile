@@ -18,7 +18,9 @@ RUN apk add --update --no-cache --force-overwrite \
         pcre-dev \
         readline-dev \
         yaml-dev \
-        zlib-dev
+        zlib-dev \
+        sqlite-static \
+        sqlite-dev
 
 WORKDIR /src
 
