@@ -1,6 +1,3 @@
-require "discordcr"
-require "redis"
-
 class Coin
   def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, db : DB::Database, prefix : String)
     @client = client
@@ -28,6 +25,30 @@ class Coin
   def check(message, condition, check_failed_message)
     send_msg message, check_failed_message if condition
     return condition
+  end
+
+  def ledger(message)
+    fields = [] of Discord::EmbedField
+
+    @db.query "SELECT author_name, author_bal, collector_name, collector_bal, amount, time FROM ledger ORDER BY time DESC LIMIT 5" do |rs|
+      rs.each do
+        author_name = rs.read.to_s
+        author_bal = rs.read.to_s
+        collector_name = rs.read.to_s
+        collector_bal = rs.read.to_s
+        amount = rs.read.to_s
+        time_string = rs.read.to_s
+
+        time = Time.parse(time_string, SQLite3::DATE_FORMAT, Time::Location::UTC)
+
+        fields << Discord::EmbedField.new(
+          name: "#{time_string}",
+          value: "#{author_name} (#{author_bal}) -> #{collector_name} (#{collector_bal}) - #{amount} STK"
+        )
+      end
+    end
+
+    send_emb message, "Last few transactions:", Discord::Embed.new(fields: fields)
   end
 
   def send(message)
@@ -96,15 +117,20 @@ class Coin
 
     return if check(message, redis_resp[0] != 0, "Failed to transfer funds!")
 
-    collector = @cache.resolve_user(mention.id)
+    collector_name = String.new()
+    begin
+      collector_name = @cache.resolve_user(mention.id).username
+    rescue
+      collector_name = "<unknown>"
+    end
 
     trans = [] of DB::Any
     trans << guild_id.to_u64.to_i64
     trans << message.author.id.to_u64.to_i64
     trans << message.author.username
     trans << new_author_bal
-    trans << collector.id.to_u64.to_i64
-    trans << collector.username
+    trans << mention.id.to_u64.to_i64
+    trans << collector_name
     trans << new_collector_bal
     trans << amount
     trans << Time.utc
@@ -118,7 +144,7 @@ class Coin
           value: "New bal: #{new_author_bal}",
         ),
         Discord::EmbedField.new(
-          name: "#{collector.username}",
+          name: "#{collector_name}",
           value: "New bal: #{new_collector_bal}",
         ),
       ],
@@ -130,7 +156,7 @@ class Coin
     bal = @redis.get "#{usr_id}:bal"
 
     if bal.is_a? String
-      send_emb message, "", Discord::Embed.new(
+      send_emb message, "Balance:", Discord::Embed.new(
         fields: [Discord::EmbedField.new(
           name: "#{message.author.username}",
           value: "Bal: #{bal}",

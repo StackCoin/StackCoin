@@ -49,6 +49,7 @@ client.on_message_create do |message|
   begin
     next if !msg.starts_with? prefix
 
+    coin.ledger message if msg.starts_with? "#{prefix}ledger"
     coin.send message if msg.starts_with? "#{prefix}send"
     coin.dole message if msg.compare("#{prefix}dole") == 0
     coin.bal message if msg.compare("#{prefix}bal") == 0
