@@ -31,8 +31,21 @@ class Coin
     fields = [] of Discord::EmbedField
 
     args = [] of DB::Any
+    condition_context = [] of String
     conditions = [] of String
     conditions << "WHERE"
+
+    yyy_mm_dd_regex = /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/
+
+    matches = message.content.scan(yyy_mm_dd_regex)
+    check(message, matches.size > 1, "Too many yyyy-mm-dd string matches in your message; max is a single one!")
+    if matches.size > 0
+      date = matches[0][1]
+      conditions << "date(time) = date(?)"
+      conditions << "AND"
+      args << date
+      condition_context << "Occured on #{date}"
+    end
 
     mentions = Discord::Mention.parse message.content
     check(message, mentions.size > 2, "Too many mentions in your message; max is two!")
@@ -45,12 +58,15 @@ class Coin
       conditions << "AND"
       args << mentioned.id.to_s
       args << mentioned.id.to_s
+      condition_context << "Mentions #{@cache.resolve_user(mentioned.id).username}"
     end
 
     conditions.pop # either remove the WHERE or last AND
 
     conditions_flat = ""
-    conditions.each do |condition| conditions_flat += " #{condition} " end
+    conditions.each do |condition|
+      conditions_flat += " #{condition} "
+    end
 
     ledger_query = "SELECT author_name, author_bal, collector_name, collector_bal, amount, time
     FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT 5"
@@ -73,12 +89,22 @@ class Coin
       end
     end
 
+    condition_context << "Most recent" if condition_context.size == 0
+
     fields << Discord::EmbedField.new(
       name: "*crickets*",
       value: "Seems like no transactions were found in the ledger :("
     ) if fields.size == 0
 
-    send_emb message, "Last few transactions:", Discord::Embed.new(fields: fields)
+    title = "_Searching ledger by_:"
+    condition_context.each do |cond|
+      title += "\n- #{cond}"
+    end
+
+    send_emb message, "Last few transactions:", Discord::Embed.new(
+      title: title,
+      fields: fields,
+    )
   end
 
   def send(message)
@@ -147,7 +173,7 @@ class Coin
 
     return if check(message, redis_resp[0] != 0, "Failed to transfer funds!")
 
-    collector_name = String.new()
+    collector_name = String.new
     begin
       collector_name = @cache.resolve_user(mention.id).username
     rescue
