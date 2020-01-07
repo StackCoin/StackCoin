@@ -30,7 +30,32 @@ class Coin
   def ledger(message)
     fields = [] of Discord::EmbedField
 
-    @db.query "SELECT author_name, author_bal, collector_name, collector_bal, amount, time FROM ledger ORDER BY time DESC LIMIT 5" do |rs|
+    args = [] of DB::Any
+    conditions = [] of String
+    conditions << "WHERE"
+
+    mentions = Discord::Mention.parse message.content
+    check(message, mentions.size > 2, "Too many mentions in your message; max is two!")
+    mentions.each do |mentioned|
+      if !mentioned.is_a? Discord::Mention::User
+        send_msg message, "Mentioned a non-user entity in your message!"
+        return
+      end
+      conditions << "(author_id = ? OR collector_id = ?)"
+      conditions << "AND"
+      args << mentioned.id.to_s
+      args << mentioned.id.to_s
+    end
+
+    conditions.pop # either remove the WHERE or last AND
+
+    conditions_flat = ""
+    conditions.each do |condition| conditions_flat += " #{condition} " end
+
+    ledger_query = "SELECT author_name, author_bal, collector_name, collector_bal, amount, time
+    FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT 5"
+
+    @db.query(ledger_query, args: args) do |rs|
       rs.each do
         author_name = rs.read.to_s
         author_bal = rs.read.to_s
@@ -47,6 +72,11 @@ class Coin
         )
       end
     end
+
+    fields << Discord::EmbedField.new(
+      name: "*crickets*",
+      value: "Seems like no transactions were found in the ledger :("
+    ) if fields.size == 0
 
     send_emb message, "Last few transactions:", Discord::Embed.new(fields: fields)
   end
@@ -124,18 +154,18 @@ class Coin
       collector_name = "<unknown>"
     end
 
-    trans = [] of DB::Any
-    trans << guild_id.to_u64.to_i64
-    trans << message.author.id.to_u64.to_i64
-    trans << message.author.username
-    trans << new_author_bal
-    trans << mention.id.to_u64.to_i64
-    trans << collector_name
-    trans << new_collector_bal
-    trans << amount
-    trans << Time.utc
+    args = [] of DB::Any
+    args << guild_id.to_u64.to_i64
+    args << message.author.id.to_u64.to_i64
+    args << message.author.username
+    args << new_author_bal
+    args << mention.id.to_u64.to_i64
+    args << collector_name
+    args << new_collector_bal
+    args << amount
+    args << Time.utc
 
-    @db.exec "INSERT INTO ledger VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", args: trans
+    @db.exec "INSERT INTO ledger VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", args: args
 
     send_emb message, "Transaction complete!", Discord::Embed.new(
       fields: [
