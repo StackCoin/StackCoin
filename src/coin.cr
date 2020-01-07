@@ -101,7 +101,7 @@ class Coin
       title += "\n- #{cond}"
     end
 
-    send_emb message, "Last few transactions:", Discord::Embed.new(
+    send_emb message, "", Discord::Embed.new(
       title: title,
       fields: fields,
     )
@@ -194,7 +194,8 @@ class Coin
 
     @db.exec "INSERT INTO ledger VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", args: args
 
-    send_emb message, "Transaction complete!", Discord::Embed.new(
+    send_emb message, "", Discord::Embed.new(
+      title: "_Transaction complete_:",
       fields: [
         Discord::EmbedField.new(
           name: "#{message.author.username}",
@@ -213,7 +214,8 @@ class Coin
     bal = @redis.get "#{usr_id}:bal"
 
     if bal.is_a? String
-      send_emb message, "Balance:", Discord::Embed.new(
+      send_emb message, "", Discord::Embed.new(
+        title: "_Balance:_",
         fields: [Discord::EmbedField.new(
           name: "#{message.author.username}",
           value: "Bal: #{bal}",
