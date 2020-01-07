@@ -23,7 +23,8 @@ redis = Redis.new(host: ENV["STACKCOIN_REDIS_HOST"])
 
 db = DB.open ENV["STACKCOIN_DATABASE_URL"]
 
-init_sql = "CREATE TABLE IF NOT EXISTS ledger (
+db.exec "CREATE TABLE IF NOT EXISTS ledger (
+  message_id string,
   guild_id string,
   author_id string,
   author_name string,
@@ -34,7 +35,15 @@ init_sql = "CREATE TABLE IF NOT EXISTS ledger (
   amount integer,
   time integer
 )"
-db.exec init_sql
+db.exec "CREATE TABLE IF NOT EXISTS benefits (
+  message_id string,
+  guild_id string,
+  needy_id string,
+  needy_name string,
+  needy_bal interger,
+  amount integer,
+  time integer
+)"
 
 coin = Coin.new(client, cache, redis, db, prefix)
 

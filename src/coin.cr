@@ -181,6 +181,7 @@ class Coin
     end
 
     args = [] of DB::Any
+    args << message.id.to_u64.to_i64
     args << guild_id.to_u64.to_i64
     args << message.author.id.to_u64.to_i64
     args << message.author.username
@@ -191,7 +192,7 @@ class Coin
     args << amount
     args << Time.utc
 
-    @db.exec "INSERT INTO ledger VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", args: args
+    @db.exec "INSERT INTO ledger VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", args: args
 
     send_emb message, "Transaction complete!", Discord::Embed.new(
       fields: [
@@ -254,7 +255,25 @@ class Coin
   end
 
   def give_dole(message)
+    guild_id = message.guild_id
+    if !guild_id.is_a? Discord::Snowflake
+      send_msg message, "This command is only valid within a guild!"
+      return
+    end
+
     new_bal = incr_bal(message, @dole)
+
+    args = [] of DB::Any
+    args << message.id.to_u64.to_i64
+    args << guild_id.to_u64.to_i64
+    args << message.author.id.to_u64.to_i64
+    args << message.author.username
+    args << new_bal
+    args << @dole
+    args << Time.utc
+
+    @db.exec "INSERT INTO benefits VALUES (?, ?, ?, ?, ?, ?, ?)", args: args
+
     send_msg message, "Dole given, new bal #{new_bal}"
   end
 
