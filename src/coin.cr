@@ -38,7 +38,7 @@ class Coin
     yyy_mm_dd_regex = /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/
 
     matches = message.content.scan(yyy_mm_dd_regex)
-    check(message, matches.size > 1, "Too many yyyy-mm-dd string matches in your message; max is a single one!")
+    return if check(message, matches.size > 1, "Too many yyyy-mm-dd string matches in your message; max is a single one!")
     if matches.size > 0
       date = matches[0][1]
       conditions << "date(time) = date(?)"
@@ -48,7 +48,7 @@ class Coin
     end
 
     mentions = Discord::Mention.parse message.content
-    check(message, mentions.size > 2, "Too many mentions in your message; max is two!")
+    return if check(message, mentions.size > 2, "Too many mentions in your message; max is two!")
     mentions.each do |mentioned|
       if !mentioned.is_a? Discord::Mention::User
         send_msg message, "Mentioned a non-user entity in your message!"
