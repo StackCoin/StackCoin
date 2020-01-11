@@ -1,6 +1,3 @@
-require "discordcr"
-require "redis"
-
 class Coin
   def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, db : DB::Database, prefix : String)
     @client = client
@@ -30,7 +27,93 @@ class Coin
     return condition
   end
 
+  def ledger(message)
+    fields = [] of Discord::EmbedField
+
+    args = [] of DB::Any
+    condition_context = [] of String
+    conditions = [] of String
+    conditions << "WHERE"
+
+    yyy_mm_dd_regex = /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/
+
+    matches = message.content.scan(yyy_mm_dd_regex)
+    return if check(message, matches.size > 1, "Too many yyyy-mm-dd string matches in your message; max is a single one!")
+    if matches.size > 0
+      date = matches[0][1]
+      conditions << "date(time) = date(?)"
+      conditions << "AND"
+      args << date
+      condition_context << "Occured on #{date}"
+    end
+
+    mentions = Discord::Mention.parse message.content
+    return if check(message, mentions.size > 2, "Too many mentions in your message; max is two!")
+    mentions.each do |mentioned|
+      if !mentioned.is_a? Discord::Mention::User
+        send_msg message, "Mentioned a non-user entity in your message!"
+        return
+      end
+      conditions << "(author_id = ? OR collector_id = ?)"
+      conditions << "AND"
+      args << mentioned.id.to_s
+      args << mentioned.id.to_s
+      condition_context << "Mentions #{@cache.resolve_user(mentioned.id).username}"
+    end
+
+    conditions.pop # either remove the WHERE or last AND
+
+    conditions_flat = ""
+    conditions.each do |condition|
+      conditions_flat += " #{condition} "
+    end
+
+    ledger_query = "SELECT author_name, author_bal, collector_name, collector_bal, amount, time
+    FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT 5"
+
+    @db.query(ledger_query, args: args) do |rs|
+      rs.each do
+        author_name = rs.read.to_s
+        author_bal = rs.read.to_s
+        collector_name = rs.read.to_s
+        collector_bal = rs.read.to_s
+        amount = rs.read.to_s
+        time_string = rs.read.to_s
+
+        time = Time.parse(time_string, SQLite3::DATE_FORMAT, Time::Location::UTC)
+
+        fields << Discord::EmbedField.new(
+          name: "#{time_string}",
+          value: "#{author_name} (#{author_bal}) -> #{collector_name} (#{collector_bal}) - #{amount} STK"
+        )
+      end
+    end
+
+    condition_context << "Most recent" if condition_context.size == 0
+
+    fields << Discord::EmbedField.new(
+      name: "*crickets*",
+      value: "Seems like no transactions were found in the ledger :("
+    ) if fields.size == 0
+
+    title = "_Searching ledger by_:"
+    condition_context.each do |cond|
+      title += "\n- #{cond}"
+    end
+
+    send_emb message, "", Discord::Embed.new(
+      title: title,
+      fields: fields,
+    )
+  end
+
   def send(message)
+    guild_id = message.guild_id
+    if !guild_id.is_a? Discord::Snowflake
+      send_msg message, "This command is only valid within a guild!"
+      return
+    end
+
     mentions = Discord::Mention.parse message.content
 
     return if check(message, mentions.size != 1, "Too many/little mentions in your message!")
@@ -81,21 +164,45 @@ class Coin
       end
 
       return {1, author_bal, collector_bal}", [author_bal_key, collector_bal_key], [amount]
+
     new_author_bal = redis_resp[1]
+    raise "new_author_bal isn't a String" if !new_author_bal.is_a?(String)
+
     new_collector_bal = redis_resp[2]
+    raise "new_collector_bal isn't a String" if !new_collector_bal.is_a?(String)
 
     return if check(message, redis_resp[0] != 0, "Failed to transfer funds!")
 
-    collector = @cache.resolve_user(mention.id)
+    collector_name = String.new
+    begin
+      collector_name = @cache.resolve_user(mention.id).username
+    rescue
+      collector_name = "<unknown>"
+    end
 
-    send_emb message, "Transaction complete!", Discord::Embed.new(
+    args = [] of DB::Any
+    args << message.id.to_u64.to_i64
+    args << guild_id.to_u64.to_i64
+    args << message.author.id.to_u64.to_i64
+    args << message.author.username
+    args << new_author_bal
+    args << mention.id.to_u64.to_i64
+    args << collector_name
+    args << new_collector_bal
+    args << amount
+    args << Time.utc
+
+    @db.exec "INSERT INTO ledger VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", args: args
+
+    send_emb message, "", Discord::Embed.new(
+      title: "_Transaction complete_:",
       fields: [
         Discord::EmbedField.new(
           name: "#{message.author.username}",
           value: "New bal: #{new_author_bal}",
         ),
         Discord::EmbedField.new(
-          name: "#{collector.username}",
+          name: "#{collector_name}",
           value: "New bal: #{new_collector_bal}",
         ),
       ],
@@ -108,6 +215,7 @@ class Coin
 
     if bal.is_a? String
       send_emb message, "", Discord::Embed.new(
+        title: "_Balance:_",
         fields: [Discord::EmbedField.new(
           name: "#{message.author.username}",
           value: "Bal: #{bal}",
@@ -149,7 +257,25 @@ class Coin
   end
 
   def give_dole(message)
+    guild_id = message.guild_id
+    if !guild_id.is_a? Discord::Snowflake
+      send_msg message, "This command is only valid within a guild!"
+      return
+    end
+
     new_bal = incr_bal(message, @dole)
+
+    args = [] of DB::Any
+    args << message.id.to_u64.to_i64
+    args << guild_id.to_u64.to_i64
+    args << message.author.id.to_u64.to_i64
+    args << message.author.username
+    args << new_bal
+    args << @dole
+    args << Time.utc
+
+    @db.exec "INSERT INTO benefits VALUES (?, ?, ?, ?, ?, ?, ?)", args: args
+
     send_msg message, "Dole given, new bal #{new_bal}"
   end
 

@@ -24,8 +24,14 @@ RUN apk add --update --no-cache --force-overwrite \
 
 WORKDIR /src
 
-ADD . /src
+COPY shard.yml /src/
+COPY shard.lock /src/
+RUN mkdir src
+COPY ./src /src/src
 COPY .env.dist /src/.env
+
+RUN mkdir data
+RUN echo "" > data/stackcoin.db
 
 RUN shards
 RUN crystal build src/bot.cr --release --static -o bot
@@ -43,7 +49,9 @@ RUN rm -rf /tmp/* /var/cache/apk/*
 
 ADD ./supervisord.conf /etc/
 
+WORKDIR /app
 COPY --from=crystalbuilder /src/bot /app/bot
 COPY --from=crystalbuilder /src/api /app/api
+COPY --from=crystalbuilder /src/data /app/data
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

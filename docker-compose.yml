@@ -7,8 +7,13 @@ services:
       - STACKCOIN_DISCORD_TOKEN=
       - STACKCOIN_DISCORD_CLIENT_ID=
       - STACKCOIN_REDIS_HOST=redis
+      - STACKCOIN_DATABASE_URL=
+      - STACKCOIN_PREFIX=
+      - STACKCOIN_TEST_GUILD_SNOWFLAKE=
     ports:
       - "3000:3000"
+    volumes:
+      - ./data/stackcoin.db:/app/data/stackcoin.db
     networks:
       - redis
     depends_on:
