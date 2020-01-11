@@ -12,6 +12,8 @@ services:
       - STACKCOIN_TEST_GUILD_SNOWFLAKE=
     ports:
       - "3000:3000"
+    volumes:
+      - ./data/stackcoin.db:/app/data/stackcoin.db
     networks:
       - redis
     depends_on:

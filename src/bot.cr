@@ -6,7 +6,9 @@ require "db"
 
 require "./coin"
 
-Dotenv.load
+begin
+  Dotenv.load
+end
 
 prefix = ENV["STACKCOIN_PREFIX"]
 
