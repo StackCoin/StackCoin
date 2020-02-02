@@ -1,3 +1,5 @@
+require "./utils"
+
 class Coin
   def initialize(client : Discord::Client, cache : Discord::Cache, redis : Redis, db : DB::Database, prefix : String)
     @client = client
@@ -229,7 +231,7 @@ class Coin
   # discovers and displays the top five richest currency holders
   def leaderboard(message)
     usernames = [] of String
-    bals      = [] of UInt64  
+    bals = [] of UInt64
 
     @redis.keys("*:bal").each do |bal_key|
       usr_id = bal_key.to_s.split(":")[0].to_u64
@@ -241,34 +243,15 @@ class Coin
     end
 
     fields = [] of Discord::EmbedField
-    indices = (argsort bals).reverse
-    positions = usernames.size<5 ? usernames.size:5 
-    (0..positions-1).each do |i|
+    indices = (Utils.argsort bals).reverse
+    positions = usernames.size < 5 ? usernames.size : 5
+    (0..positions - 1).each do |i|
       fields <<
-        Discord::EmbedField.new(name: "\##{i+1}: #{usernames[indices[i]]}",
-                                value: "Bal: #{bals[indices[i]]}")
+        Discord::EmbedField.new(name: "\##{i + 1}: #{usernames[indices[i]]}",
+          value: "Bal: #{bals[indices[i]]}")
     end
 
     send_emb message, "", Discord::Embed.new(title: "_Leaderboard:_", fields: fields)
-  end
-
-  # produces a set of indices that correspond to the sorted elements of 'array'
-  def argsort(array)
-    array_map = [] of Bool
-    indices   = [] of Int32
-    array_sorted = array.sort
-    (0..array.size).each { |x| array_map << true }
-    
-    array_sorted.each do |element|
-      array.each_index do |i|
-        if array_map[i] && array[i] == element
-          indices << i
-          array_map[i] = false
-        end
-      end
-    end
-    
-    return indices
   end
 
   def incr_bal(message, amount)
