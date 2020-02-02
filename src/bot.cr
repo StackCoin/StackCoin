@@ -64,6 +64,7 @@ client.on_message_create do |message|
     coin.send message if msg.starts_with? "#{prefix}send"
     coin.dole message if msg.compare("#{prefix}dole") == 0
     coin.bal message if msg.compare("#{prefix}bal") == 0
+    coin.leaderboard message if msg.compare("#{prefix}leaderboard") == 0
 
     client.create_message message.channel_id, "Pong!" if msg.starts_with? "#{prefix}ping"
 
