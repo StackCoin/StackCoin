@@ -2,7 +2,7 @@
 
 <div class="bal">
     <%- if user.has_key? "username" %>
-    <p>Username: <%= user["username"] %></p>
+    <p>Username: <%= HTML.escape(user["username"] ||= "<unknown>") %></p>
     <%- end -%>
     <p>ID: <%= id %></p>
     <p>Bal: <%= user["bal"] %></p>
