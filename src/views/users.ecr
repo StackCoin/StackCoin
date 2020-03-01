@@ -7,7 +7,7 @@
 <%- users.each do |id, details| -%>
 <div class="bal">
     <%- if details.has_key? "username" %>
-    <p>Username: <%= details["username"] %></p>
+    <p>Username: <%= HTML.escape(details["username"] ||= "<unknown>") %></p>
     <%- end -%>
     <a href="<%= id %>/?usernames"><p>ID: <%= id %></p></a>
     <p>Bal: <%= details["bal"] %></p>
