@@ -4,12 +4,6 @@
 <a href="../user/?usernames">Include usernames in results</a>
 <%- end -%>
 
-<%- users.each do |id, details| -%>
-<div class="bal">
-    <%- if details.has_key? "username" %>
-    <p>Username: <%= HTML.escape(details["username"] ||= "<unknown>") %></p>
-    <%- end -%>
-    <a href="<%= id %>/?usernames"><p>ID: <%= id %></p></a>
-    <p>Bal: <%= details["bal"] %></p>
-</div>
+<%- users.each do |id, user| -%>
+<%= render "src/views/user-base.ecr" %>
 <%- end -%>
