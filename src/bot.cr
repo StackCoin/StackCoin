@@ -1,3 +1,4 @@
+require "kemal"
 require "discordcr"
 require "dotenv"
 require "redis"
@@ -22,6 +23,8 @@ cache = Discord::Cache.new(client)
 client.cache = cache
 
 redis = Redis.new(host: ENV["STACKCOIN_REDIS_HOST"])
+
+# DB
 
 db = DB.open ENV["STACKCOIN_DATABASE_URL"]
 
@@ -48,6 +51,8 @@ db.exec "CREATE TABLE IF NOT EXISTS benefits (
 )"
 
 coin = Coin.new(client, cache, redis, db, prefix)
+
+# BOT
 
 client.on_message_create do |message|
   guild_id = message.guild_id
@@ -86,10 +91,68 @@ client.on_message_create do |message|
   end
 end
 
+# API
+
+def should_return_html(env)
+  headers = env.request.headers
+  return headers["Accept"].split(',').includes? "text/html" if headers.has_key? "Accept"
+  false
+end
+
+def should_include_usernames(env)
+  env.params.query.has_key? "usernames"
+end
+
+get "/" do |env|
+  next render "src/views/home.ecr" if should_return_html env
+  Hash(String, String).new.to_json
+end
+
+get "/user/:id" do |env|
+  include_usernames = should_include_usernames env
+  id = env.params.url["id"]
+
+  user = Hash(String, Union(String, Nil)).new
+  user["id"] = id
+
+  bal = redis.get("#{id}:bal")
+  halt env, status_code: 404 if bal.is_a? Nil
+  user["bal"] = bal
+
+  user["username"] = cache.resolve_user(id.to_u64).username if include_usernames
+
+  next render "src/views/user.ecr" if should_return_html env
+  user.to_json
+end
+
+get "/user/" do |env|
+  include_usernames = should_include_usernames env
+
+  users = Hash(String, Hash(String, String)).new
+  redis.keys("*:bal").each do |bal_key|
+    break if !bal_key.is_a? String
+
+    bal = redis.get bal_key
+    break if !bal.is_a? String
+
+    id = bal_key.split(":").first
+    users[id] = Hash(String, String).new
+    users[id]["username"] = cache.resolve_user(id.to_u64).username if include_usernames
+    users[id]["bal"] = bal
+  end
+
+  next render "src/views/users.ecr" if should_return_html env
+  users.to_json
+end
+
 Signal::INT.trap do
   puts "stack coin killed .-."
   db.close
   exit
 end
+
+spawn {
+  Kemal.run
+}
 
 client.run

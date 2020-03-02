@@ -1,9 +1,2 @@
 <%= render "src/views/header.ecr" %>
-
-<div class="bal">
-    <%- if user.has_key? "username" %>
-    <p>Username: <%= HTML.escape(user["username"] ||= "<unknown>") %></p>
-    <%- end -%>
-    <p>ID: <%= id %></p>
-    <p>Bal: <%= user["bal"] %></p>
-</div>
+<%= render "src/views/user-base.ecr" %>
