@@ -62,12 +62,15 @@ client.on_message_create do |message|
 
     coin.ledger message if msg.starts_with? "#{prefix}ledger"
     coin.send message if msg.starts_with? "#{prefix}send"
-    coin.dole message if msg.compare("#{prefix}dole") == 0
-    coin.bal message if msg.compare("#{prefix}bal") == 0
-    coin.leaderboard message if msg.compare("#{prefix}leaderboard") == 0
+    coin.dole message if msg.starts_with? "#{prefix}dole"
+    coin.bal message if msg.starts_with? "#{prefix}bal"
+    coin.leaderboard message if msg.starts_with? "#{prefix}leaderboard"
 
     client.create_message message.channel_id, "Pong!" if msg.starts_with? "#{prefix}ping"
 
+    next
+
+    # TODO api key giver
     if msg.compare("#{prefix}key") == 0
       channel = cache.resolve_channel message.channel_id
       if channel.type.dm?

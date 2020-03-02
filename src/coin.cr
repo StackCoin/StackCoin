@@ -123,7 +123,7 @@ class Coin
     mention = mentions[0]
 
     if !mention.is_a? Discord::Mention::User
-      send_msg message, "Mentioned entity isn't a User"
+      send_msg message, "Mentioned entity isn't a user!"
       return
     end
 
@@ -212,19 +212,36 @@ class Coin
   end
 
   def bal(message)
-    usr_id = message.author.id.to_u64.to_s
-    bal = @redis.get "#{usr_id}:bal"
+    mentions = Discord::Mention.parse message.content
+    return if check(message, mentions.size > 1, "Too many mentions in your message; max is one!")
 
+    usr_id = message.author.id.to_u64.to_s
+    usr = message.author
+    prefix = "You don't"
+
+    if mentions.size == 1
+      mention = mentions[0]
+      if !mention.is_a? Discord::Mention::User
+        send_msg message, "Mentioned entity isn't a user!"
+        return
+      end
+
+      usr = @cache.resolve_user(mention.id)
+      usr_id = mention.id.to_u64.to_s
+      prefix = "User doesn't" if mention.id != message.author.id
+    end
+
+    bal = @redis.get "#{usr_id}:bal"
     if bal.is_a? String
       send_emb message, "", Discord::Embed.new(
         title: "_Balance:_",
         fields: [Discord::EmbedField.new(
-          name: "#{message.author.username}",
+          name: "#{usr.username}",
           value: "Bal: #{bal}",
         )]
       )
     else
-      send_msg message, "You don't have a balance, run '#{@prefix}dole' to collect some coin!"
+      send_msg message, "#{prefix} have a balance, run '#{@prefix}dole' to collect some coin!"
     end
   end
 
