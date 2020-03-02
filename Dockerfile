@@ -16,7 +16,6 @@ RUN echo "" > data/stackcoin.db
 
 RUN shards
 RUN crystal build src/bot.cr --release --static -o bot
-RUN crystal build src/api.cr --release --static -o api
 
 # production environment
 
@@ -32,7 +31,6 @@ ADD ./supervisord.conf /etc/
 
 WORKDIR /app
 COPY --from=crystalbuilder /src/bot /app/bot
-COPY --from=crystalbuilder /src/api /app/api
 COPY --from=crystalbuilder /src/data /app/data
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
