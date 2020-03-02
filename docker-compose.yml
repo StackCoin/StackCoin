@@ -2,14 +2,9 @@ version: '3.7'
 
 services:
   stackcoin:
-    image: stackcoin
-    environment:
-      - STACKCOIN_DISCORD_TOKEN=
-      - STACKCOIN_DISCORD_CLIENT_ID=
-      - STACKCOIN_REDIS_HOST=redis
-      - STACKCOIN_DATABASE_URL=
-      - STACKCOIN_PREFIX=
-      - STACKCOIN_TEST_GUILD_SNOWFLAKE=
+    image: jackharrhy/stackcoin
+    env_file:
+      - ./.env
     ports:
       - "3000:3000"
     volumes:
