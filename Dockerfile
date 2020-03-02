@@ -1,24 +1,5 @@
-FROM alpine:3.11 as crystalbuilder
-RUN echo '@edge http://dl-cdn.alpinelinux.org/alpine/edge/community' >> /etc/apk/repositories
-RUN echo '@edge http://dl-cdn.alpinelinux.org/alpine/edge/main' >> /etc/apk/repositories
+FROM crystallang/crystal:0.33.0-alpine-build as crystalbuilder
 RUN apk add --update --no-cache --force-overwrite \
-        crystal@edge \
-        shards@edge \
-        g++ \
-        gc-dev \
-        libunwind-dev \
-        libxml2-dev \
-        llvm8 \
-        llvm8-dev \
-        llvm8-libs \
-        llvm8-static \
-        make \
-        musl-dev \
-        openssl-dev \
-        pcre-dev \
-        readline-dev \
-        yaml-dev \
-        zlib-dev \
         sqlite-static \
         sqlite-dev
 
