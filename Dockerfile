@@ -16,14 +16,14 @@ RUN mkdir data
 RUN echo "" > data/stackcoin.db
 
 RUN shards
-RUN crystal build src/bot.cr --release --static -o bot
+RUN crystal build src/stackcoin.cr --release --static -o stackcoin
 
 # prod
 FROM alpine:3
 
 WORKDIR /app
 COPY ./.env.dist /app/.env
-COPY --from=build /build/bot /app/bot
+COPY --from=build /build/stackcoin /app/stackcoin
 
 EXPOSE 3000
-CMD ["/app/bot"]
+CMD ["/app/stackcoin"]
