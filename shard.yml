@@ -17,3 +17,6 @@ dependencies:
   redis:
     github: stefanwille/crystal-redis
     version: ~> 2.3.0
+  toro:
+    github: soveran/toro
+    branch: master

@@ -1,27 +1,30 @@
 require "dotenv"
 require "./stackcoin/*"
 
-Signal::INT.trap do
-  # TODO cleanup any open db connections
-  puts "bye!"
-  exit
-end
-
 begin
   Dotenv.load
 end
 
 config = StackCoin::Config.from_env
 
-api = StackCoin::Api.new
+db = DB.open config.database_url
+StackCoin::Database.init(db)
+
+bank = StackCoin::Bank.new(db)
+
 spawn (
-  api.run!
+  StackCoin::Api.run!
 )
 
-bot = StackCoin::Bot.new(config)
 spawn (
-  bot.run!
+  StackCoin::Bot.new(config).run!
 )
+
+Signal::INT.trap do
+  db.close
+  puts "bye!"
+  exit
+end
 
 loop do
   # #20 TODO check if UTC rolled over, message #stackexchange if so

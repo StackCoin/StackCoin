@@ -1,9 +1,9 @@
-<%= render "src/views/header.ecr" %>
+<%= render "src/views/header" %>
 
 <%- if !include_usernames %>
 <a href="../user/?usernames">Include usernames in results</a>
 <%- end -%>
 
 <%- users.each do |id, user| -%>
-<%= render "src/views/user-base.ecr" %>
+<%= render "src/views/user-base" %>
 <%- end -%>
