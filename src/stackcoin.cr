@@ -25,5 +25,6 @@ spawn (
 
 loop do
   # TODO check if UTC rolled over, message #stackexchange if so
+  # TODO backup entire sqlite databaes every day here
   sleep 60
 end
