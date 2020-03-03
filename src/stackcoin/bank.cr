@@ -2,6 +2,7 @@ module StackCoin
   class Bank
     class Success
       getter message : String
+
       def initialize(db : DB::Transaction, @message)
         db.commit
       end
@@ -10,6 +11,7 @@ module StackCoin
     class TransferSuccess
       getter from_bal : Int32
       getter to_bal : Int32
+
       def initialize(db : DB::Transaction, @from_bal, @to_bal)
         db.commit
       end
@@ -20,6 +22,14 @@ module StackCoin
 
     def initialize(db : DB::Database)
       @db = db
+    end
+
+    private def deposit(cnn : DB::Connection, user_id : UInt64, amount : Int32)
+      cnn.exec "UPDATE balance SET bal = bal + ? WHERE id = ?", amount, user_id.to_s
+    end
+
+    private def withdraw(cnn : DB::Connection, user_id : UInt64, amount : Int32)
+      cnn.exec "UPDATE balance SET bal = bal - ? WHERE id = ?", amount, user_id.to_s
     end
 
     def open_account(user_id : UInt64)
@@ -37,7 +47,7 @@ module StackCoin
     end
 
     def balance(cnn : DB::Connection, user_id : UInt64)
-      cnn.query_one? "SELECT bal FROM balance WHERE id = ?", user_id.to_s, as: { Int32 }
+      cnn.query_one? "SELECT bal FROM balance WHERE id = ?", user_id.to_s, as: {Int32}
     end
 
     def balance(user_id : UInt64)
@@ -66,9 +76,22 @@ module StackCoin
           return Error.new(tx, "User doesn't have an account yet")
         end
 
-        if from_balance - amount < 0
-          return Error.new(tx, "Insufficient funds")
-        end
+        return Error.new(tx, "Insufficient funds") if from_balance - amount < 0
+
+        from_balance = from_balance - amount
+        self.withdraw(cnn, from_id, amount)
+
+        to_balance = to_balance + amount
+        self.deposit(cnn, to_id, amount)
+
+        args = [] of DB::Any
+        args << from_id.to_s
+        args << from_balance
+        args << to_id.to_s
+        args << to_balance
+        args << amount
+        args << Time.utc
+        cnn.exec "INSERT INTO ledger(author_id, author_bal, collector_id, collector_bal, amount, time) VALUES (?, ?, ?, ?, ?, ?)", args: args
 
         return TransferSuccess.new(tx, from_balance, to_balance)
       end
