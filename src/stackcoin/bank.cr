@@ -91,7 +91,11 @@ module StackCoin
         args << to_balance
         args << amount
         args << Time.utc
-        cnn.exec "INSERT INTO ledger(author_id, author_bal, collector_id, collector_bal, amount, time) VALUES (?, ?, ?, ?, ?, ?)", args: args
+        cnn.exec "INSERT INTO ledger(
+          author_id, author_bal, collector_id, collector_bal, amount, time
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?
+        )", args: args
 
         return TransferSuccess.new(tx, from_balance, to_balance)
       end

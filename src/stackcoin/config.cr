@@ -8,7 +8,7 @@ module StackCoin
 
     def self.from_env
       config = Config.new
-      config.token = ENV["STACKCOIN_DISCORD_TOKEN"]
+      config.token = "Bot #{ENV["STACKCOIN_DISCORD_TOKEN"]}"
       config.client_id = ENV["STACKCOIN_DISCORD_CLIENT_ID"].to_u64
       config.prefix = ENV["STACKCOIN_PREFIX"]
       config.test_guild_snowflake = Discord::Snowflake.new ENV["STACKCOIN_TEST_GUILD_SNOWFLAKE"]
