@@ -11,6 +11,7 @@ db = DB.open config.database_url
 StackCoin::Database.init db
 
 bank = StackCoin::Bank.new db
+stats = StackCoin::Statistics.new db
 
 api = StackCoin::Api
 bot = StackCoin::Bot.new config, bank

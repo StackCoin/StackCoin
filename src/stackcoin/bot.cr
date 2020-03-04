@@ -1,9 +1,14 @@
 require "discordcr"
 
 class StackCoin::Bot
-  class Error
-    def initialize(client, message, content)
-      client.create_message message.channel_id, content
+  class Result
+    class Base
+      def initialize(client, message, content)
+        client.create_message message.channel_id, content
+      end
+    end
+
+    class Error < Base
     end
   end
 
@@ -29,7 +34,7 @@ class StackCoin::Bot
         self.dole message if msg.starts_with? "#{config.prefix}dole"
       rescue ex
         puts ex.inspect_with_backtrace
-        @client.create_message message.channel_id, "```#{ex.inspect_with_backtrace}```"
+        Result::Error.new @client, message, "```#{ex.inspect_with_backtrace}```"
       end
     end
   end
@@ -50,7 +55,7 @@ class StackCoin::Bot
 
   def bal(message)
     mentions = Discord::Mention.parse message.content
-    return Error.new(@client, message, "Too many mentions in your message; max is one") if mentions.size > 1
+    return Result::Error.new(@client, message, "Too many mentions in your message; max is one") if mentions.size > 1
 
     prefix = "You don't"
     user = message.author
@@ -59,7 +64,7 @@ class StackCoin::Bot
     if mentions.size > 0
       mention = mentions[0]
       if !mention.is_a? Discord::Mention::User
-        return Error.new(@client, message, "Mentioned entity isn't a user!")
+        return Result::Error.new(@client, message, "Mentioned entity isn't a user!")
       end
 
       user = @cache.resolve_user(mention.id)
@@ -70,7 +75,7 @@ class StackCoin::Bot
     end
 
     if bal.is_a? Nil
-      return Error.new(@client, message, "#{prefix} have an account, run #{@config.prefix}open to create an account")
+      return Result::Error.new(@client, message, "#{prefix} have an account, run #{@config.prefix}open to create an account")
     end
 
     send_emb message, "", Discord::Embed.new(

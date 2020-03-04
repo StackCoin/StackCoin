@@ -83,7 +83,6 @@ describe StackCoin::Bank do
     end
   end
 
-  # TODO
   describe "transfer" do
     it "sends money from one user to another" do
       bank = create_populated_test_bank
