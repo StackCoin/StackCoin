@@ -51,7 +51,7 @@ describe StackCoin::Bank do
       bank.deposit_dole(martin_id).should be_a StackCoin::Bank::Success
     end
 
-    it "fails on giving a non-user dole" do
+    it "fails on no account" do
       bank = create_populated_test_bank
       bank.deposit_dole(joshua_id).should be_a StackCoin::Error
     end
@@ -80,6 +80,33 @@ describe StackCoin::Bank do
     it "fails on creating existing account" do
       bank = create_populated_test_bank
       bank.open_account(martin_id).should be_a StackCoin::Error
+    end
+  end
+
+  # TODO
+  describe "transfer" do
+    it "sends money from one user to another" do
+    end
+
+    it "fails if user is trying to transfer money to themselves" do
+    end
+
+    it "fails if amount is less than zero" do
+    end
+
+    it "fails if amount is greater than 10000" do
+    end
+
+    it "fails if sender has no account" do
+    end
+
+    it "fails if reciever hsa no account" do
+    end
+
+    it "fails if poor" do
+    end
+
+    it "fails if poor, then after getting dole, passes" do
     end
   end
 end
