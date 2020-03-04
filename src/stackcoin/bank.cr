@@ -25,6 +25,10 @@ module StackCoin
       @db = db
     end
 
+    def db
+      @db
+    end
+
     private def deposit(cnn : DB::Connection, user_id : UInt64, amount : Int32)
       cnn.exec "UPDATE balance SET bal = bal + ? WHERE id = ?", amount, user_id.to_s
     end
