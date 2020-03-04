@@ -46,12 +46,17 @@ describe StackCoin::Bank do
   end
 
   describe "deposit_dole" do
-    it "gives user dole if they freshly created" do
+    it "gives user dole if they're freshly created" do
       bank = create_populated_test_bank
       bank.deposit_dole(martin_id).should be_a StackCoin::Bank::Success
     end
 
-    it "fails on creating existing account" do
+    it "fails on giving a non-user dole" do
+      bank = create_populated_test_bank
+      bank.deposit_dole(joshua_id).should be_a StackCoin::Error
+    end
+
+    it "fails on giving user dole that already gotten it today" do
       bank = create_populated_test_bank
       bank.deposit_dole(andrew_id).should be_a StackCoin::Error
     end
