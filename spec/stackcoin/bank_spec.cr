@@ -45,7 +45,6 @@ describe StackCoin::Bank do
     end
   end
 
-  # TODO fix type assertions
   describe "deposit_dole" do
     it "gives user dole if they're freshly created" do
       bank = create_populated_test_bank
@@ -70,7 +69,6 @@ describe StackCoin::Bank do
     end
   end
 
-  # TODO fix type assertions
   describe "open_account" do
     it "creates an account that doens't already exist" do
       bank = create_populated_test_bank
