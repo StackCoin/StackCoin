@@ -86,27 +86,52 @@ describe StackCoin::Bank do
   # TODO
   describe "transfer" do
     it "sends money from one user to another" do
+      bank = create_populated_test_bank
+
+      resp = bank.transfer(daniel_id, martin_id, 5)
+      resp.should be_a StackCoin::Bank::Result::TransferSuccess
+
+      if resp.is_a? StackCoin::Bank::Result::TransferSuccess
+        resp.from_bal.should eq 10
+        resp.to_bal.should eq 5
+      end
     end
 
     it "fails if user is trying to transfer money to themselves" do
+      bank = create_populated_test_bank
+      resp = bank.transfer(martin_id, martin_id, 10).should be_a StackCoin::Bank::Result::TransferSelf
     end
 
     it "fails if amount is less than zero" do
+      bank = create_populated_test_bank
+      resp = bank.transfer(daniel_id, martin_id, -1).should be_a StackCoin::Bank::Result::InvalidAmount
     end
 
     it "fails if amount is greater than 10000" do
+      bank = create_populated_test_bank
+      resp = bank.transfer(martin_id, daniel_id, 10001).should be_a StackCoin::Bank::Result::InvalidAmount
     end
 
     it "fails if sender has no account" do
+      bank = create_populated_test_bank
+      resp = bank.transfer(joshua_id, daniel_id, 10).should be_a StackCoin::Bank::Result::NoSuchAccount
     end
 
     it "fails if reciever hsa no account" do
+      bank = create_populated_test_bank
+      resp = bank.transfer(daniel_id, joshua_id, 10).should be_a StackCoin::Bank::Result::NoSuchAccount
     end
 
     it "fails if poor" do
+      bank = create_populated_test_bank
+      resp = bank.transfer(martin_id, andrew_id, 10).should be_a StackCoin::Bank::Result::InsufficientFunds
     end
 
     it "fails if poor, then after getting dole, passes" do
+      bank = create_populated_test_bank
+      resp = bank.transfer(martin_id, andrew_id, 10).should be_a StackCoin::Bank::Result::InsufficientFunds
+      bank.deposit_dole martin_id
+      resp = bank.transfer(martin_id, andrew_id, 10).should be_a StackCoin::Bank::Result::TransferSuccess
     end
   end
 end
