@@ -9,7 +9,7 @@ module StackCoin
     end
 
     def self.run!
-      Api.run(3000)
+      Api.run 3000
     end
   end
 end

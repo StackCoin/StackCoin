@@ -17,13 +17,22 @@ module StackCoin
         amount integer,
         time integer
       )"
-      db.exec "CREATE TABLE IF NOT EXISTS benefits (
+      db.exec "CREATE TABLE IF NOT EXISTS benefit (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         needy_id string,
         needy_bal interger,
         amount integer,
         time integer
       )"
+
+      db.exec "CREATE TABLE IF NOT EXISTS last_given_dole (
+        id INTEGER PRIMARY KEY,
+        time integer
+      )"
+    end
+
+    def self.parse_time(time)
+      Time.parse time, SQLite3::DATE_FORMAT, Time::Location::UTC
     end
   end
 end

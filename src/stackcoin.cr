@@ -8,17 +8,15 @@ end
 config = StackCoin::Config.from_env
 
 db = DB.open config.database_url
-StackCoin::Database.init(db)
+StackCoin::Database.init db
 
-bank = StackCoin::Bank.new(db)
+bank = StackCoin::Bank.new db
 
-spawn (
-  StackCoin::Api.run!
-)
+api = StackCoin::Api
+bot = StackCoin::Bot.new config, bank
 
-spawn (
-  StackCoin::Bot.new(config).run!
-)
+spawn (api.run!)
+spawn (bot.run!)
 
 Signal::INT.trap do
   db.close
