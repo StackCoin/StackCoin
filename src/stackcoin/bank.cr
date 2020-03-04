@@ -100,9 +100,9 @@ class StackCoin::Bank
   end
 
   def transfer(from_id : UInt64, to_id : UInt64, amount : Int32)
-    return TransferSelf.new "Can't transfer money to self" if from_id == to_id
-    return InvalidAmount.new "Amount can't be less than zero" if amount <= 0
-    return InvalidAmount.new "Amount can't be greater than 10000" if amount > 10000
+    return Result::TransferSelf.new "Can't transfer money to self" if from_id == to_id
+    return Result::InvalidAmount.new "Amount can't be less than zero" if amount <= 0
+    return Result::InvalidAmount.new "Amount can't be greater than 10000" if amount > 10000
 
     from_balance, to_balance = 0, 0
     @db.transaction do |tx|
@@ -111,15 +111,15 @@ class StackCoin::Bank
       from_balance = self.balance(cnn, from_id)
 
       if !from_balance.is_a? Int32
-        return NoSuchAccount.new tx, "You don't have an account yet"
+        return Result::NoSuchAccount.new tx, "You don't have an account yet"
       end
 
       to_balance = self.balance(cnn, to_id)
       if !to_balance.is_a? Int32
-        return NoSuchAccount.new tx, "User doesn't have an account yet"
+        return Result::NoSuchAccount.new tx, "User doesn't have an account yet"
       end
 
-      return InsufficientFunds.new tx, "Insufficient funds" if from_balance - amount < 0
+      return Result::InsufficientFunds.new tx, "Insufficient funds" if from_balance - amount < 0
 
       from_balance = from_balance - amount
       self.withdraw cnn, from_id, amount
@@ -141,6 +141,6 @@ class StackCoin::Bank
       )", args: args
     end
 
-    TransferSuccess.new "Transfer sucessful", from_balance, to_balance
+    Result::TransferSuccess.new "Transfer sucessful", from_balance, to_balance
   end
 end
