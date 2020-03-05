@@ -1,4 +1,14 @@
 require "../src/stackcoin/*"
+
+# some text in code for _context_
+# started this project in redis, since it was only two attributes; the bal and the last_given_dole
+# sqlite came later, and then i realized it'd be so much better to just have a single source of truth,
+# makes backups easy too!
+
+#  redis:
+#    github: stefanwille/crystal-redis
+#    version: ~> 2.3.0
+
 require "redis"
 
 redis = Redis.new
