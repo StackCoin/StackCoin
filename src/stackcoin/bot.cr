@@ -101,7 +101,7 @@ class StackCoin::Bot
   def leaderboard(message)
     fields = [] of Discord::EmbedField
 
-    @stats.leaderboard(5).each_with_index do |res, i|
+    @stats.leaderboard.each_with_index do |res, i|
       user = @cache.resolve_user res[0]
       fields << Discord::EmbedField.new(
         name: "\##{i + 1}: #{user.username}",
@@ -145,11 +145,12 @@ class StackCoin::Bot
     ledger_results = @stats.ledger dates, from_ids, to_ids
 
     ledger_results.results.each_with_index do |result, i|
-      p i, result
-      #fields << Discord::EmbedField.new(
-      #  name: "#{time_string}",
-      #  value: "#{author_name} (#{author_bal}) -> #{collector_name} (#{collector_bal}) - #{amount} STK"
-      #)
+      from = @cache.resolve_user result.from_id
+      to = @cache.resolve_user result.to_id
+      fields << Discord::EmbedField.new(
+        name: "#{i + 1} - #{result.time}",
+        value: "#{from.username} (#{result.from_bal}) -> #{to.username} (#{result.to_bal}) - #{result.amount} STK"
+      )
     end
 
     condition_context << "Most recent" if condition_context.size == 0

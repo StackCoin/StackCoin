@@ -7,6 +7,7 @@ class StackCoin::Database
       user_id TEXT PRIMARY KEY,
       bal INTERGER
     )"
+
     db.exec "CREATE TABLE IF NOT EXISTS ledger (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       from_id TEXT,
@@ -16,6 +17,7 @@ class StackCoin::Database
       amount INTERGER,
       time INTERGER
     )"
+
     db.exec "CREATE TABLE IF NOT EXISTS benefit (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT,

@@ -74,8 +74,15 @@ class StackCoin::Bank
 
       self.deposit cnn, user_id, @@dole_amount
       cnn.exec "UPDATE last_given_dole SET time = ? WHERE user_id = ?", now, user_id.to_s
-
       bal = self.balance cnn, user_id
+
+      args = [] of DB::Any
+      args << user_id.to_s
+      args << bal
+      args << @@dole_amount
+      args << now
+
+      cnn.exec "INSERT INTO benefit(user_id, user_bal, amount, time) VALUES (?, ?, ?, ?)", args: args
     end
 
     Result::Success.new "#{@@dole_amount} StackCoin given, your balance is now #{bal}"

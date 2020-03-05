@@ -9,7 +9,7 @@ class StackCoin::Statistics < StackCoin::Bank
 
     def initialize(from_id, @from_bal, to_id, @to_bal, @amount, time)
       @from_id = from_id.to_u64
-      @to_id = from_id.to_u64
+      @to_id = to_id.to_u64
       @time = Database.parse_time time
     end
   end
@@ -41,7 +41,7 @@ class StackCoin::Statistics < StackCoin::Bank
     self.handle_balance_result_set "SELECT user_id, bal FROM balance", nil
   end
 
-  def leaderboard(limit)
+  def leaderboard(limit = 5)
     self.handle_balance_result_set "SELECT user_id, bal FROM balance ORDER BY bal DESC LIMIT ?", [limit]
   end
 
@@ -51,29 +51,36 @@ class StackCoin::Statistics < StackCoin::Bank
     richest[0]
   end
 
-  macro optional_condition(obj, type, condition)
-    if {{obj}}.is_a? {{type}}
-      conditions << {{condition}}
-      conditions << "AND"
-      args << {{obj}}
+  macro optional_conditions(objs, type, condition, final = "AND")
+    if {{objs}}.size != 0
+      conditions << "("
+      {{objs}}.each do |obj|
+        if obj.is_a? {{type}}
+          conditions << {{condition}}
+          conditions << "OR"
+          args << obj.to_s
+        end
+      end
+      conditions.pop
+      conditions << ")"
+      conditions << {{final}}
     end
   end
 
-  def ledger(dates : Array(String), from_ids, to_ids)
+  def ledger(dates, from_ids, to_ids, limit = 5)
     args = [] of DB::Any
     conditions = [] of String
     conditions << "WHERE"
 
-    dates.each do |date|
-      optional_condition date, String, "date(time) = date(?)"
-    end
+    optional_conditions dates, String, "date(time) = date(?)"
 
-    from_ids.each do |from_id|
-      optional_condition from_id.to_s, String, "(from_id = ?)"
-    end
-
-    to_ids.each do |to_id|
-      optional_condition to_id.to_s, String, "(to_id = ?)"
+    if from_ids.size != 0 || to_ids.size != 0
+      conditions << "("
+      optional_conditions from_ids, UInt64, "from_id = ?", "OR"
+      optional_conditions to_ids, UInt64, "to_id = ?", "OR"
+      conditions.pop
+      conditions << ")"
+      conditions << "AND"
     end
 
     conditions.pop # either remove the WHERE or last AND
@@ -84,7 +91,8 @@ class StackCoin::Statistics < StackCoin::Bank
     end
 
     ledger_query = "SELECT from_id, from_bal, to_id, to_bal, amount, time
-    FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT 5"
+    FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT ?"
+    args << limit
 
     results = [] of LedgerResult
     @db.query ledger_query, args: args do |rs|
