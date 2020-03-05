@@ -20,9 +20,17 @@ bank.open_account andrew_id
 bank.deposit_dole andrew_id
 bank.open_account daniel_id
 bank.deposit_dole daniel_id
-bank.transfer andrew_id, daniel_id, 5
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
+bank.transfer andrew_id, daniel_id, 1
 
-#p stats.all_balances
-#p stats.leaderboard 5
-#p stats.richest
-p stats.ledger nil, andrew_id, daniel_id
+p stats.all_balances
+p stats.leaderboard 5
+p stats.richest
+p stats.ledger [] of String, [andrew_id], [daniel_id]

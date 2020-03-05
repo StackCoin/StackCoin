@@ -16,9 +16,9 @@ class StackCoin::Statistics < StackCoin::Bank
 
   class Result < StackCoin::Result
     class LedgerResults
-      getter date : (Int32 | Nil)
-      getter from_id : (UInt64 | Nil)
-      getter to_id : (UInt64 | Nil)
+      getter date : Array(String)
+      getter from_id : Array(UInt64)
+      getter to_id : Array(UInt64)
       getter results : Array(LedgerResult)
 
       def initialize(@date, @from_id, @to_id, @results)
@@ -59,14 +59,22 @@ class StackCoin::Statistics < StackCoin::Bank
     end
   end
 
-  def ledger(date, from_id, to_id)
+  def ledger(dates : Array(String), from_ids, to_ids)
     args = [] of DB::Any
     conditions = [] of String
     conditions << "WHERE"
 
-    optional_condition date, String, "date(time) = date(?)"
-    optional_condition from_id.to_s, String, "(from_id = ?)"
-    optional_condition to_id.to_s, String, "(to_id = ?)"
+    dates.each do |date|
+      optional_condition date, String, "date(time) = date(?)"
+    end
+
+    from_ids.each do |from_id|
+      optional_condition from_id.to_s, String, "(from_id = ?)"
+    end
+
+    to_ids.each do |to_id|
+      optional_condition to_id.to_s, String, "(to_id = ?)"
+    end
 
     conditions.pop # either remove the WHERE or last AND
 
@@ -85,6 +93,6 @@ class StackCoin::Statistics < StackCoin::Bank
       end
     end
 
-    Result::LedgerResults.new date, from_id, to_id, results
+    Result::LedgerResults.new dates, from_ids, to_ids, results
   end
 end
