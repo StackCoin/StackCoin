@@ -64,7 +64,7 @@ describe StackCoin::Bank do
     it "fails, then passes once its a week in the future" do
       bank = create_populated_test_bank
       bank.deposit_dole(andrew_id).should be_a StackCoin::Bank::Result::PrematureDole
-      bank.db.exec "UPDATE last_given_dole SET time = ? WHERE id = ?", Time.utc + 1.weeks, andrew_id.to_s
+      bank.db.exec "UPDATE last_given_dole SET time = ? WHERE user_id = ?", Time.utc + 1.weeks, andrew_id.to_s
       bank.deposit_dole(andrew_id).should be_a StackCoin::Result::Success
     end
   end

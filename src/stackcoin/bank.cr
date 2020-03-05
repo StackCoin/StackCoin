@@ -40,15 +40,15 @@ class StackCoin::Bank
   end
 
   private def deposit(cnn : DB::Connection, user_id : UInt64, amount : Int32)
-    cnn.exec "UPDATE balance SET bal = bal + ? WHERE id = ?", amount, user_id.to_s
+    cnn.exec "UPDATE balance SET bal = bal + ? WHERE user_id = ?", amount, user_id.to_s
   end
 
   private def withdraw(cnn : DB::Connection, user_id : UInt64, amount : Int32)
-    cnn.exec "UPDATE balance SET bal = bal - ? WHERE id = ?", amount, user_id.to_s
+    cnn.exec "UPDATE balance SET bal = bal - ? WHERE user_id = ?", amount, user_id.to_s
   end
 
   def balance(cnn : DB::Connection, user_id : UInt64)
-    cnn.query_one? "SELECT bal FROM balance WHERE id = ?", user_id.to_s, as: {Int32}
+    cnn.query_one? "SELECT bal FROM balance WHERE user_id = ?", user_id.to_s, as: {Int32}
   end
 
   def balance(user_id : UInt64)
@@ -66,14 +66,14 @@ class StackCoin::Bank
     @db.transaction do |tx|
       cnn = tx.connection
 
-      expect_one = cnn.query_one "SELECT EXISTS(SELECT 1 FROM last_given_dole WHERE id = ?)", user_id.to_s, as: Int
+      expect_one = cnn.query_one "SELECT EXISTS(SELECT 1 FROM last_given_dole WHERE user_id = ?)", user_id.to_s, as: Int
       return Result::NoSuchAccount.new tx, "No account to deposit dole to" if expect_one == 0
 
-      last_given = Database.parse_time cnn.query_one "SELECT time FROM last_given_dole WHERE id = ?", user_id.to_s, as: String
+      last_given = Database.parse_time cnn.query_one "SELECT time FROM last_given_dole WHERE user_id = ?", user_id.to_s, as: String
       return Result::PrematureDole.new tx, "Dole already received today" if last_given.day == now.day
 
       self.deposit cnn, user_id, @@dole_amount
-      cnn.exec "UPDATE last_given_dole SET time = ? WHERE id = ?", now, user_id.to_s
+      cnn.exec "UPDATE last_given_dole SET time = ? WHERE user_id = ?", now, user_id.to_s
 
       bal = self.balance cnn, user_id
     end
@@ -87,7 +87,7 @@ class StackCoin::Bank
     @db.transaction do |tx|
       cnn = tx.connection
 
-      expect_zero = cnn.query_one "SELECT EXISTS(SELECT 1 FROM balance WHERE id = ?)", user_id.to_s, as: Int
+      expect_zero = cnn.query_one "SELECT EXISTS(SELECT 1 FROM balance WHERE user_id = ?)", user_id.to_s, as: Int
       if expect_zero > 0
         return Result::PreexistingAccount.new tx, "Account already open"
       end

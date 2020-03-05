@@ -12,12 +12,13 @@ class StackCoin::Bot
     end
   end
 
-  def initialize(config : Config, bank : Bank)
+  def initialize(config : Config, bank : Bank, stats : Statistics)
     @client = Discord::Client.new(token: config.token, client_id: config.client_id)
     @cache = Discord::Cache.new(@client)
     @client.cache = @cache
-    @bank = bank
     @config = config
+    @bank = bank
+    @stats = stats
 
     @client.on_message_create do |message|
       guild_id = message.guild_id
@@ -32,6 +33,7 @@ class StackCoin::Bot
         self.bal message if msg.starts_with? "#{config.prefix}bal"
         self.open message if msg.starts_with? "#{config.prefix}open"
         self.dole message if msg.starts_with? "#{config.prefix}dole"
+        self.leaderboard message if msg.starts_with? "#{config.prefix}leaderboard"
       rescue ex
         puts ex.inspect_with_backtrace
         Result::Error.new @client, message, "```#{ex.inspect_with_backtrace}```"
@@ -64,10 +66,10 @@ class StackCoin::Bot
     if mentions.size > 0
       mention = mentions[0]
       if !mention.is_a? Discord::Mention::User
-        return Result::Error.new(@client, message, "Mentioned entity isn't a user!")
+        return Result::Error.new @client, message, "Mentioned entity isn't a user!"
       end
 
-      user = @cache.resolve_user(mention.id)
+      user = @cache.resolve_user mention.id
       bal = @bank.balance mention.id.to_u64
       prefix = "User doesn't" if mention.id != message.author.id
     else
@@ -75,14 +77,14 @@ class StackCoin::Bot
     end
 
     if bal.is_a? Nil
-      return Result::Error.new(@client, message, "#{prefix} have an account, run #{@config.prefix}open to create an account")
+      return Result::Error.new @client, message, "#{prefix} have an account, run #{@config.prefix}open to create an account"
     end
 
     send_emb message, "", Discord::Embed.new(
       title: "_Balance:_",
       fields: [Discord::EmbedField.new(
         name: "#{user.username}",
-        value: "Bal: #{bal}",
+        value: "#{bal}",
       )]
     )
   end
@@ -93,6 +95,20 @@ class StackCoin::Bot
 
   def dole(message)
     send_msg message, @bank.deposit_dole(message.author.id.to_u64).message
+  end
+
+  def leaderboard(message)
+    fields = [] of Discord::EmbedField
+
+    @stats.leaderboard(5).each_with_index do |res, i|
+      user = @cache.resolve_user res[0]
+      fields << Discord::EmbedField.new(
+        name: "\##{i + 1}: #{user.username}",
+        value: "Balance: #{res[1]}"
+      )
+    end
+
+    send_emb message, "", Discord::Embed.new title: "_Leaderboard:_", fields: fields
   end
 
   def run!

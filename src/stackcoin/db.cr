@@ -4,29 +4,29 @@ require "db"
 class StackCoin::Database
   def self.init(db : DB::Database)
     db.exec "CREATE TABLE IF NOT EXISTS balance (
-      id INTEGER PRIMARY KEY,
-      bal interger
+      user_id TEXT PRIMARY KEY,
+      bal INTERGER
     )"
     db.exec "CREATE TABLE IF NOT EXISTS ledger (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      author_id string,
-      author_bal interger,
-      collector_id string,
-      collector_bal interger,
-      amount integer,
-      time integer
+      author_id TEXT,
+      author_bal INTERGER,
+      collector_id TEXT,
+      collector_bal INTERGER,
+      amount INTERGER,
+      time INTERGER
     )"
     db.exec "CREATE TABLE IF NOT EXISTS benefit (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      needy_id string,
-      needy_bal interger,
-      amount integer,
-      time integer
+      user_id TEXT,
+      user_bal INTERGER,
+      amount INTERGER,
+      time INTERGER
     )"
 
     db.exec "CREATE TABLE IF NOT EXISTS last_given_dole (
-      id INTEGER PRIMARY KEY,
-      time integer
+      user_id TEXT PRIMARY KEY,
+      time INTERGER
     )"
   end
 
