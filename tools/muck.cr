@@ -34,3 +34,4 @@ p stats.all_balances
 p stats.leaderboard 5
 p stats.richest
 p stats.ledger [] of String, [andrew_id, daniel_id], [daniel_id, andrew_id]
+p stats.circulation

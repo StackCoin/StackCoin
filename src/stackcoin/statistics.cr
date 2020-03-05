@@ -51,6 +51,10 @@ class StackCoin::Statistics < StackCoin::Bank
     richest[0]
   end
 
+  def circulation
+    @db.query_one "SELECT SUM(bal) FROM balance", as: Int64
+  end
+
   macro optional_conditions(objs, type, condition, final = "AND")
     if {{objs}}.size != 0
       conditions << "("

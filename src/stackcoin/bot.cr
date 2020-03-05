@@ -35,6 +35,7 @@ class StackCoin::Bot
         self.dole message if msg.starts_with? "#{config.prefix}dole"
         self.leaderboard message if msg.starts_with? "#{config.prefix}leaderboard"
         self.ledger message if msg.starts_with? "#{config.prefix}ledger"
+        self.circulation message if msg.starts_with? "#{config.prefix}circulation"
       rescue ex
         puts ex.inspect_with_backtrace
         Result::Error.new @client, message, "```#{ex.inspect_with_backtrace}```"
@@ -112,6 +113,16 @@ class StackCoin::Bot
     send_emb message, "", Discord::Embed.new title: "_Leaderboard:_", fields: fields
   end
 
+  def circulation(message)
+    send_emb message, "", Discord::Embed.new(
+      title: "_Total StackCoin in Circulation:_",
+      fields: [Discord::EmbedField.new(
+        name: "#{@stats.circulation} STK",
+        value: "Since #{EPOCH}",
+      )]
+    )
+  end
+
   def ledger(message)
     dates = [] of String
     from_ids = [] of UInt64
@@ -149,7 +160,7 @@ class StackCoin::Bot
       to = @cache.resolve_user result.to_id
       fields << Discord::EmbedField.new(
         name: "#{i + 1} - #{result.time}",
-        value: "#{from.username} (#{result.from_bal}) -> #{to.username} (#{result.to_bal}) - #{result.amount} STK"
+        value: "#{from.username} (#{result.from_bal}) ⟶ #{to.username} (#{result.to_bal}) - #{result.amount} STK"
       )
     end
 
