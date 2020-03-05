@@ -116,7 +116,7 @@ describe StackCoin::Bank do
       resp = bank.transfer(joshua_id, daniel_id, 10).should be_a StackCoin::Bank::Result::NoSuchAccount
     end
 
-    it "fails if reciever hsa no account" do
+    it "fails if reciever has no account" do
       bank = create_populated_test_bank
       resp = bank.transfer(daniel_id, joshua_id, 10).should be_a StackCoin::Bank::Result::NoSuchAccount
     end

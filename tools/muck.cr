@@ -22,6 +22,7 @@ bank.open_account daniel_id
 bank.deposit_dole daniel_id
 bank.transfer andrew_id, daniel_id, 5
 
-p stats.all_balances
-p stats.leaderboard 5
-p stats.richest
+#p stats.all_balances
+#p stats.leaderboard 5
+#p stats.richest
+p stats.ledger nil, andrew_id, daniel_id

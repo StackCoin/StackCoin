@@ -5,12 +5,12 @@ shards:
     version: 0.8.0
 
   discordcr:
-    github: meew0/discordcr
+    github: discordcr/discordcr
     commit: f55992da080f3ca1a4e02d0b96ce3e61fadd0471
 
   dotenv:
     github: gdotdesign/cr-dotenv
-    version: 0.1.0
+    version: 0.6.0
 
   exception_page:
     github: crystal-loot/exception_page

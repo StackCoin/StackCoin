@@ -135,7 +135,7 @@ class StackCoin::Bank
       args << amount
       args << Time.utc
       cnn.exec "INSERT INTO ledger(
-        author_id, author_bal, collector_id, collector_bal, amount, time
+        from_id, from_bal, to_id, to_bal, amount, time
       ) VALUES (
         ?, ?, ?, ?, ?, ?
       )", args: args

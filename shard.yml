@@ -6,7 +6,7 @@ authors:
 
 dependencies:
   discordcr:
-    github: meew0/discordcr
+    github: discordcr/discordcr
     branch: master
   kemal:
     github: kemalcr/kemal

@@ -1,4 +1,31 @@
 class StackCoin::Statistics < StackCoin::Bank
+  class LedgerResult
+    getter from_id : UInt64
+    getter from_bal : Int32
+    getter to_id : UInt64
+    getter to_bal : Int32
+    getter amount : Int32
+    getter time : Time
+
+    def initialize(from_id, @from_bal, to_id, @to_bal, @amount, time)
+      @from_id = from_id.to_u64
+      @to_id = from_id.to_u64
+      @time = Database.parse_time time
+    end
+  end
+
+  class Result < StackCoin::Result
+    class LedgerResults
+      getter date : (Int32 | Nil)
+      getter from_id : (UInt64 | Nil)
+      getter to_id : (UInt64 | Nil)
+      getter results : Array(LedgerResult)
+
+      def initialize(@date, @from_id, @to_id, @results)
+      end
+    end
+  end
+
   private def handle_balance_result_set(query, args)
     balances = [] of Tuple(UInt64, Int32)
     @db.query query, args: args do |rs|
@@ -22,5 +49,42 @@ class StackCoin::Statistics < StackCoin::Bank
     richest = self.leaderboard 1
     return nil if richest.size == 0
     richest[0]
+  end
+
+  macro optional_condition(obj, type, condition)
+    if {{obj}}.is_a? {{type}}
+      conditions << {{condition}}
+      conditions << "AND"
+      args << {{obj}}
+    end
+  end
+
+  def ledger(date, from_id, to_id)
+    args = [] of DB::Any
+    conditions = [] of String
+    conditions << "WHERE"
+
+    optional_condition date, String, "date(time) = date(?)"
+    optional_condition from_id.to_s, String, "(from_id = ?)"
+    optional_condition to_id.to_s, String, "(to_id = ?)"
+
+    conditions.pop # either remove the WHERE or last AND
+
+    conditions_flat = ""
+    conditions.each do |condition|
+      conditions_flat += " #{condition} "
+    end
+
+    ledger_query = "SELECT from_id, from_bal, to_id, to_bal, amount, time
+    FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT 5"
+
+    results = [] of LedgerResult
+    @db.query ledger_query, args: args do |rs|
+      rs.each do
+        results << LedgerResult.new(*rs.read String, Int32, String, Int32, Int32, String)
+      end
+    end
+
+    Result::LedgerResults.new date, from_id, to_id, results
   end
 end

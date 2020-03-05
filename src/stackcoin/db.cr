@@ -9,10 +9,10 @@ class StackCoin::Database
     )"
     db.exec "CREATE TABLE IF NOT EXISTS ledger (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      author_id TEXT,
-      author_bal INTERGER,
-      collector_id TEXT,
-      collector_bal INTERGER,
+      from_id TEXT,
+      from_bal INTERGER,
+      to_id TEXT,
+      to_bal INTERGER,
       amount INTERGER,
       time INTERGER
     )"
