@@ -36,6 +36,7 @@ class StackCoin::Bot
         self.leaderboard message if msg.starts_with? "#{config.prefix}leaderboard"
         self.ledger message if msg.starts_with? "#{config.prefix}ledger"
         self.circulation message if msg.starts_with? "#{config.prefix}circulation"
+        self.send message if msg.starts_with? "#{config.prefix}send"
       rescue ex
         puts ex.inspect_with_backtrace
         Result::Error.new @client, message, "```#{ex.inspect_with_backtrace}```"
@@ -148,7 +149,7 @@ class StackCoin::Bot
     return Result::Error.new(@client, message, "Too many mentions in your message; max is two") if mentions.size > 2
     mentions.each do |mentioned|
       if !mentioned.is_a? Discord::Mention::User
-        return Result::Error.new(@client, message, "Mentioned a non-user entity in your message") if mentions.size > 2
+        return Result::Error.new(@client, message, "Mentioned a non-user entity in your message")
       else
         # TODO allow to specify from / to
         from_ids << mentioned.id
@@ -181,6 +182,41 @@ class StackCoin::Bot
     end
 
     send_emb message, "", Discord::Embed.new(title: title, fields: fields)
+  end
+
+  def send(message)
+    mentions = Discord::Mention.parse message.content
+    return Result::Error.new(@client, message, "Too many/little mentions in your message; max is one") if mentions.size != 1
+
+    mention = mentions[0]
+    return Result::Error.new(@client, message, "Mentioned a non-user entity in your message") if !mention.is_a? Discord::Mention::User
+
+    msg_parts = message.content.split(" ")
+    return Result::Error.new(@client, message, "Too many arguments in message, found #{msg_parts.size}") if msg_parts.size > 3
+
+    amount = msg_parts.last.to_i?
+    return Result::Error.new(@client, message, "Invalid amount: #{msg_parts.last}") if amount.is_a? Nil
+
+    result = @bank.transfer message.author.id.to_u64, mention.id, amount
+
+    if result.is_a? Bank::Result::TransferSuccess
+      to = @cache.resolve_user mention.id
+      send_emb message, "", Discord::Embed.new(
+        title: "_Transaction complete_:",
+        fields: [
+          Discord::EmbedField.new(
+            name: "#{message.author.username}",
+            value: "New bal: #{result.from_bal}",
+          ),
+          Discord::EmbedField.new(
+            name: "#{to.username}",
+            value: "New bal: #{result.to_bal}",
+          ),
+        ],
+      )
+    else
+      Result::Error.new @client, message, result.message
+    end
   end
 
   def run!
