@@ -43,6 +43,10 @@ class StackCoin::Bot
     end
   end
 
+  def cache
+    @cache
+  end
+
   def send_msg(message, content)
     @client.create_message message.channel_id, content
   end

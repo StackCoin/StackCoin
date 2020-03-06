@@ -13,8 +13,8 @@ StackCoin::Database.init db
 bank = StackCoin::Bank.new db
 stats = StackCoin::Statistics.new db
 
-api = StackCoin::Api
 bot = StackCoin::Bot.new config, bank, stats
+api = StackCoin::Api.new config, bank, stats, bot
 
 spawn (api.run!)
 spawn (bot.run!)
