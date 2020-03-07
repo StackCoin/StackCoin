@@ -2,7 +2,7 @@ name: Deploy to Dockerhub
 
 on:
   push:
-    branches:    
+    branches:
       - master
 
 jobs:

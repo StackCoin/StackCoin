@@ -5,16 +5,28 @@ shards:
     version: 0.8.0
 
   discordcr:
-    github: meew0/discordcr
+    github: discordcr/discordcr
     commit: f55992da080f3ca1a4e02d0b96ce3e61fadd0471
 
   dotenv:
     github: gdotdesign/cr-dotenv
-    version: 0.3.1
+    version: 0.6.0
 
   exception_page:
     github: crystal-loot/exception_page
-    version: 0.1.2
+    version: 0.1.4
+
+  humanize_time:
+    github: mamantoha/humanize_time
+    version: 0.6.0
+
+  i18n:
+    github: TechMagister/i18n.cr
+    version: 0.3.1
+
+  i18n_plural_rules:
+    github: mamantoha/i18n_plural_rules
+    version: 0.1.0
 
   kemal:
     github: kemalcr/kemal

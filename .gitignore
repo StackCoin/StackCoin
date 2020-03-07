@@ -1,7 +1,10 @@
 *.swp
+tmp/
 
 lib/
 docs/
 
 .env
 *.db
+*.aof
+*.rdb
