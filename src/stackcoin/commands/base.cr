@@ -8,7 +8,7 @@ abstract class StackCoin::Bot::Command
   property client : Discord::Client
   property cache : Discord::Cache
   property bank : Bank
-  property  stats : Statistics
+  property stats : Statistics
   property config : Config
 
   def initialize(context : Context)

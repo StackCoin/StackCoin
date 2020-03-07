@@ -42,7 +42,7 @@ class StackCoin::Api
     get "/user/" do |env|
       include_usernames = should_include_usernames env
 
-      users = Hash(String, Hash(String,Union(String, Int32))).new
+      users = Hash(String, Hash(String, Union(String, Int32))).new
 
       stats.all_balances.each do |balance|
         id = balance[0].to_s

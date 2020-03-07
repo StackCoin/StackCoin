@@ -11,4 +11,3 @@ class StackCoin::Bot
     end
   end
 end
-

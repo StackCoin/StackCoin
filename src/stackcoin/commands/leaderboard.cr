@@ -1,4 +1,4 @@
- class StackCoin::Bot
+class StackCoin::Bot
   class Leaderboard < Command
     def initialize(context : Context)
       super context
