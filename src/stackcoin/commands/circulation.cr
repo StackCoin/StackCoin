@@ -1,8 +1,8 @@
 class StackCoin::Bot
   class Circulation < Command
-    def initialize(@client, @cache, @bank, @stats, @config)
+    def initialize(context : Context)
+      super context
       @trigger = "circulation"
-      @usage = "" # TODO make usage nillable?
       @desc = "See the STK currently in circulation"
     end
 

@@ -1,8 +1,8 @@
  class StackCoin::Bot
   class Leaderboard < Command
-    def initialize(@client, @cache, @bank, @stats, @config)
+    def initialize(context : Context)
+      super context
       @trigger = "leaderboard"
-      @usage = "" # TODO make usage nillable?
       @desc = "See the highest-STK account"
     end
 

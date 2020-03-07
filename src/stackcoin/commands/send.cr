@@ -1,6 +1,7 @@
 class StackCoin::Bot
   class Send < Command
-    def initialize(@client, @cache, @bank, @stats, @config)
+    def initialize(context : Context)
+      super context
       @trigger = "send"
       @usage = "<@user> <#amount>"
       @desc = "Send your STK to others"

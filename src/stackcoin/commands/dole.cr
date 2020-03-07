@@ -1,8 +1,8 @@
 class StackCoin::Bot
   class Dole < Command
-    def initialize(@client, @cache, @bank, @stats, @config)
+    def initialize(context : Context)
+      super context
       @trigger = "dole"
-      @usage = ""
       @desc = "Get some STK, daily"
     end
 

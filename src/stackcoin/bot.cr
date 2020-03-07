@@ -14,6 +14,17 @@ class StackCoin::Bot
     end
   end
 
+  class Context
+    getter client : Discord::Client
+    getter cache : Discord::Cache
+    getter bank : Bank
+    getter stats : Statistics
+    getter config : Config
+
+    def initialize(@client, @cache, @bank, @stats, @config)
+    end
+  end
+
   def initialize(config : Config, bank : Bank, stats : Statistics)
     @client = Discord::Client.new(token: config.token, client_id: config.client_id)
     @cache = Discord::Cache.new(@client)
@@ -22,15 +33,17 @@ class StackCoin::Bot
     @bank = bank
     @stats = stats
 
+    context = Context.new(@client, @cache, bank, stats, config)
+
     commands = [] of Command
-    commands << Bal.new @client, @cache, @bank, @stats, @config
-    commands << Circulation.new @client, @cache, @bank, @stats, @config
-    commands << Send.new @client, @cache, @bank, @stats, @config
-    commands << Dole.new @client, @cache, @bank, @stats, @config
-    commands << Leaderboard.new @client, @cache, @bank, @stats, @config
-    commands << Ledger.new @client, @cache, @bank, @stats, @config
-    commands << Open.new @client, @cache, @bank, @stats, @config
-    commands << Send.new @client, @cache, @bank, @stats, @config
+    commands << Bal.new context
+    commands << Circulation.new context
+    commands << Send.new context
+    commands << Dole.new context
+    commands << Leaderboard.new context
+    commands << Ledger.new context
+    commands << Open.new context
+    commands << Send.new context
 
     command_lookup = {} of String => Command
     commands.each do |command|

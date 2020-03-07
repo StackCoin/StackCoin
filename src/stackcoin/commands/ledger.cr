@@ -1,6 +1,7 @@
 class StackCoin::Bot
   class Ledger < Command
-    def initialize(@client, @cache, @bank, @stats, @config)
+    def initialize(context : Context)
+      super context
       @trigger = "ledger"
       @usage = "?<date> ?<@user-a> ?<@user-b>"
       @desc = "View/search previous transactions"
