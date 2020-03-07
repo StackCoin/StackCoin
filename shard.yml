@@ -17,3 +17,5 @@ dependencies:
   redis:
     github: stefanwille/crystal-redis
     version: ~> 2.3.0
+  humanize_time:
+    github: mamantoha/humanize_time

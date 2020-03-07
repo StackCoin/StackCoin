@@ -1,3 +1,4 @@
+require "humanize_time"
 require "./result.cr"
 
 class StackCoin::Bank
@@ -70,7 +71,11 @@ class StackCoin::Bank
       return Result::NoSuchAccount.new tx, "No account to deposit dole to" if expect_one == 0
 
       last_given = Database.parse_time cnn.query_one "SELECT time FROM last_given_dole WHERE user_id = ?", user_id.to_s, as: String
-      return Result::PrematureDole.new tx, "Dole already received today" if last_given.day == now.day
+
+      if last_given.day == now.day
+        time_till_rollver = HumanizeTime.distance_of_time_in_words(Time.utc.at_end_of_day - Time.utc, Time.utc)
+        return Result::PrematureDole.new tx, "Dole already received today, rollover in #{time_till_rollver}"
+      end
 
       self.deposit cnn, user_id, @@dole_amount
       cnn.exec "UPDATE last_given_dole SET time = ? WHERE user_id = ?", now, user_id.to_s

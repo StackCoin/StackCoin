@@ -8,7 +8,7 @@ end
 config = StackCoin::Config.from_env
 
 db = DB.open config.database_url
-StackCoin::Database.init db
+database = StackCoin::Database.new config, db
 
 bank = StackCoin::Bank.new db
 stats = StackCoin::Statistics.new db
@@ -26,7 +26,6 @@ Signal::INT.trap do
 end
 
 loop do
-  # #20 TODO check if UTC rolled over, message #stackexchange if so
-  # #11 TODO backup entire sqlite databaes every day here
-  sleep 60
+  sleep 1.day
+  database.backup
 end
