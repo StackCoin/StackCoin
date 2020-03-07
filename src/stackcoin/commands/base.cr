@@ -3,7 +3,7 @@ end
 
 abstract class StackCoin::Bot::Command
   getter trigger : String = ""
-  getter usage : String | Nil = ""
+  getter usage : String | Nil
   getter desc : String = ""
   property client : Discord::Client
   property cache : Discord::Cache
@@ -23,7 +23,7 @@ abstract class StackCoin::Bot::Command
     @client.create_message message.channel_id, content
   end
 
-  def send_emb(message, content, emb)
+  def send_emb(message, content, emb : Discord::Embed)
     emb.colour = 16773120
     emb.timestamp = Time.utc
     emb.footer = Discord::EmbedFooter.new(

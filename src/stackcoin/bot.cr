@@ -50,6 +50,8 @@ class StackCoin::Bot
       command_lookup[command.trigger] = command
     end
 
+    commands << Help.new context, command_lookup
+
     @client.on_message_create do |message|
       guild_id = message.guild_id
       if !guild_id.is_a? Nil && message.author.bot
@@ -64,6 +66,8 @@ class StackCoin::Bot
 
         if command_lookup.has_key? command_key
           command_lookup[command_key].invoke message
+        else
+          Result::Error.new @client, message, "Unknown command: #{command_key}"
         end
       rescue ex
         puts ex.inspect_with_backtrace
