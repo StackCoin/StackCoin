@@ -1,32 +1,12 @@
-version: '3.7'
+version: '3'
 
 services:
   stackcoin:
     image: jackharrhy/stackcoin
+    build: ./.
     env_file:
       - ./.env
     ports:
       - "3000:3000"
     volumes:
       - ./data/stackcoin.db:/app/data/stackcoin.db
-    networks:
-      - redis
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:5-alpine
-    ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    hostname: redis
-    networks:
-      - redis
-    volumes:
-      - stackcoin_redis_data:/data
-
-networks:
-  redis:
-
-volumes:
-  stackcoin_redis_data:
