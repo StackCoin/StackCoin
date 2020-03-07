@@ -14,7 +14,7 @@ require "redis"
 redis = Redis.new
 
 db = DB.open "sqlite3://./data/stackcoin.db"
-StackCoin::Database.init db
+database = StackCoin::Database.new StackCoin::Config.new, db
 stats = StackCoin::Statistics.new db
 
 olddb = DB.open "sqlite3://./data/legacy.db"
