@@ -16,7 +16,14 @@ abstract class StackCoin::Api::Route
     false
   end
 
-  def initialize(@config : Config, @bank : Bank, @stats : Statistics)
+  property bank : Bank
+  property stats : Statistics
+  property config : Config
+
+  def initialize(context : Context)
+    @bank = context.bank
+    @stats = context.stats
+    @config = context.config
     Route.list << self
   end
 

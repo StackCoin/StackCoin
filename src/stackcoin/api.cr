@@ -3,9 +3,20 @@ require "./routes/base"
 require "./routes/*"
 
 class StackCoin::Api
+  class Context
+    getter bank : Bank
+    getter stats : Statistics
+    getter config : Config
+
+    def initialize(@bank, @stats, @config)
+    end
+  end
+
   def initialize(config : Config, bank : Bank, stats : Statistics)
-    User.new config, bank, stats
-    Root.new config, bank, stats
+    context = Context.new bank, stats, config
+
+    User.new context
+    Root.new context
 
     Route.list.each do |route|
       route.setup
