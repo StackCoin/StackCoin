@@ -14,24 +14,22 @@ class StackCoin::Statistics < StackCoin::Bank
     end
   end
 
-  class Result < StackCoin::Result
-    class LedgerResults
-      getter date : Array(String)
-      getter from_id : Array(UInt64)
-      getter to_id : Array(UInt64)
-      getter results : Array(LedgerResult)
+  class LedgerResults
+    getter date : Array(String)
+    getter from_id : Array(UInt64)
+    getter to_id : Array(UInt64)
+    getter results : Array(LedgerResult)
 
-      def initialize(@date, @from_id, @to_id, @results)
-      end
+    def initialize(@date, @from_id, @to_id, @results)
     end
   end
 
   private def handle_balance_result_set(query, args)
-    balances = [] of Tuple(UInt64, Int32)
+    balances = {} of UInt64 => Int32
     @db.query query, args: args do |rs|
       rs.each do
         res = rs.read String, Int32
-        balances << Tuple.new(res[0].to_u64, res[1])
+        balances[res[0].to_u64] = res[1]
       end
     end
     balances
@@ -105,6 +103,6 @@ class StackCoin::Statistics < StackCoin::Bank
       end
     end
 
-    Result::LedgerResults.new dates, from_ids, to_ids, results
+    LedgerResults.new dates, from_ids, to_ids, results
   end
 end

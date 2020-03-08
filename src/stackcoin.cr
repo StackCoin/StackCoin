@@ -14,7 +14,7 @@ bank = StackCoin::Bank.new db
 stats = StackCoin::Statistics.new db
 
 bot = StackCoin::Bot.new config, bank, stats
-api = StackCoin::Api.new config, bank, stats, bot
+api = StackCoin::Api.new config, bank, stats
 
 spawn (api.run!)
 spawn (bot.run!)

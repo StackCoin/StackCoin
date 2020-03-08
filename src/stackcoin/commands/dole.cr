@@ -1,9 +1,9 @@
 class StackCoin::Bot
   class Dole < Command
     def initialize(context : Context)
-      super context
       @trigger = "dole"
       @desc = "Get some STK, daily"
+      super context
     end
 
     def invoke(message)

@@ -1,10 +1,10 @@
 class StackCoin::Bot
   class Bal < Command
     def initialize(context : Context)
-      super context
       @trigger = "bal"
       @usage = "?<@user>"
       @desc = "See the STK of yourself, or another user"
+      super context
     end
 
     def invoke(message)

@@ -1,9 +1,9 @@
 class StackCoin::Bot
   class Circulation < Command
     def initialize(context : Context)
-      super context
       @trigger = "circulation"
       @desc = "See the STK currently in circulation"
+      super context
     end
 
     def invoke(message)

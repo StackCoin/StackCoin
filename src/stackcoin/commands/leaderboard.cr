@@ -1,9 +1,9 @@
 class StackCoin::Bot
   class Leaderboard < Command
     def initialize(context : Context)
-      super context
       @trigger = "leaderboard"
       @desc = "See the highest-STK account"
+      super context
     end
 
     def invoke(message)

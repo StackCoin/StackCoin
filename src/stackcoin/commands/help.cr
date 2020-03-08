@@ -3,13 +3,13 @@ class StackCoin::Bot
     property root_help = Discord::Embed.new
     property sub_help = {} of String => Discord::Embed
 
-    def initialize(context : Context, command_lookup)
-      super context
+    def initialize(context : Context)
       @trigger = "help"
       @usage = "?<subcommand>"
       @desc = "This command you're seeing right now!"
+      super context
 
-      command_lookup[@trigger] = self
+      command_lookup = @@lookup
 
       all_fields = [] of Discord::EmbedField
       command_lookup.each_value do |command|

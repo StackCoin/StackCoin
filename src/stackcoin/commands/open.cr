@@ -1,9 +1,9 @@
 class StackCoin::Bot
   class Open < Command
     def initialize(context : Context)
-      super context
       @trigger = "open"
       @desc = "Open an account"
+      super context
     end
 
     def invoke(message)

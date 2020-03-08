@@ -1,10 +1,10 @@
 class StackCoin::Bot
   class Send < Command
     def initialize(context : Context)
-      super context
       @trigger = "send"
       @usage = "<@user> <#amount>"
       @desc = "Send your STK to others"
+      super context
     end
 
     def invoke(message)
