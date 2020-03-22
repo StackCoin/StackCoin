@@ -60,7 +60,7 @@ class StackCoin::Bot
         title += "\n- #{cond}"
       end
 
-      send_emb message, "", Discord::Embed.new(title: title, fields: fields)
+      send_emb message, Discord::Embed.new(title: title, fields: fields)
     end
   end
 end

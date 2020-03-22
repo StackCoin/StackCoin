@@ -30,6 +30,10 @@ abstract class StackCoin::Bot::Command
     @client.create_message message.channel_id, content
   end
 
+  def send_emb(message, emb : Discord::Embed)
+    self.send_emb(message, "", emb)
+  end
+
   def send_emb(message, content, emb : Discord::Embed)
     emb.colour = 16773120
     emb.timestamp = Time.utc

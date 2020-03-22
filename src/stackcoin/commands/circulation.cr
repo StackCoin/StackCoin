@@ -7,7 +7,7 @@ class StackCoin::Bot
     end
 
     def invoke(message)
-      send_emb message, "", Discord::Embed.new(
+      send_emb message, Discord::Embed.new(
         title: "_Total StackCoin in Circulation:_",
         fields: [Discord::EmbedField.new(
           name: "#{@stats.circulation} STK",

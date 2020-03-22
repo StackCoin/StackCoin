@@ -32,7 +32,7 @@ class StackCoin::Bot
         return Result::Error.new @client, message, "#{prefix} have an account, run #{@config.prefix}open to create an account"
       end
 
-      send_emb message, "", Discord::Embed.new(
+      send_emb message, Discord::Embed.new(
         title: "_Balance:_",
         fields: [Discord::EmbedField.new(
           name: "#{user.username}",

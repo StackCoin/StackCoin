@@ -24,7 +24,7 @@ class StackCoin::Bot
 
       if result.is_a? Bank::Result::TransferSuccess
         to = @cache.resolve_user mention.id
-        send_emb message, "", Discord::Embed.new(
+        send_emb message, Discord::Embed.new(
           title: "_Transaction complete_:",
           fields: [
             Discord::EmbedField.new(

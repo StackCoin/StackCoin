@@ -12,9 +12,10 @@ database = StackCoin::Database.new config, db
 
 bank = StackCoin::Bank.new db
 stats = StackCoin::Statistics.new db
+auth = StackCoin::Auth.new db
 
 bot = StackCoin::Bot.new config, bank, stats
-api = StackCoin::Api.new config, bank, stats
+api = StackCoin::Api.new config, bank, stats, auth
 
 spawn (api.run!)
 spawn (bot.run!)

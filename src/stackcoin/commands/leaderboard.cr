@@ -17,7 +17,7 @@ class StackCoin::Bot
         )
       end
 
-      send_emb message, "", Discord::Embed.new title: "_Leaderboard:_", fields: fields
+      send_emb message, Discord::Embed.new title: "_Leaderboard:_", fields: fields
     end
   end
 end
