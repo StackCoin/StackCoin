@@ -1,3 +1,4 @@
+require "levenshtein"
 require "discordcr"
 require "./commands/base"
 require "./commands/*"
@@ -64,7 +65,11 @@ class StackCoin::Bot
         if command_lookup.has_key? command_key
           command_lookup[command_key].invoke message
         else
-          Result::Error.new @client, message, "Unknown command: #{command_key}"
+          postfix = ""
+          potential = Levenshtein.find(command_key, command_lookup.keys)
+          postfix = ", did you mean #{potential}?" if potential
+
+          Result::Error.new @client, message, "Unknown command: #{command_key}#{postfix}"
         end
       rescue ex
         puts ex.inspect_with_backtrace

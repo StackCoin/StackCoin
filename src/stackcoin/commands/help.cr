@@ -9,7 +9,7 @@ class StackCoin::Bot
       @desc = "This command you're seeing right now!"
       super context
 
-      command_lookup = @@lookup
+      command_lookup = Command.lookup
 
       all_fields = [] of Discord::EmbedField
       command_lookup.each_value do |command|
@@ -44,7 +44,11 @@ class StackCoin::Bot
         if @sub_help.has_key? command
           send_emb message, @sub_help[command]
         else
-          Result::Error.new @client, message, "Unknown command: #{command}"
+          postfix = ""
+          potential = Levenshtein.find(command, @sub_help.keys)
+          postfix = ", did you mean #{potential}?" if potential
+
+          Result::Error.new @client, message, "Unknown help section: #{command}#{postfix}"
         end
       end
     end
