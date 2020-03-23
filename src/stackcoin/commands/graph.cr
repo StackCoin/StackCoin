@@ -30,7 +30,6 @@ class StackCoin::Bot
       end
 
       result = @stats.graph(id)
-
       if result.is_a? Statistics::Result::Graph::Success
         @client.upload_file(
           channel_id: message.channel_id,

@@ -101,11 +101,11 @@ class StackCoin::Statistics < StackCoin::Bank
     end
 
     random = UUID.random
-
     image_filename = "/tmp/stackcoin/graph_#{id}_#{random}.png"
+    title = "#{id} - #{Time.utc}"
     process = Process.new(
       "gnuplot",
-      ["-e", "imagefilename='#{image_filename}'", "./src/gnuplot/graph.plt"],
+      ["-e", "imagefilename='#{image_filename}';customtitle='#{title}'", "./src/gnuplot/graph.plt"],
       input: reader,
       output: Process::Redirect::Pipe,
       error: Process::Redirect::Pipe
