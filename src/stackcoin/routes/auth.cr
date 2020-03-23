@@ -1,6 +1,6 @@
 class StackCoin::Api
   class Auth < Route
-    def setup()
+    def setup
       post "/auth" do |env|
         halt env, status_code: 403 if self.should_return_html env
 

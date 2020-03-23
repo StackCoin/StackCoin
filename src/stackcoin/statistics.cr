@@ -1,26 +1,55 @@
+require "uuid"
+
 class StackCoin::Statistics < StackCoin::Bank
-  class LedgerResult
-    getter from_id : UInt64
-    getter from_bal : Int32
-    getter to_id : UInt64
-    getter to_bal : Int32
-    getter amount : Int32
-    getter time : Time
-
-    def initialize(from_id, @from_bal, to_id, @to_bal, @amount, time)
-      @from_id = from_id.to_u64
-      @to_id = to_id.to_u64
-      @time = Database.parse_time time
+  class Result
+    class Base
+      def initialize(client, message, content)
+        client.create_message message.channel_id, content
+      end
     end
-  end
 
-  class LedgerResults
-    getter date : Array(String)
-    getter from_id : Array(UInt64)
-    getter to_id : Array(UInt64)
-    getter results : Array(LedgerResult)
+    class Error < Base
+    end
 
-    def initialize(@date, @from_id, @to_id, @results)
+    class Graph
+      class Success
+        getter file : File
+
+        def initialize(@file)
+        end
+      end
+
+      class Error
+        getter message : String
+
+        def initialize(@message)
+        end
+      end
+    end
+
+    class Report
+      class Transaction
+        getter from_id : UInt64
+        getter from_bal : Int32
+        getter to_id : UInt64
+        getter to_bal : Int32
+        getter amount : Int32
+        getter time : Time
+
+        def initialize(from_id, @from_bal, to_id, @to_bal, @amount, time)
+          @from_id = from_id.to_u64
+          @to_id = to_id.to_u64
+          @time = Database.parse_time time
+        end
+      end
+
+      getter date : Array(String)
+      getter from_id : Array(UInt64)
+      getter to_id : Array(UInt64)
+      getter results : Array(Transaction)
+
+      def initialize(@date, @from_id, @to_id, @results)
+      end
     end
   end
 
@@ -41,6 +70,55 @@ class StackCoin::Statistics < StackCoin::Bank
 
   def leaderboard(limit = 5)
     self.handle_balance_result_set "SELECT user_id, bal FROM balance ORDER BY bal DESC LIMIT ?", [limit]
+  end
+
+  def graph(id)
+    query = "SELECT time, to_bal, amount FROM ledger
+    WHERE to_id = ?
+    UNION
+    SELECT time, user_bal, amount FROM benefit
+    WHERE user_id = ?
+    ORDER BY time"
+
+    id = id.to_s
+
+    datapoints = 0
+    reader, writer = IO.pipe
+    @db.query query, args: [id, id] do |rs|
+      rs.each do
+        datapoints += 1
+        time = rs.read String
+        bal = rs.read Int32
+        amount = rs.read Int32
+
+        writer.puts "#{time},#{bal},#{amount}"
+      end
+    end
+    writer.close
+
+    if datapoints <= 1
+      return Result::Graph::Error.new "Not enough datapoints!"
+    end
+
+    random = UUID.random
+
+    image_filename = "/tmp/stackcoin/graph_#{id}_#{random}.png"
+    process = Process.new(
+      "gnuplot",
+      ["-e", "imagefilename='#{image_filename}'", "./src/gnuplot/graph.plt"],
+      input: reader,
+      output: Process::Redirect::Pipe,
+      error: Process::Redirect::Pipe
+    )
+
+    stdout = process.output.gets_to_end
+    stderr = process.error.gets_to_end
+
+    if stderr != ""
+      raise stderr
+    end
+
+    Result::Graph::Success.new File.open(image_filename)
   end
 
   def richest
@@ -96,13 +174,13 @@ class StackCoin::Statistics < StackCoin::Bank
     FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT ?"
     args << limit
 
-    results = [] of LedgerResult
+    results = [] of Result::Report::Transaction
     @db.query ledger_query, args: args do |rs|
       rs.each do
-        results << LedgerResult.new(*rs.read String, Int32, String, Int32, Int32, String)
+        results << Result::Report::Transaction.new(*rs.read String, Int32, String, Int32, Int32, String)
       end
     end
 
-    LedgerResults.new dates, from_ids, to_ids, results
+    Result::Report.new dates, from_ids, to_ids, results
   end
 end

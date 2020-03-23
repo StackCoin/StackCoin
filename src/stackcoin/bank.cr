@@ -93,6 +93,10 @@ class StackCoin::Bank
     Result::Success.new "#{@@dole_amount} StackCoin given, your balance is now #{bal}"
   end
 
+  def has_account(user_id : UInt64)
+    0 < @db.query_one "SELECT EXISTS(SELECT 1 FROM balance WHERE user_id = ?)", user_id.to_s, as: Int
+  end
+
   def open_account(user_id : UInt64)
     initial_bal = 0
 

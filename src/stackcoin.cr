@@ -5,6 +5,8 @@ begin
   Dotenv.load
 end
 
+Dir.mkdir_p "/tmp/stackcoin/"
+
 config = StackCoin::Config.from_env
 
 db = DB.open config.database_url

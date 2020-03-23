@@ -37,9 +37,9 @@ class StackCoin::Bot
         end
       end
 
-      ledger_results = @stats.ledger dates, from_ids, to_ids
+      report = @stats.ledger dates, from_ids, to_ids
 
-      ledger_results.results.each_with_index do |result, i|
+      report.results.each_with_index do |result, i|
         from = @cache.resolve_user result.from_id
         to = @cache.resolve_user result.to_id
         fields << Discord::EmbedField.new(

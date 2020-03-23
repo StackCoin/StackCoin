@@ -39,6 +39,7 @@ class StackCoin::Bot
     Circulation.new context
     Send.new context
     Dole.new context
+    Graph.new context
     Leaderboard.new context
     Ledger.new context
     Open.new context
