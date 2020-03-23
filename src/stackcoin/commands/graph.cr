@@ -1,9 +1,8 @@
 class StackCoin::Bot
-  class Bal < Command
+  class Graph < Command
     def initialize(context : Context)
-      @trigger = "bal"
-      @usage = "?<@user>"
-      @desc = "See the STK of yourself, or another user"
+      @trigger = "graph"
+      @desc = "Graph different data points."
       super context
     end
 
@@ -12,32 +11,34 @@ class StackCoin::Bot
       return Result::Error.new(@client, message, "Too many mentions in your message; max is one") if mentions.size > 1
 
       prefix = "You don't"
+      id = message.author.id
       user = message.author
-      bal = nil
 
       if mentions.size > 0
         mention = mentions[0]
         if !mention.is_a? Discord::Mention::User
           return Result::Error.new @client, message, "Mentioned entity isn't a user!"
         end
+        id = mention.id
         user = @cache.resolve_user mention.id
-        bal = @bank.balance mention.id.to_u64
         prefix = "User doesn't" if mention.id != message.author.id
+      end
+
+      id = id.to_u64
+      if !@bank.has_account id
+        return Result::Error.new @client, message, "#{prefix} have an account to see a graph of!"
+      end
+
+      result = @stats.graph(id)
+      if result.is_a? Statistics::Result::Graph::Success
+        @client.upload_file(
+          channel_id: message.channel_id,
+          content: "#{user.username}'s STK balance over time",
+          file: result.file
+        )
       else
-        bal = @bank.balance message.author.id.to_u64
+        client.create_message message.channel_id, result.message
       end
-
-      if bal.is_a? Nil
-        return Result::Error.new @client, message, "#{prefix} have an account, run #{@config.prefix}open to create an account"
-      end
-
-      send_emb message, Discord::Embed.new(
-        title: "_Balance:_",
-        fields: [Discord::EmbedField.new(
-          name: "#{user.username}",
-          value: "#{bal}",
-        )]
-      )
     end
   end
 end

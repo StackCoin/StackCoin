@@ -1,9 +1,9 @@
 class StackCoin::Bot
   class Leaderboard < Command
     def initialize(context : Context)
-      super context
       @trigger = "leaderboard"
       @desc = "See the highest-STK account"
+      super context
     end
 
     def invoke(message)
@@ -17,7 +17,7 @@ class StackCoin::Bot
         )
       end
 
-      send_emb message, "", Discord::Embed.new title: "_Leaderboard:_", fields: fields
+      send_emb message, Discord::Embed.new title: "_Leaderboard:_", fields: fields
     end
   end
 end

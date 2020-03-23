@@ -1,10 +1,10 @@
 class StackCoin::Bot
   class Ledger < Command
     def initialize(context : Context)
-      super context
       @trigger = "ledger"
       @usage = "?<date> ?<@user-a> ?<@user-b>"
       @desc = "View/search previous transactions"
+      super context
     end
 
     def invoke(message)
@@ -37,9 +37,9 @@ class StackCoin::Bot
         end
       end
 
-      ledger_results = @stats.ledger dates, from_ids, to_ids
+      report = @stats.ledger dates, from_ids, to_ids
 
-      ledger_results.results.each_with_index do |result, i|
+      report.results.each_with_index do |result, i|
         from = @cache.resolve_user result.from_id
         to = @cache.resolve_user result.to_id
         fields << Discord::EmbedField.new(
@@ -60,7 +60,7 @@ class StackCoin::Bot
         title += "\n- #{cond}"
       end
 
-      send_emb message, "", Discord::Embed.new(title: title, fields: fields)
+      send_emb message, Discord::Embed.new(title: title, fields: fields)
     end
   end
 end

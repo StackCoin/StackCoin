@@ -1,3 +1,4 @@
+require "levenshtein"
 require "discordcr"
 require "./commands/base"
 require "./commands/*"
@@ -35,22 +36,19 @@ class StackCoin::Bot
 
     context = Context.new(@client, @cache, bank, stats, config)
 
-    commands = [] of Command
-    commands << Bal.new context
-    commands << Circulation.new context
-    commands << Send.new context
-    commands << Dole.new context
-    commands << Leaderboard.new context
-    commands << Ledger.new context
-    commands << Open.new context
-    commands << Send.new context
+    Bal.new context
+    Circulation.new context
+    Send.new context
+    Dole.new context
+    Graph.new context
+    Leaderboard.new context
+    Ledger.new context
+    Open.new context
+    Send.new context
 
-    command_lookup = {} of String => Command
-    commands.each do |command|
-      command_lookup[command.trigger] = command
-    end
+    Help.new context
 
-    commands << Help.new context, command_lookup
+    command_lookup = Command.lookup
 
     @client.on_message_create do |message|
       guild_id = message.guild_id
@@ -67,17 +65,17 @@ class StackCoin::Bot
         if command_lookup.has_key? command_key
           command_lookup[command_key].invoke message
         else
-          Result::Error.new @client, message, "Unknown command: #{command_key}"
+          postfix = ""
+          potential = Levenshtein.find(command_key, command_lookup.keys)
+          postfix = ", did you mean #{potential}?" if potential
+
+          Result::Error.new @client, message, "Unknown command: #{command_key}#{postfix}"
         end
       rescue ex
         puts ex.inspect_with_backtrace
         Result::Error.new @client, message, "```#{ex.inspect_with_backtrace}```"
       end
     end
-  end
-
-  def cache
-    @cache
   end
 
   def run!
