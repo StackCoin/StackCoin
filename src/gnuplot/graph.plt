@@ -12,7 +12,7 @@ set border lc rgb 'white'
 set key tc rgb 'white'
 set title tc rgb 'white'
 set linetype 1 lc rgb '#AAAAFF' lw 2
-set linetype 2 lc rgb 'white' lw 1 dt '-'
+set linetype 2 lc rgb '#99AAB5' lw 1 dt '-'
 set grid linestyle 2
 set rmargin 7
 set bmargin 4
