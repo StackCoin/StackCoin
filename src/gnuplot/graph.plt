@@ -17,7 +17,7 @@ set grid linestyle 2
 set rmargin 7
 set bmargin 4
 
-set font 'Verdana,10'
+set font 'Open Sans,10'
 set output imagefilename
 set terminal pngcairo background rgb '#2C2F33' size 1600,600
 
