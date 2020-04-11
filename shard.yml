@@ -14,8 +14,5 @@ dependencies:
     github: gdotdesign/cr-dotenv
   sqlite3:
     github: crystal-lang/crystal-sqlite3
-  redis:
-    github: stefanwille/crystal-redis
-    version: ~> 2.3.0
   humanize_time:
     github: mamantoha/humanize_time
