@@ -1,5 +1,11 @@
+require "log"
+
 require "dotenv"
+
 require "./stackcoin/*"
+
+backend = Log::IOBackend.new
+Log.builder.bind "*", :info, backend
 
 begin
   Dotenv.load

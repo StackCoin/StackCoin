@@ -6,7 +6,7 @@ shards:
 
   discordcr:
     github: discordcr/discordcr
-    commit: f55992da080f3ca1a4e02d0b96ce3e61fadd0471
+    commit: 936869afd3f3be4b0606d5fd51f4489d46ce58a4
 
   dotenv:
     github: gdotdesign/cr-dotenv
@@ -26,7 +26,7 @@ shards:
 
   i18n_plural_rules:
     github: mamantoha/i18n_plural_rules
-    version: 0.1.0
+    version: 0.1.1
 
   kemal:
     github: kemalcr/kemal

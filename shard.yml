@@ -7,7 +7,7 @@ authors:
 dependencies:
   discordcr:
     github: discordcr/discordcr
-    branch: master
+    branch: cr-0.34
   kemal:
     github: kemalcr/kemal
   dotenv:
