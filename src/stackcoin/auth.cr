@@ -3,11 +3,15 @@ require "./result.cr"
 
 class StackCoin::Auth
   class Result < StackCoin::Result
+    class AccountCreated < Success
+      property token : String
+
+      def initialize(@message, @token)
+      end
+    end
+
     class Authenticated < Success
-      JSON.mapping(
-        message: String,
-        access_token: String,
-      )
+      property access_token : String
 
       def initialize(@message, @access_token)
       end
@@ -30,8 +34,17 @@ class StackCoin::Auth
     end
   end
 
-  def initialize(db : DB::Database)
-    @db = db
+  def initialize(@db : DB::Database, @bank : Bank, @jwt_secret_key : String)
+  end
+
+  def create_account_with_token(user_id : UInt64)
+    result = @bank.open_account(user_id)
+    return result if !result.is_a? Bank::Result::Success
+
+    token = Random::Secure.hex(32)
+    @db.exec "INSERT INTO token VALUES (?, ?)", user_id.to_s, token
+
+    Result::AccountCreated.new "Account created", token
   end
 
   def authenticate(user_id : UInt64, token : String)
@@ -47,13 +60,13 @@ class StackCoin::Auth
     invalid_at = (Time.utc + 1.seconds).to_s("%Y-%m-%d %H:%M:%S %:z")
 
     payload = {"user_id" => user_id, "invalid_at" => invalid_at}
-    access_token = JWT.encode(payload, "SecretKey", JWT::Algorithm::HS256)
+    access_token = JWT.encode(payload, @jwt_secret_key, JWT::Algorithm::HS256)
 
     Result::Authenticated.new "Authenticated", access_token
   end
 
   def validate_access_token(access_token : String)
-    payload, header = JWT.decode(access_token, "SecretKey", JWT::Algorithm::HS256)
+    payload, header = JWT.decode(access_token, @jwt_secret_key, JWT::Algorithm::HS256)
 
     invalid_at = Time.parse_utc payload["invalid_at"].as_s, "%Y-%m-%d %H:%M:%S %z"
     is_valid_access_token = invalid_at > Time.utc

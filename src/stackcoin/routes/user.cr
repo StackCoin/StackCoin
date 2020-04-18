@@ -1,5 +1,10 @@
 class StackCoin::Api
   class User < Route
+    def initialize(context : Context)
+      super context
+      @routes = ["GET -> /user/", "GET -> /user/:id"]
+    end
+
     def setup
       get "/user/:id" do |env|
         id = env.params.url["id"].to_u64?

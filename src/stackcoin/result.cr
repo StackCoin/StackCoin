@@ -1,10 +1,10 @@
 class StackCoin::Result
   class Base
-    JSON.mapping(
-      message: String,
-      error: String?,
-      success: String?,
-    )
+    include JSON::Serializable
+
+    property message : String
+    property error : String?
+    property success : String?
 
     def initialize(@message)
     end

@@ -4,6 +4,8 @@ class StackCoin::Config
   property prefix : String = ""
   property test_guild_snowflake : Discord::Snowflake = Discord::Snowflake.new 0_u64
   property database_url : String = ""
+  property jwt_secret_key : String = ""
+  property owner_id : Discord::Snowflake = Discord::Snowflake.new 0_u64
 
   def self.from_env
     config = Config.new
@@ -12,6 +14,8 @@ class StackCoin::Config
     config.prefix = ENV["STACKCOIN_PREFIX"]
     config.test_guild_snowflake = Discord::Snowflake.new ENV["STACKCOIN_TEST_GUILD_SNOWFLAKE"]
     config.database_url = ENV["STACKCOIN_DATABASE_URL"]
+    config.jwt_secret_key = ENV["STACKCOIN_JWT_SECRET_KEY"]
+    config.owner_id = Discord::Snowflake.new ENV["STACKCOIN_OWNER_ID"]
     config
   end
 end

@@ -4,11 +4,8 @@ require "./result.cr"
 class StackCoin::Bank
   class Result < StackCoin::Result
     class TransferSuccess < Success
-      JSON.mapping(
-        message: String,
-        from_bal: Int32,
-        to_bal: Int32,
-      )
+      property from_bal : Int32
+      property to_bal : Int32
 
       def initialize(@message, @from_bal, @to_bal)
       end
@@ -35,8 +32,7 @@ class StackCoin::Bank
 
   @@dole_amount : Int32 = 10
 
-  def initialize(db : DB::Database)
-    @db = db
+  def initialize(@db : DB::Database)
   end
 
   def db

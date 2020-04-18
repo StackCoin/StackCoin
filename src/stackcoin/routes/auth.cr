@@ -1,19 +1,27 @@
 class StackCoin::Api
   class Auth < Route
+    def initialize(context : Context)
+      super context
+      @routes = ["POST -> /auth"]
+    end
+
+    class AuthPostBody
+      JSON.mapping(
+        user_id: UInt64,
+        token: String,
+      )
+    end
+
     def setup
       post "/auth" do |env|
-        expect_json
-        expect_keys ["token", "id"]
+        next unless env.request.body
+        begin
+          auth_post_body = AuthPostBody.from_json env.request.body.not_nil!
+        rescue e : JSON::ParseException
+          halt env, status_code: 403, response: json_error "Invalid JSON: #{e}"
+        end
 
-        token = env.params.json["token"]
-        expect_value_to_be String, token
-        token = token.as String
-
-        id = env.params.json["id"]
-        expect_value_to_be Int64, id
-        id = id.as Int64
-
-        auth_result = @auth.authenticate id.to_u64, token
+        auth_result = @auth.authenticate auth_post_body.user_id, auth_post_body.token
         env.response.status_code = 401 if !auth_result.is_a? StackCoin::Auth::Result::Authenticated
 
         auth_result.to_json
