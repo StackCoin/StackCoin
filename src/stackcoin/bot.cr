@@ -62,6 +62,7 @@ class StackCoin::Bot
 
       begin
         next if !msg.starts_with? config.prefix
+        @client.trigger_typing_indicator message.channel_id
         msg_parts = msg.split " "
         command_key = msg_parts.first.lchop config.prefix
 
