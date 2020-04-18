@@ -40,11 +40,21 @@ class StackCoin::Bot
       report = @stats.ledger dates, from_ids, to_ids
 
       report.results.each_with_index do |result, i|
-        from = @cache.resolve_user result.from_id
-        to = @cache.resolve_user result.to_id
+        begin
+          from = @cache.resolve_user(result.from_id).username
+        rescue Discord::CodeException
+          from = "(?)"
+        end
+
+        begin
+          to = @cache.resolve_user(result.to_id).username
+        rescue Discord::CodeException
+          to = "(?)"
+        end
+
         fields << Discord::EmbedField.new(
           name: "#{i + 1} - #{result.time}",
-          value: "#{from.username} (#{result.from_bal}) ⟶ #{to.username} (#{result.to_bal}) - #{result.amount} STK"
+          value: "#{from} (#{result.from_bal}) ⟶ #{to} (#{result.to_bal}) - #{result.amount} STK"
         )
       end
 

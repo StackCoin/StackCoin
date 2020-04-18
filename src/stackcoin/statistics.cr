@@ -156,8 +156,8 @@ class StackCoin::Statistics < StackCoin::Bank
 
     if from_ids.size != 0 || to_ids.size != 0
       conditions << "("
-      optional_conditions from_ids, UInt64, "from_id = ?", "OR"
-      optional_conditions to_ids, UInt64, "to_id = ?", "OR"
+      optional_conditions from_ids, UInt64, "from_id = ?", "AND"
+      optional_conditions to_ids, UInt64, "to_id = ?", "AND"
       conditions.pop
       conditions << ")"
       conditions << "AND"

@@ -36,6 +36,8 @@ class StackCoin::Bot
           content: "#{user.username}'s STK balance over time",
           file: result.file
         )
+
+        result.file.delete
       else
         client.create_message message.channel_id, result.message
       end
