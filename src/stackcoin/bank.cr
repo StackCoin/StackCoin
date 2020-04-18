@@ -4,8 +4,8 @@ require "./result.cr"
 class StackCoin::Bank
   class Result < StackCoin::Result
     class TransferSuccess < Success
-      getter from_bal : Int32
-      getter to_bal : Int32
+      property from_bal : Int32
+      property to_bal : Int32
 
       def initialize(@message, @from_bal, @to_bal)
       end
@@ -32,8 +32,7 @@ class StackCoin::Bank
 
   @@dole_amount : Int32 = 10
 
-  def initialize(db : DB::Database)
-    @db = db
+  def initialize(@db : DB::Database)
   end
 
   def db
@@ -49,7 +48,7 @@ class StackCoin::Bank
   end
 
   def balance(cnn : DB::Connection, user_id : UInt64)
-    cnn.query_one? "SELECT bal FROM balance WHERE user_id = ?", user_id.to_s, as: {Int32}
+    cnn.query_one? "SELECT bal FROM balance WHERE user_id = ?", user_id.to_s, as: Int32
   end
 
   def balance(user_id : UInt64)

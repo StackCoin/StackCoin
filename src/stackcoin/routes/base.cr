@@ -2,11 +2,7 @@ class StackCoin::Api
 end
 
 abstract class StackCoin::Api::Route
-  @@list = [] of Route
-
-  def self.list
-    @@list
-  end
+  class_getter list : Array(Route) = [] of Route
 
   def should_return_html(env)
     headers = env.request.headers
@@ -16,8 +12,8 @@ abstract class StackCoin::Api::Route
     false
   end
 
-  macro expect_key(key)
-    halt env, status_code: 403, response: "Missing key: #{{{key}}}" if !env.params.json.has_key? {{key}}
+  def json_error(message)
+    %({"message": "#{message}"})
   end
 
   property bank : Bank
@@ -31,6 +27,16 @@ abstract class StackCoin::Api::Route
     @auth = context.auth
     @config = context.config
     Route.list << self
+  end
+
+  property routes : Array(String) = [] of String
+  property requires_auth : Array(String) | Nil
+
+  def info
+    {
+      "routes"        => @routes,
+      "requires_auth" => @requires_auth,
+    }
   end
 
   abstract def setup

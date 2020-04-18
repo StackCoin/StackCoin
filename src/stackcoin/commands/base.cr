@@ -2,11 +2,7 @@ class StackCoin::Bot
 end
 
 abstract class StackCoin::Bot::Command
-  @@lookup = {} of String => Command
-
-  def self.lookup
-    @@lookup
-  end
+  class_getter lookup : Hash(String, Command) = {} of String => Command
 
   getter trigger : String = ""
   getter usage : String | Nil
@@ -15,6 +11,7 @@ abstract class StackCoin::Bot::Command
   property cache : Discord::Cache
   property bank : Bank
   property stats : Statistics
+  property auth : StackCoin::Auth
   property config : Config
 
   def initialize(context : Context)
@@ -22,12 +19,17 @@ abstract class StackCoin::Bot::Command
     @cache = context.cache
     @bank = context.bank
     @stats = context.stats
+    @auth = context.auth
     @config = context.config
     Command.lookup[@trigger] = self
   end
 
   def send_msg(message, content)
     @client.create_message message.channel_id, content
+  end
+
+  def send_msg(message, channel_id, content)
+    @client.create_message channel_id, content
   end
 
   def send_emb(message, emb : Discord::Embed)

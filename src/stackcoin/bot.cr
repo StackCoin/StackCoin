@@ -20,22 +20,25 @@ class StackCoin::Bot
     getter cache : Discord::Cache
     getter bank : Bank
     getter stats : Statistics
+    getter auth : StackCoin::Auth
     getter config : Config
 
-    def initialize(@client, @cache, @bank, @stats, @config)
+    def initialize(@client, @cache, @bank, @stats, @auth, @config)
     end
   end
 
-  def initialize(config : Config, bank : Bank, stats : Statistics)
+  def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth)
     @client = Discord::Client.new(token: config.token, client_id: config.client_id)
     @cache = Discord::Cache.new(@client)
     @client.cache = @cache
     @config = config
     @bank = bank
+    @auth = auth
     @stats = stats
 
-    context = Context.new(@client, @cache, bank, stats, config)
+    context = Context.new(@client, @cache, bank, stats, auth, config)
 
+    Auth.new context
     Bal.new context
     Circulation.new context
     Send.new context

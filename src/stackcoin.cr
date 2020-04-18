@@ -20,9 +20,9 @@ database = StackCoin::Database.new config, db
 
 bank = StackCoin::Bank.new db
 stats = StackCoin::Statistics.new db
-auth = StackCoin::Auth.new db
+auth = StackCoin::Auth.new db, bank, config.jwt_secret_key
 
-bot = StackCoin::Bot.new config, bank, stats
+bot = StackCoin::Bot.new config, bank, stats, auth
 api = StackCoin::Api.new config, bank, stats, auth
 
 spawn (api.run!)
