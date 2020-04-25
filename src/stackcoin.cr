@@ -22,12 +22,16 @@ StackCoin::Log.info { "Opening database" }
 db = DB.open config.database_url
 database = StackCoin::Database.new config, db
 
+notification = StackCoin::Notification.new db
+
 StackCoin::Log.info { "Initializing modules" }
 banned = StackCoin::Banned.new db
 
-bank = StackCoin::Bank.new db, banned
-stats = StackCoin::Statistics.new db, banned
+bank = StackCoin::Bank.new db, notification, banned
+stats = StackCoin::Statistics.new db, notification, banned
 auth = StackCoin::Auth.new db, bank, config.jwt_secret_key
+
+notification.inject auth
 
 bot = StackCoin::Bot.new config, bank, stats, auth, banned
 api = StackCoin::Api.new config, bank, stats, auth
@@ -35,13 +39,16 @@ api = StackCoin::Api.new config, bank, stats, auth
 StackCoin::Log.info { "Spawning API" }
 spawn (api.run!)
 
+StackCoin::Log.info { "Spawning Notification" }
+spawn (notification.run!)
+
 StackCoin::Log.info { "Spawning Bot" }
 spawn (bot.run!)
 
 {Signal::INT, Signal::TERM}.each &.trap do
   StackCoin::Log.info { "Got signal to die" }
   db.close
-  puts "bye!"
+  puts "bye"
   exit
 end
 

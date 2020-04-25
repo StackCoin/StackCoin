@@ -6,7 +6,8 @@ class StackCoin::Auth
     class AccountCreated < Success
       property token : String
 
-      def initialize(@message, @token)
+      def initialize(message, @token)
+        super message
       end
     end
 
@@ -17,10 +18,14 @@ class StackCoin::Auth
       end
     end
 
+    class ValidToken < Success
+    end
+
     class ValidAccessToken < Success
       getter user_id : UInt64
 
-      def initialize(@message, @user_id)
+      def initialize(message, @user_id)
+        super message
       end
     end
 
@@ -47,7 +52,7 @@ class StackCoin::Auth
     Result::AccountCreated.new "Account created", token
   end
 
-  def authenticate(user_id : UInt64, token : String)
+  def valid_token(user_id : UInt64, token : String)
     @db.transaction do |tx|
       cnn = tx.connection
       token_exists = cnn.query_one("SELECT EXISTS(SELECT 1 FROM token WHERE user_id = ?)", user_id.to_s, as: Int) == 1
@@ -56,6 +61,13 @@ class StackCoin::Auth
       db_token = cnn.query_one "SELECT token FROM token WHERE user_id = ?", user_id.to_s, as: String
       return Result::InvalidToken.new tx, "Invalid Token" unless db_token == token
     end
+
+    Result::ValidToken.new "Valid Token"
+  end
+
+  def authenticate(user_id : UInt64, token : String)
+    result = valid_token user_id, token
+    return result unless result.is_a? Result::ValidToken
 
     invalid_at = (Time.utc + 1.seconds).to_s("%Y-%m-%d %H:%M:%S %:z")
 

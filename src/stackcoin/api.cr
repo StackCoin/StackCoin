@@ -1,4 +1,5 @@
 require "kemal"
+
 require "./result"
 require "./routes/base"
 require "./routes/*"
