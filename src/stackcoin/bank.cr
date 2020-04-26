@@ -4,10 +4,13 @@ require "./result.cr"
 class StackCoin::Bank
   class Result < StackCoin::Result
     class TransferSuccess < Success
+      property amount : Int32
+      property from_id : UInt64
       property from_bal : Int32
+      property to_id : UInt64
       property to_bal : Int32
 
-      def initialize(message, @from_bal, @to_bal)
+      def initialize(message, @amount, @from_id, @from_bal, @to_id, @to_bal)
         super message
       end
     end
@@ -167,7 +170,7 @@ class StackCoin::Bank
       )", args: args
     end
 
-    result = Result::TransferSuccess.new "Transfer sucessful", from_balance, to_balance
+    result = Result::TransferSuccess.new "Transfer sucessful", amount, from_id, from_balance, to_id, to_balance
 
     if bot_user_id.is_a? String
       @notification.send bot_user_id.to_u64, result

@@ -14,7 +14,8 @@ class StackCoin::Auth
     class Authenticated < Success
       property access_token : String
 
-      def initialize(@message, @access_token)
+      def initialize(message, @access_token)
+        super message
       end
     end
 

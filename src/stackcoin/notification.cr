@@ -18,6 +18,18 @@ class StackCoin::Notification
     end
   end
 
+  struct AuthMessage
+    JSON.mapping(
+      token: String,
+    )
+  end
+
+  struct AcknowledgeMessage
+    JSON.mapping(
+      acknowledge: String,
+    )
+  end
+
   def state_change(new_state)
     %({"state": "#{new_state}"})
   end
@@ -56,7 +68,7 @@ class StackCoin::Notification
 
     ws "/ws/notification/:user_id" do |socket, context|
       state = SocketState::Hello
-      busy = false
+      last_send_result_uuid = nil
 
       begin
         user_id = context.ws_route_lookup.params["user_id"].to_u64
@@ -87,40 +99,49 @@ class StackCoin::Notification
 
         response = response.as_h
 
-        exception state, connection, "Sent message while busy" if busy
-
         loop do
           case state
           when SocketState::Hello
-            token = response["token"]?
-            if token.is_a? JSON::Any
-              raw = token.raw
-              if raw.is_a? String
-                result = auth.valid_token user_id, raw
+            begin
+              auth_message = AuthMessage.from_json message
+              result = auth.valid_token user_id, auth_message.token
 
-                if result.is_a? StackCoin::Auth::Result::ValidToken
-                  new_channel = Channel(StackCoin::Result::Base).new
-                  @channels[user_id] = new_channel
-                  state = SocketState::Ready
-                  socket.send(state_change state.to_s)
-                  next
-                end
+              if result.is_a? StackCoin::Auth::Result::ValidToken
+                new_channel = Channel(StackCoin::Result::Base).new
+                @channels[user_id] = new_channel
+
+                # TODO populate new channel w/messages from DB
+
+                state = SocketState::Ready
+                socket.send(state_change state.to_s)
+                next
               end
+            rescue e : JSON::ParseException
+              exception state, connection, "Invalid AuthMessage JSON: #{e}"
             end
 
             exception state, connection, "Auth failure"
           when SocketState::Ready
-            busy = true
-
             result = @channels[user_id].receive
             break if socket.closed?
+            last_send_result_uuid = result.uuid
             socket.send result.to_json
-            busy = false
 
             state = SocketState::AwaitingAcknowledgement
             socket.send(state_change state.to_s)
-          when SocketState::AwaitingAcknowledgement
             break
+          when SocketState::AwaitingAcknowledgement
+            begin
+              acknowledge_message = AcknowledgeMessage.from_json message
+              # TODO verify: acknowledge_message.acknowledge == last_send_result_uuid
+              # TODO REMOVE MESSAGE FROM DB
+            rescue e : JSON::ParseException
+              exception state, connection, "Invalid AcknowledgeMessage JSON: #{e}"
+            end
+
+            state = SocketState::Ready
+            socket.send(state_change state.to_s)
+            next
           else
             raise "Unexpected state"
           end

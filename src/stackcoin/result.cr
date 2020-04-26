@@ -1,3 +1,5 @@
+require "uuid"
+
 class StackCoin::Result
   class Base
     include JSON::Serializable
@@ -5,8 +7,12 @@ class StackCoin::Result
     property message : String
     property error : String?
     property success : String?
+    property timestamp : Time
+    property uuid : String
 
     def initialize(@message)
+      @timestamp = Time.utc
+      @uuid = UUID.random.to_s
     end
 
     def name
@@ -15,7 +21,8 @@ class StackCoin::Result
   end
 
   class Success < Base
-    def initialize(@message)
+    def initialize(message)
+      super message
       @success = name
     end
 
@@ -26,7 +33,8 @@ class StackCoin::Result
   end
 
   class Error < Base
-    def initialize(@message)
+    def initialize(message)
+      super message
       @error = name
     end
 
