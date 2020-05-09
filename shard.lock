@@ -10,7 +10,7 @@ shards:
 
   discordcr:
     github: discordcr/discordcr
-    commit: 936869afd3f3be4b0606d5fd51f4489d46ce58a4
+    commit: 619e08d31fd10918f2554f7623e2066ac308c439
 
   dotenv:
     github: gdotdesign/cr-dotenv
