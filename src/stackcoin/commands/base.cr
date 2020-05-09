@@ -12,6 +12,7 @@ abstract class StackCoin::Bot::Command
   property bank : Bank
   property stats : Statistics
   property auth : StackCoin::Auth
+  property banned : Banned
   property config : Config
 
   def initialize(context : Context)
@@ -20,6 +21,7 @@ abstract class StackCoin::Bot::Command
     @bank = context.bank
     @stats = context.stats
     @auth = context.auth
+    @banned = context.banned
     @config = context.config
     Command.lookup[@trigger] = self
   end

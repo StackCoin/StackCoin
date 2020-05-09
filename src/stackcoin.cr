@@ -18,11 +18,13 @@ config = StackCoin::Config.from_env
 db = DB.open config.database_url
 database = StackCoin::Database.new config, db
 
+banned = StackCoin::Banned.new db
+
 bank = StackCoin::Bank.new db
 stats = StackCoin::Statistics.new db
 auth = StackCoin::Auth.new db, bank, config.jwt_secret_key
 
-bot = StackCoin::Bot.new config, bank, stats, auth
+bot = StackCoin::Bot.new config, bank, stats, auth, banned
 api = StackCoin::Api.new config, bank, stats, auth
 
 spawn (api.run!)

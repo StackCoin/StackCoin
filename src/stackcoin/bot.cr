@@ -21,13 +21,14 @@ class StackCoin::Bot
     getter bank : Bank
     getter stats : Statistics
     getter auth : StackCoin::Auth
+    getter banned : StackCoin::Banned
     getter config : Config
 
-    def initialize(@client, @cache, @bank, @stats, @auth, @config)
+    def initialize(@client, @cache, @bank, @stats, @auth, @banned, @config)
     end
   end
 
-  def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth)
+  def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth, banned : Banned)
     @client = Discord::Client.new(token: config.token, client_id: config.client_id)
     @cache = Discord::Cache.new(@client)
     @client.cache = @cache
@@ -36,10 +37,11 @@ class StackCoin::Bot
     @auth = auth
     @stats = stats
 
-    context = Context.new(@client, @cache, bank, stats, auth, config)
+    context = Context.new(@client, @cache, bank, stats, auth, banned, config)
 
     Auth.new context
     Bal.new context
+    Ban.new context
     Circulation.new context
     Send.new context
     Dole.new context
@@ -62,7 +64,14 @@ class StackCoin::Bot
 
       begin
         next if !msg.starts_with? config.prefix
+
+        if banned.is_banned(message.author.id.to_u64)
+          Result::Error.new @client, message, "❌"
+          next
+        end
+
         @client.trigger_typing_indicator message.channel_id
+
         msg_parts = msg.split " "
         command_key = msg_parts.first.lchop config.prefix
 

@@ -14,13 +14,13 @@ class StackCoin::Bot
       return Result::Error.new(@client, message, "Too many/little mentions in your message; two is expected") if mentions.size != 2
 
       bot_user_mention = mentions[0]
-      return Result::Error.new(@client, message, "Mentioned a non-user entity in your message: #{bot_user_mention}") if !bot_user_mention.is_a? Discord::Mention::User
+      return Result::Error.new(@client, message, "Mentioned a non-user entity in your message") if !bot_user_mention.is_a? Discord::Mention::User
       return Result::Error.new(@client, message, "StackCoin itself can't have an account with itself!") if bot_user_mention.id.to_u64 == @config.client_id
       bot_user = @cache.resolve_user bot_user_mention.id
       return Result::Error.new(@client, message, "Mentioned a non-bot user as the bot user in your message") if !bot_user.bot
 
       bot_users_owner_mention = mentions[1]
-      return Result::Error.new(@client, message, "Mentioned a non-user entity in your message: #{bot_users_owner_mention}") if !bot_users_owner_mention.is_a? Discord::Mention::User
+      return Result::Error.new(@client, message, "Mentioned a non-user entity in your message") if !bot_users_owner_mention.is_a? Discord::Mention::User
       bot_users_owner = @cache.resolve_user bot_users_owner_mention.id
       return Result::Error.new(@client, message, "Mentioned a bot user as the bot users owner in your message") if bot_users_owner.bot
 
