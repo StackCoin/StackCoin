@@ -9,6 +9,10 @@ class StackCoin::Database
       bal INTERGER
     )"
 
+    @db.exec "CREATE TABLE IF NOT EXISTS banned (
+      user_id TEXT PRIMARY KEY
+    )"
+
     @db.exec "CREATE TABLE IF NOT EXISTS token (
       user_id TEXT PRIMARY KEY,
       token TEXT
