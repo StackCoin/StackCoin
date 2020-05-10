@@ -28,11 +28,14 @@ class StackCoin::Bank
 
     class InsufficientFunds < Error
     end
+
+    class BannedUser < Error
+    end
   end
 
   @@dole_amount : Int32 = 10
 
-  def initialize(@db : DB::Database)
+  def initialize(@db : DB::Database, @banned : Banned)
   end
 
   def db
@@ -118,6 +121,10 @@ class StackCoin::Bank
     return Result::TransferSelf.new "Can't transfer money to self" if from_id == to_id
     return Result::InvalidAmount.new "Amount can't be less than zero" if amount <= 0
     return Result::InvalidAmount.new "Amount can't be greater than 10000" if amount > 10000
+
+    if @banned.is_banned(from_id) || @banned.is_banned(to_id)
+      return Result::BannedUser.new "Banned user mentioned in transaction"
+    end
 
     from_balance, to_balance = 0, 0
     @db.transaction do |tx|
