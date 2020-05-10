@@ -20,8 +20,8 @@ database = StackCoin::Database.new config, db
 
 banned = StackCoin::Banned.new db
 
-bank = StackCoin::Bank.new db
-stats = StackCoin::Statistics.new db
+bank = StackCoin::Bank.new db, banned
+stats = StackCoin::Statistics.new db, banned
 auth = StackCoin::Auth.new db, bank, config.jwt_secret_key
 
 bot = StackCoin::Bot.new config, bank, stats, auth, banned
