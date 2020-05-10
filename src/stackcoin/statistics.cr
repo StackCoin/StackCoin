@@ -148,6 +148,8 @@ class StackCoin::Statistics < StackCoin::Bank
   end
 
   def ledger(dates, from_ids, to_ids, limit = 5)
+    Log.debug { "Ledger arguments: #{dates}, #{from_ids}, #{to_ids}, #{limit}" }
+
     args = [] of DB::Any
     conditions = [] of String
     conditions << "WHERE"
@@ -173,8 +175,10 @@ class StackCoin::Statistics < StackCoin::Bank
     ledger_query = "SELECT from_id, from_bal, to_id, to_bal, amount, time
     FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT ?"
     args << limit
+    Log.debug { "Ledger query: #{ledger_query} - #{args}" }
 
     results = [] of Result::Report::Transaction
+
     @db.query ledger_query, args: args do |rs|
       rs.each do
         results << Result::Report::Transaction.new(*rs.read String, Int32, String, Int32, Int32, String)

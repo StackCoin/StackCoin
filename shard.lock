@@ -2,7 +2,7 @@ version: 1.0
 shards:
   bindata:
     github: spider-gazelle/bindata
-    version: 1.3.0
+    version: 1.5.2
 
   db:
     github: crystal-lang/crystal-db
@@ -34,7 +34,7 @@ shards:
 
   jwt:
     github: crystal-community/jwt
-    version: 1.4.0
+    version: 1.4.1
 
   kemal:
     github: kemalcr/kemal

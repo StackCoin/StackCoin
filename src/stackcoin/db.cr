@@ -45,7 +45,7 @@ class StackCoin::Database
   def backup
     db_file = @config.database_url.lchop "sqlite3://"
     backup_file = "#{db_file}.backup.#{Time.utc}.gz"
-    puts "gzipping #{db_file} to #{backup_file}..."
+    Log.info { "gzipping #{db_file} to #{backup_file}..." }
 
     File.open(db_file, "r") do |database_file|
       File.open(backup_file, "w") do |backup_file|
@@ -55,7 +55,7 @@ class StackCoin::Database
       end
     end
 
-    puts "backup complete!"
+    Log.info { "backup complete!" }
   end
 
   def self.parse_time(time)

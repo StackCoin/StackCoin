@@ -39,6 +39,7 @@ class StackCoin::Bot
 
     context = Context.new(@client, @cache, bank, stats, auth, banned, config)
 
+    Log.info { "Initializing commands" }
     Auth.new context
     Bal.new context
     Ban.new context
@@ -56,6 +57,7 @@ class StackCoin::Bot
 
     command_lookup = Command.lookup
 
+    Log.info { "Creating listener for discord messages" }
     @client.on_message_create do |message|
       guild_id = message.guild_id
       if !guild_id.is_a? Nil && message.author.bot
@@ -86,13 +88,14 @@ class StackCoin::Bot
           Result::Error.new @client, message, "Unknown command: #{command_key}#{postfix}"
         end
       rescue ex
-        puts ex.inspect_with_backtrace
+        Log.error { "Exception while invoking discord command: #{ex.inspect_with_backtrace}" }
         Result::Error.new @client, message, "```#{ex.inspect_with_backtrace}```"
       end
     end
   end
 
   def run!
+    Log.info { "Running Discord client" }
     @client.run
   end
 end
