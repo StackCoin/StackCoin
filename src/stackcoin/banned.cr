@@ -18,4 +18,9 @@ class StackCoin::Banned
     @banned_users << user_id
     @db.exec "INSERT INTO banned VALUES (?)", args: [user_id.to_s]
   end
+
+  def unban(user_id: UInt64)
+    @banned_users.delete user_id
+    @db.exec "DELETE FROM banned WHERE user_id = ?", args: [user_id.to_s]
+  end
 end
