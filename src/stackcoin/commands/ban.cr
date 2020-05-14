@@ -17,7 +17,7 @@ class StackCoin::Bot
       return Result::Error.new(@client, message, "Mentioned a non-user entity in your message: #{user_mention}") if !user_mention.is_a? Discord::Mention::User
 
       @banned.ban user_mention.id.to_u64
-      send_msg message, "❌ User '<@#{user_mention.id}>' banned ❌"
+      send_msg message, "❌ User <@#{user_mention.id}> banned ❌"
     end
   end
 end

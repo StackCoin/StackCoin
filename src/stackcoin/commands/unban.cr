@@ -20,7 +20,7 @@ class StackCoin::Bot
       return Result::Error.new(@client, message, "User '<@#{user_mention.id}>' is not banned") if !is_banned
 
       @banned.unban user_mention.id.to_u64
-      send_msg message, "👌 User '<@#{user_mention.id}>' unbanned 👌"
+      send_msg message, "👌 User <@#{user_mention.id}> unbanned 👌"
     end
   end
 end
