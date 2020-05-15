@@ -1,9 +1,9 @@
 class StackCoin::Bot
-  class Ban < Command
+  class Unban < Command
     def initialize(context : Context)
-      @trigger = "ban"
+      @trigger = "unban"
       @usage = "<@user>"
-      @desc = "Bans an account from using the bot"
+      @desc = "Allows a banned account to use the bot again"
       super context
     end
 
@@ -18,10 +18,10 @@ class StackCoin::Bot
       user_id = user_mention.id.to_u64
 
       is_banned = @banned.is_banned user_id
-      return Result::Error.new(@client, message, "User <@#{user_mention.id}> is already banned") if is_banned
+      return Result::Error.new(@client, message, "User <@#{user_mention.id}> is not banned") if !is_banned
 
-      @banned.ban user_id
-      send_msg message, "❌ User <@#{user_mention.id}> banned ❌"
+      @banned.unban user_id
+      send_msg message, "👌 User <@#{user_mention.id}> unbanned 👌"
     end
   end
 end
