@@ -18,3 +18,5 @@ dependencies:
     github: mamantoha/humanize_time
   jwt:
     github: crystal-community/jwt
+  i18n:
+    github: TechMagister/i18n.cr
