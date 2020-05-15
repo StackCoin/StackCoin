@@ -50,6 +50,7 @@ class StackCoin::Bot
     Ledger.new context
     Open.new context
     Send.new context
+    Unban.new context
 
     Help.new context
 
