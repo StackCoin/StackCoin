@@ -21,18 +21,13 @@ class StackCoin::Bot
         loading message
         send_msg message, "ding!"
       when 120571255635181568_u64 # z64
-        send_msg message, "m-m-maintainer-san @__@"
       when 140981598987354112_u64 # bobi
         loading message
         send_msg message, "boobi gt doyl"
-      when 72073771468468224_u64 # cheem
-        send_msg message, "DOLE"
-      when 72069821960822784_u64 # duunie
-        send_msg message, "'I need it'"
+      when 72073771468468224_u64  # cheem
+      when 72069821960822784_u64  # duunie
       when 163415804761735170_u64 # bigman
-        send_msg message, "frdulnt tranactin dtectd by VraFin™™™™™™™™™™™™"
       when 636346308403134484_u64 # human lambo
-        send_msg message, "Just send it to <@72073771468468224> now, might as well not wait until he beats you again :)"
       else
       end
     end
