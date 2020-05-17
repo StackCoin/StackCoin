@@ -9,7 +9,7 @@ daniel_id = 3_u64
 def create_empty_test_bank
   db = DB.open "sqlite3://%3Amemory%3A"
   StackCoin::Database.new StackCoin::Config.new, db
-  StackCoin::Bank.new db
+  StackCoin::Bank.new db, StackCoin::Banned.new(db)
 end
 
 def create_populated_test_bank

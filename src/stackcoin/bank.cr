@@ -119,7 +119,7 @@ class StackCoin::Bank
 
   def transfer(from_id : UInt64, to_id : UInt64, amount : Int32)
     return Result::TransferSelf.new "Can't transfer money to self" if from_id == to_id
-    return Result::InvalidAmount.new "Amount can't be less than zero" if amount <= 0
+    return Result::InvalidAmount.new "Amount must be greater than zero" unless amount > 0
     return Result::InvalidAmount.new "Amount can't be greater than 10000" if amount > 10000
 
     if @banned.is_banned(from_id) || @banned.is_banned(to_id)
