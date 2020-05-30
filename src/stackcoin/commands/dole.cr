@@ -8,11 +8,19 @@ class StackCoin::Bot
 
     def loading(message)
       send_msg message, "loading."
-      sleep 20.seconds
+      sleep 60.seconds
       send_msg message, "loading.."
-      sleep 20.seconds
+      sleep 60.seconds
       send_msg message, "loading..."
-      sleep 20.seconds
+      sleep 60.seconds
+      send_msg message, "loading.."
+      sleep 60.seconds
+      send_msg message, "loading."
+      sleep 60.seconds
+      send_msg message, "loading.."
+      sleep 60.seconds
+      send_msg message, "loading..."
+      sleep 60.seconds
     end
 
     def memes(message)
