@@ -7,20 +7,20 @@ class StackCoin::Bot
     end
 
     def loading(message)
-      send_msg message, "loading."
-      sleep 60.seconds
-      send_msg message, "loading.."
-      sleep 60.seconds
-      send_msg message, "loading..."
-      sleep 60.seconds
-      send_msg message, "loading.."
-      sleep 60.seconds
-      send_msg message, "loading."
-      sleep 60.seconds
-      send_msg message, "loading.."
-      sleep 60.seconds
-      send_msg message, "loading..."
-      sleep 60.seconds
+      send_msg message, "l"
+      sleep 120.seconds
+      send_msg message, "o"
+      sleep 120.seconds
+      send_msg message, "a"
+      sleep 120.seconds
+      send_msg message, "d"
+      sleep 120.seconds
+      send_msg message, "i"
+      sleep 120.seconds
+      send_msg message, "n"
+      sleep 120.seconds
+      send_msg message, "g"
+      sleep 120.seconds
     end
 
     def memes(message)
@@ -31,7 +31,7 @@ class StackCoin::Bot
       when 120571255635181568_u64 # z64
       when 140981598987354112_u64 # bobi
         loading message
-        send_msg message, "boobi gt doyl"
+        send_msg message, "surf and turf"
       when 72073771468468224_u64  # cheem
       when 72069821960822784_u64  # duunie
       when 163415804761735170_u64 # bigman
