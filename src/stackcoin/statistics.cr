@@ -157,9 +157,14 @@ class StackCoin::Statistics < StackCoin::Bank
     optional_conditions dates, String, "date(time) = date(?)"
 
     if from_ids.size != 0 || to_ids.size != 0
+      condition = "AND"
+      if from_ids.size == 1 || to_ids.size == 1
+        condition = "OR"
+      end
+
       conditions << "("
-      optional_conditions from_ids, UInt64, "from_id = ?", "AND"
-      optional_conditions to_ids, UInt64, "to_id = ?", "AND"
+      optional_conditions from_ids, UInt64, "from_id = ?", condition
+      optional_conditions to_ids, UInt64, "to_id = ?", condition
       conditions.pop
       conditions << ")"
       conditions << "AND"
