@@ -8,6 +8,8 @@ class StackCoin::Config
   property owner_id : Discord::Snowflake = Discord::Snowflake.new 0_u64
 
   def self.from_env
+    Log.info { "Configuring bot from environment variables" }
+
     config = Config.new
     config.token = "Bot #{ENV["STACKCOIN_DISCORD_TOKEN"]}"
     config.client_id = ENV["STACKCOIN_DISCORD_CLIENT_ID"].to_u64

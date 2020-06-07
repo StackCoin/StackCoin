@@ -15,6 +15,7 @@ class StackCoin::Api
   end
 
   def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth)
+    Log.info { "Initializing routes" }
     context = Context.new bank, stats, auth, config
 
     Ledger.new context
@@ -29,6 +30,7 @@ class StackCoin::Api
   end
 
   def run!
+    Log.info { "Starting Kemal" }
     Kemal.run
   end
 end
