@@ -69,7 +69,6 @@ class StackCoin::Bot
         next if !msg.starts_with? config.prefix
 
         if banned.is_banned(message.author.id.to_u64)
-          Result::Error.new @client, message, "❌"
           next
         end
 
