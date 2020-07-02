@@ -4,7 +4,7 @@ class StackCoin::Bot
       @trigger = "ledger"
       @usage = "?<date> ?<@user-a> ?<@user-b>"
       @desc = "View/search previous transactions"
-      super context
+      super(context)
     end
 
     def invoke(message)
@@ -24,7 +24,7 @@ class StackCoin::Bot
         condition_context << "Occured on #{date}"
       end
 
-      mentions = Discord::Mention.parse message.content
+      mentions = Discord::Mention.parse(message.content)
       return Result::Error.new(@client, message, "Too many mentions in your message; max is two") if mentions.size > 2
       mentions.each do |mentioned|
         if !mentioned.is_a? Discord::Mention::User
@@ -37,7 +37,7 @@ class StackCoin::Bot
         end
       end
 
-      report = @stats.ledger dates, from_ids, to_ids
+      report = @stats.ledger(dates, from_ids, to_ids)
 
       report.results.each_with_index do |result, i|
         begin
@@ -70,7 +70,7 @@ class StackCoin::Bot
         title += "\n- #{cond}"
       end
 
-      send_emb message, Discord::Embed.new(title: title, fields: fields)
+      send_emb(message, Discord::Embed.new(title: title, fields: fields))
     end
   end
 end

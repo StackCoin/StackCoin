@@ -4,7 +4,7 @@ class StackCoin::Statistics < StackCoin::Bank
   class Result
     class Base
       def initialize(client, message, content)
-        client.create_message message.channel_id, content
+        client.create_message(message.channel_id, content)
       end
     end
 
@@ -39,7 +39,7 @@ class StackCoin::Statistics < StackCoin::Bank
         def initialize(from_id, @from_bal, to_id, @to_bal, @amount, time)
           @from_id = from_id.to_u64
           @to_id = to_id.to_u64
-          @time = Database.parse_time time
+          @time = Database.parse_time(time)
         end
       end
 
@@ -55,9 +55,9 @@ class StackCoin::Statistics < StackCoin::Bank
 
   private def handle_balance_result_set(query, args)
     balances = {} of UInt64 => Int32
-    @db.query query, args: args do |rs|
+    @db.query(query, args: args) do |rs|
       rs.each do
-        res = rs.read String, Int32
+        res = rs.read(String, Int32)
         balances[res[0].to_u64] = res[1]
       end
     end
@@ -65,13 +65,13 @@ class StackCoin::Statistics < StackCoin::Bank
   end
 
   def all_balances
-    self.handle_balance_result_set <<-SQL, nil
+    self.handle_balance_result_set(<<-SQL, nil)
       SELECT user_id, bal FROM balance
       SQL
   end
 
   def leaderboard(limit = 5)
-    self.handle_balance_result_set <<-SQL, [limit]
+    self.handle_balance_result_set(<<-SQL, [limit])
       SELECT user_id, bal FROM balance ORDER BY bal DESC LIMIT ?
       SQL
   end
@@ -93,17 +93,17 @@ class StackCoin::Statistics < StackCoin::Bank
     @db.query query, args: [id, id] do |rs|
       rs.each do
         datapoints += 1
-        time = rs.read String
-        bal = rs.read Int32
-        amount = rs.read Int32
+        time = rs.read(String)
+        bal = rs.read(Int32)
+        amount = rs.read(Int32)
 
-        writer.puts "#{time},#{bal},#{amount}"
+        writer.puts("#{time},#{bal},#{amount}")
       end
     end
     writer.close
 
     if datapoints <= 1
-      return Result::Graph::Error.new "Not enough datapoints!"
+      return Result::Graph::Error.new("Not enough datapoints!")
     end
 
     random = UUID.random
@@ -124,17 +124,17 @@ class StackCoin::Statistics < StackCoin::Bank
       raise stderr
     end
 
-    Result::Graph::Success.new File.open(image_filename)
+    Result::Graph::Success.new(File.open(image_filename))
   end
 
   def richest
-    richest = self.leaderboard 1
+    richest = self.leaderboard(1)
     return nil if richest.size == 0
     richest[0]
   end
 
   def circulation
-    @db.query_one <<-SQL, as: Int64
+    @db.query_one(<<-SQL, as: Int64)
       SELECT SUM(bal) FROM balance
       SQL
   end
@@ -143,7 +143,7 @@ class StackCoin::Statistics < StackCoin::Bank
     if {{objs}}.size != 0
       conditions << "("
       {{objs}}.each do |obj|
-        if obj.is_a? {{type}}
+        if obj.is_a?({{type}})
           conditions << {{condition}}
           conditions << "OR"
           args << obj.to_s
@@ -162,7 +162,7 @@ class StackCoin::Statistics < StackCoin::Bank
     conditions = [] of String
     conditions << "WHERE"
 
-    optional_conditions dates, String, "date(time) = date(?)"
+    optional_conditions(dates, String, "date(time) = date(?)")
 
     if from_ids.size != 0 || to_ids.size != 0
       condition = "AND"
@@ -171,8 +171,8 @@ class StackCoin::Statistics < StackCoin::Bank
       end
 
       conditions << "("
-      optional_conditions from_ids, UInt64, "from_id = ?", condition
-      optional_conditions to_ids, UInt64, "to_id = ?", condition
+      optional_conditions(from_ids, UInt64, "from_id = ?", condition)
+      optional_conditions(to_ids, UInt64, "to_id = ?", condition)
       conditions.pop
       conditions << ")"
       conditions << "AND"
@@ -195,12 +195,12 @@ class StackCoin::Statistics < StackCoin::Bank
 
     results = [] of Result::Report::Transaction
 
-    @db.query ledger_query, args: args do |rs|
+    @db.query(ledger_query, args: args) do |rs|
       rs.each do
-        results << Result::Report::Transaction.new(*rs.read String, Int32, String, Int32, Int32, String)
+        results << Result::Report::Transaction.new(*rs.read(String, Int32, String, Int32, Int32, String))
       end
     end
 
-    Result::Report.new dates, from_ids, to_ids, results
+    Result::Report.new(dates, from_ids, to_ids, results)
   end
 end

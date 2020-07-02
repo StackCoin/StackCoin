@@ -20,7 +20,7 @@ class StackCoin::Result
     end
 
     def initialize(db : DB::Transaction, @message)
-      initialize @message
+      initialize(@message)
       db.commit
     end
   end
@@ -31,7 +31,7 @@ class StackCoin::Result
     end
 
     def initialize(db : DB::Transaction, @message)
-      initialize @message
+      initialize(@message)
       db.rollback
     end
   end

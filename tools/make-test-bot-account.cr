@@ -1,7 +1,7 @@
 require "db"
 require "sqlite3"
 
-db = DB.open "sqlite3://./data/stackcoin.db"
+db = DB.open("sqlite3://./data/stackcoin.db")
 
 puts "goodbye user"
 

@@ -4,11 +4,11 @@ class StackCoin::Bot
       @trigger = "send"
       @usage = "<@user> <#amount>"
       @desc = "Send your STK to others"
-      super context
+      super(context)
     end
 
     def invoke(message)
-      mentions = Discord::Mention.parse message.content
+      mentions = Discord::Mention.parse(message.content)
       return Result::Error.new(@client, message, "Too many/little mentions in your message; max is one") if mentions.size != 1
 
       mention = mentions[0]
@@ -20,11 +20,11 @@ class StackCoin::Bot
       amount = msg_parts.last.to_i?
       return Result::Error.new(@client, message, "Invalid amount: #{msg_parts.last}") if amount.is_a? Nil
 
-      result = @bank.transfer message.author.id.to_u64, mention.id, amount
+      result = @bank.transfer(message.author.id.to_u64, mention.id, amount)
 
       if result.is_a? Bank::Result::TransferSuccess
-        to = @cache.resolve_user mention.id
-        send_emb message, Discord::Embed.new(
+        to = @cache.resolve_user(mention.id)
+        send_emb(message, Discord::Embed.new(
           title: "_Transaction complete_:",
           fields: [
             Discord::EmbedField.new(
@@ -36,9 +36,9 @@ class StackCoin::Bot
               value: "New bal: #{result.to_bal}",
             ),
           ],
-        )
+        ))
       else
-        Result::Error.new @client, message, result.message
+        Result::Error.new(@client, message, result.message)
       end
     end
   end

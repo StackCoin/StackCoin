@@ -7,7 +7,7 @@ abstract class StackCoin::Api::Route
   def should_return_html(env)
     headers = env.request.headers
     if headers.has_key? "Accept"
-      return headers["Accept"].split(',').includes? "text/html"
+      return headers["Accept"].split(',').includes?("text/html")
     end
     false
   end

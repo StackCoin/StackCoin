@@ -3,7 +3,7 @@ class StackCoin::Bot
     def initialize(context : Context)
       @trigger = "dole"
       @desc = "Get some STK, daily"
-      super context
+      super(context)
     end
 
     def memes(message)
@@ -21,7 +21,7 @@ class StackCoin::Bot
 
     def invoke(message)
       # memes message :)
-      send_msg message, @bank.deposit_dole(message.author.id.to_u64).message
+      send_msg(message, @bank.deposit_dole(message.author.id.to_u64).message)
     end
   end
 end

@@ -7,7 +7,7 @@ class StackCoin::Bot
       @trigger = "help"
       @usage = "?<subcommand>"
       @desc = "This command you're seeing right now!"
-      super context
+      super(context)
 
       command_lookup = Command.lookup
 
@@ -37,18 +37,18 @@ class StackCoin::Bot
       return Result::Error.new(@client, message, "Too many arguments in message, found #{msg_parts.size}") if msg_parts.size > 2
 
       if msg_parts.size == 1
-        send_emb message, @root_help
+        send_emb(message, @root_help)
       else
         command = msg_parts.last
 
         if @sub_help.has_key? command
-          send_emb message, @sub_help[command]
+          send_emb(message, @sub_help[command])
         else
           postfix = ""
           potential = Levenshtein.find(command, @sub_help.keys)
           postfix = ", did you mean #{potential}?" if potential
 
-          Result::Error.new @client, message, "Unknown help section: #{command}#{postfix}"
+          Result::Error.new(@client, message, "Unknown help section: #{command}#{postfix}")
         end
       end
     end

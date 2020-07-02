@@ -7,7 +7,7 @@ class StackCoin::Bot
   class Result
     class Base
       def initialize(client, message, content)
-        client.create_message message.channel_id, content
+        client.create_message(message.channel_id, content)
       end
     end
 
@@ -40,55 +40,55 @@ class StackCoin::Bot
     context = Context.new(@client, @cache, bank, stats, auth, banned, config)
 
     Log.info { "Initializing commands" }
-    Auth.new context
-    Bal.new context
-    Ban.new context
-    Circulation.new context
-    Send.new context
-    Dole.new context
-    Graph.new context
-    Leaderboard.new context
-    Ledger.new context
-    Open.new context
-    Send.new context
-    Unban.new context
+    Auth.new(context)
+    Bal.new(context)
+    Ban.new(context)
+    Circulation.new(context)
+    Send.new(context)
+    Dole.new(context)
+    Graph.new(context)
+    Leaderboard.new(context)
+    Ledger.new(context)
+    Open.new(context)
+    Send.new(context)
+    Unban.new(context)
 
-    Help.new context
+    Help.new(context)
 
     command_lookup = Command.lookup
 
     Log.info { "Creating listener for discord messages" }
     @client.on_message_create do |message|
       guild_id = message.guild_id
-      if !guild_id.is_a? Nil && message.author.bot
+      if !guild_id.is_a?(Nil) && message.author.bot
         next if (guild_id <=> config.test_guild_snowflake) != 0
       end
       msg = message.content
 
       begin
-        next if !msg.starts_with? config.prefix
+        next if !msg.starts_with?(config.prefix)
 
         if banned.is_banned(message.author.id.to_u64)
           next
         end
 
-        @client.trigger_typing_indicator message.channel_id
+        @client.trigger_typing_indicator(message.channel_id)
 
         msg_parts = msg.split " "
-        command_key = msg_parts.first.lchop config.prefix
+        command_key = msg_parts.first.lchop(config.prefix)
 
-        if command_lookup.has_key? command_key
-          command_lookup[command_key].invoke message
+        if command_lookup.has_key?(command_key)
+          command_lookup[command_key].invoke(message)
         else
           postfix = ""
           potential = Levenshtein.find(command_key, command_lookup.keys)
           postfix = ", did you mean #{potential}?" if potential
 
-          Result::Error.new @client, message, "Unknown command: #{command_key}#{postfix}"
+          Result::Error.new(@client, message, "Unknown command: #{command_key}#{postfix}")
         end
       rescue ex
         Log.error { "Exception while invoking discord command: #{ex.inspect_with_backtrace}" }
-        Result::Error.new @client, message, "```#{ex.inspect_with_backtrace}```"
+        Result::Error.new(@client, message, "```#{ex.inspect_with_backtrace}```")
       end
     end
   end
