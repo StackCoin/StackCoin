@@ -65,20 +65,26 @@ class StackCoin::Statistics < StackCoin::Bank
   end
 
   def all_balances
-    self.handle_balance_result_set "SELECT user_id, bal FROM balance", nil
+    self.handle_balance_result_set <<-SQL, nil
+      SELECT user_id, bal FROM balance
+      SQL
   end
 
   def leaderboard(limit = 5)
-    self.handle_balance_result_set "SELECT user_id, bal FROM balance ORDER BY bal DESC LIMIT ?", [limit]
+    self.handle_balance_result_set <<-SQL, [limit]
+      SELECT user_id, bal FROM balance ORDER BY bal DESC LIMIT ?
+      SQL
   end
 
   def graph(id)
-    query = "SELECT time, to_bal, amount FROM ledger
-    WHERE to_id = ?
-    UNION
-    SELECT time, user_bal, amount FROM benefit
-    WHERE user_id = ?
-    ORDER BY time"
+    query = <<-SQL
+      SELECT time, to_bal, amount FROM ledger
+      WHERE to_id = ?
+      UNION
+      SELECT time, user_bal, amount FROM benefit
+      WHERE user_id = ?
+      ORDER BY time
+      SQL
 
     id = id.to_s
 
@@ -128,7 +134,9 @@ class StackCoin::Statistics < StackCoin::Bank
   end
 
   def circulation
-    @db.query_one "SELECT SUM(bal) FROM balance", as: Int64
+    @db.query_one <<-SQL, as: Int64
+      SELECT SUM(bal) FROM balance
+      SQL
   end
 
   macro optional_conditions(objs, type, condition, final = "AND")
@@ -177,8 +185,11 @@ class StackCoin::Statistics < StackCoin::Bank
       conditions_flat += " #{condition} "
     end
 
-    ledger_query = "SELECT from_id, from_bal, to_id, to_bal, amount, time
-    FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT ?"
+    ledger_query = <<-SQL
+      SELECT from_id, from_bal, to_id, to_bal, amount, time
+      FROM ledger #{conditions_flat} ORDER BY time DESC LIMIT ?
+      SQL
+
     args << limit
     Log.debug { "Ledger query: #{ledger_query} - #{args}" }
 
