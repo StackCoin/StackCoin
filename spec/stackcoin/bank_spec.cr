@@ -7,9 +7,9 @@ andrew_id = 2_u64
 daniel_id = 3_u64
 
 def create_empty_test_bank
-  db = DB.open "sqlite3://%3Amemory%3A"
-  StackCoin::Database.new StackCoin::Config.new, db
-  StackCoin::Bank.new db, StackCoin::Banned.new(db)
+  db = DB.open("sqlite3://%3Amemory%3A")
+  StackCoin::Database.new(StackCoin::Config.new, db)
+  StackCoin::Bank.new(db, StackCoin::Banned.new(db))
 end
 
 def create_populated_test_bank
@@ -25,7 +25,7 @@ def create_populated_test_bank
   bank.deposit_dole andrew_id
   bank.open_account daniel_id
   bank.deposit_dole daniel_id
-  bank.transfer andrew_id, daniel_id, 5
+  bank.transfer(andrew_id, daniel_id, 5)
   bank
 end
 
@@ -90,7 +90,7 @@ describe StackCoin::Bank do
       resp = bank.transfer(daniel_id, martin_id, 5)
       resp.should be_a StackCoin::Bank::Result::TransferSuccess
 
-      if resp.is_a? StackCoin::Bank::Result::TransferSuccess
+      if resp.is_a?(StackCoin::Bank::Result::TransferSuccess)
         resp.from_bal.should eq 10
         resp.to_bal.should eq 5
       end

@@ -28,11 +28,11 @@ abstract class StackCoin::Bot::Command
   end
 
   def send_msg(message, content)
-    @client.create_message message.channel_id, content
+    @client.create_message(message.channel_id, content)
   end
 
   def send_msg(message, channel_id, content)
-    @client.create_message channel_id, content
+    @client.create_message(channel_id, content)
   end
 
   def send_emb(message, emb : Discord::Embed)
@@ -46,7 +46,7 @@ abstract class StackCoin::Bot::Command
       text: "StackCoin™",
       icon_url: "https://i.imgur.com/CsVxtvM.png"
     )
-    @client.create_message message.channel_id, content, emb
+    @client.create_message(message.channel_id, content, emb)
   end
 
   abstract def invoke(message)

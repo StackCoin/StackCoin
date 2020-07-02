@@ -3,17 +3,17 @@ class StackCoin::Bot
     def initialize(context : Context)
       @trigger = "circulation"
       @desc = "See the STK currently in circulation"
-      super context
+      super(context)
     end
 
     def invoke(message)
-      send_emb message, Discord::Embed.new(
+      send_emb(message, Discord::Embed.new(
         title: "_Total StackCoin in Circulation:_",
         fields: [Discord::EmbedField.new(
           name: "#{@stats.circulation} STK",
           value: "Since #{EPOCH}",
         )]
-      )
+      ))
     end
   end
 end

@@ -8,7 +8,7 @@ class StackCoin::Database
   end
 
   def populate_tables
-    @db.exec <<-SQL
+    @db.exec(<<-SQL)
       CREATE TABLE IF NOT EXISTS balance (
         user_id TEXT PRIMARY KEY,
         bal INTERGER
@@ -65,6 +65,6 @@ class StackCoin::Database
   end
 
   def self.parse_time(time)
-    Time.parse time, SQLite3::DATE_FORMAT, Time::Location::UTC
+    Time.parse(time, SQLite3::DATE_FORMAT, Time::Location::UTC)
   end
 end

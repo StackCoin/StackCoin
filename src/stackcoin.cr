@@ -14,23 +14,23 @@ begin
 end
 
 StackCoin::Log.info { "Creaitng /tmp/stackcoin" }
-Dir.mkdir_p "/tmp/stackcoin/"
+Dir.mkdir_p("/tmp/stackcoin/")
 
 config = StackCoin::Config.from_env
 
 StackCoin::Log.info { "Opening database" }
-db = DB.open config.database_url
-database = StackCoin::Database.new config, db
+db = DB.open(config.database_url)
+database = StackCoin::Database.new(config, db)
 
 StackCoin::Log.info { "Initializing modules" }
-banned = StackCoin::Banned.new db
+banned = StackCoin::Banned.new(db)
 
-bank = StackCoin::Bank.new db, banned
-stats = StackCoin::Statistics.new db, banned
-auth = StackCoin::Auth.new db, bank, config.jwt_secret_key
+bank = StackCoin::Bank.new(db, banned)
+stats = StackCoin::Statistics.new(db, banned)
+auth = StackCoin::Auth.new(db, bank, config.jwt_secret_key)
 
-bot = StackCoin::Bot.new config, bank, stats, auth, banned
-api = StackCoin::Api.new config, bank, stats, auth
+bot = StackCoin::Bot.new(config, bank, stats, auth, banned)
+api = StackCoin::Api.new(config, bank, stats, auth)
 
 StackCoin::Log.info { "Spawning API" }
 spawn (api.run!)
@@ -41,7 +41,7 @@ spawn (bot.run!)
 {Signal::INT, Signal::TERM}.each &.trap do
   StackCoin::Log.info { "Got signal to die" }
   db.close
-  puts "bye!"
+  puts("bye!")
   exit
 end
 

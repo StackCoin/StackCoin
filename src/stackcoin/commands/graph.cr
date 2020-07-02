@@ -3,11 +3,11 @@ class StackCoin::Bot
     def initialize(context : Context)
       @trigger = "graph"
       @desc = "Graph different data points."
-      super context
+      super(context)
     end
 
     def invoke(message)
-      mentions = Discord::Mention.parse message.content
+      mentions = Discord::Mention.parse(message.content)
       return Result::Error.new(@client, message, "Too many mentions in your message; max is one") if mentions.size > 1
 
       prefix = "You don't"
@@ -17,16 +17,16 @@ class StackCoin::Bot
       if mentions.size > 0
         mention = mentions[0]
         if !mention.is_a? Discord::Mention::User
-          return Result::Error.new @client, message, "Mentioned entity isn't a user!"
+          return Result::Error.new(@client, message, "Mentioned entity isn't a user!")
         end
         id = mention.id
-        user = @cache.resolve_user mention.id
+        user = @cache.resolve_user(mention.id)
         prefix = "User doesn't" if mention.id != message.author.id
       end
 
       id = id.to_u64
       if !@bank.has_account id
-        return Result::Error.new @client, message, "#{prefix} have an account to see a graph of!"
+        return Result::Error.new(@client, message, "#{prefix} have an account to see a graph of!")
       end
 
       result = @stats.graph(id)
@@ -39,7 +39,7 @@ class StackCoin::Bot
 
         result.file.delete
       else
-        client.create_message message.channel_id, result.message
+        client.create_message(message.channel_id, result.message)
       end
     end
   end

@@ -16,13 +16,13 @@ class StackCoin::Api
 
   def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth)
     Log.info { "Initializing routes" }
-    context = Context.new bank, stats, auth, config
+    context = Context.new(bank, stats, auth, config)
 
-    Ledger.new context
-    Auth.new context
-    User.new context
+    Ledger.new(context)
+    Auth.new(context)
+    User.new(context)
 
-    Root.new context
+    Root.new(context)
 
     Route.list.each do |route|
       route.setup
