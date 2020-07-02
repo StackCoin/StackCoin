@@ -43,15 +43,21 @@ class StackCoin::Bank
   end
 
   private def deposit(cnn : DB::Connection, user_id : UInt64, amount : Int32)
-    cnn.exec "UPDATE balance SET bal = bal + ? WHERE user_id = ?", amount, user_id.to_s
+    cnn.exec <<-SQL, amount, user_id.to_s
+      UPDATE balance SET bal = bal + ? WHERE user_id = ?
+      SQL
   end
 
   private def withdraw(cnn : DB::Connection, user_id : UInt64, amount : Int32)
-    cnn.exec "UPDATE balance SET bal = bal - ? WHERE user_id = ?", amount, user_id.to_s
+    cnn.exec <<-SQL, amount, user_id.to_s
+      UPDATE balance SET bal = bal - ? WHERE user_id = ?
+      SQL
   end
 
   def balance(cnn : DB::Connection, user_id : UInt64)
-    cnn.query_one? "SELECT bal FROM balance WHERE user_id = ?", user_id.to_s, as: Int32
+    cnn.query_one? <<-SQL, user_id.to_s, as: Int32
+      SELECT bal FROM balance WHERE user_id = ?
+      SQL
   end
 
   def balance(user_id : UInt64)
@@ -69,10 +75,15 @@ class StackCoin::Bank
     @db.transaction do |tx|
       cnn = tx.connection
 
-      expect_one = cnn.query_one "SELECT EXISTS(SELECT 1 FROM last_given_dole WHERE user_id = ?)", user_id.to_s, as: Int
+      expect_one = cnn.query_one <<-SQL, user_id.to_s, as: Int
+        SELECT EXISTS(SELECT 1 FROM last_given_dole WHERE user_id = ?)
+        SQL
+
       return Result::NoSuchAccount.new tx, "No account to deposit dole to" if expect_one == 0
 
-      last_given = Database.parse_time cnn.query_one "SELECT time FROM last_given_dole WHERE user_id = ?", user_id.to_s, as: String
+      last_given = Database.parse_time cnn.query_one <<-SQL, user_id.to_s, as: String
+        SELECT time FROM last_given_dole WHERE user_id = ?
+        SQL
 
       if last_given.day == now.day
         time_till_rollver = HumanizeTime.distance_of_time_in_words(Time.utc.at_end_of_day - Time.utc, Time.utc)
@@ -80,7 +91,11 @@ class StackCoin::Bank
       end
 
       self.deposit cnn, user_id, @@dole_amount
-      cnn.exec "UPDATE last_given_dole SET time = ? WHERE user_id = ?", now, user_id.to_s
+
+      cnn.exec <<-SQL, now, user_id.to_s
+        UPDATE last_given_dole SET time = ? WHERE user_id = ?
+        SQL
+
       bal = self.balance cnn, user_id
 
       args = [] of DB::Any
@@ -89,14 +104,18 @@ class StackCoin::Bank
       args << @@dole_amount
       args << now
 
-      cnn.exec "INSERT INTO benefit(user_id, user_bal, amount, time) VALUES (?, ?, ?, ?)", args: args
+      cnn.exec <<-SQL, args: args
+        INSERT INTO benefit(user_id, user_bal, amount, time) VALUES (?, ?, ?, ?)
+        SQL
     end
 
     Result::Success.new "#{@@dole_amount} StackCoin given, your balance is now #{bal}"
   end
 
   def has_account(user_id : UInt64)
-    0 < @db.query_one "SELECT EXISTS(SELECT 1 FROM balance WHERE user_id = ?)", user_id.to_s, as: Int
+    0 < @db.query_one <<-SQL, user_id.to_s, as: Int
+      SELECT EXISTS(SELECT 1 FROM balance WHERE user_id = ?)
+      SQL
   end
 
   def open_account(user_id : UInt64)
@@ -105,13 +124,21 @@ class StackCoin::Bank
     @db.transaction do |tx|
       cnn = tx.connection
 
-      expect_zero = cnn.query_one "SELECT EXISTS(SELECT 1 FROM balance WHERE user_id = ?)", user_id.to_s, as: Int
+      expect_zero = cnn.query_one <<-SQL, user_id.to_s, as: Int
+        SELECT EXISTS(SELECT 1 FROM balance WHERE user_id = ?)
+        SQL
+
       if expect_zero > 0
         return Result::PreexistingAccount.new tx, "Account already open"
       end
 
-      cnn.exec "INSERT INTO balance VALUES (?, ?)", user_id.to_s, initial_bal
-      cnn.exec "INSERT INTO last_given_dole VALUES (?, ?)", user_id.to_s, EPOCH
+      cnn.exec <<-SQL, user_id.to_s, initial_bal
+        INSERT INTO balance VALUES (?, ?)
+        SQL
+
+      cnn.exec <<-SQL, user_id.to_s, EPOCH
+        INSERT INTO last_given_dole VALUES (?, ?)
+        SQL
     end
 
     Result::Success.new "Account created, initial balance is #{initial_bal}"
@@ -156,11 +183,14 @@ class StackCoin::Bank
       args << to_balance
       args << amount
       args << Time.utc
-      cnn.exec "INSERT INTO ledger(
-        from_id, from_bal, to_id, to_bal, amount, time
-      ) VALUES (
-        ?, ?, ?, ?, ?, ?
-      )", args: args
+
+      cnn.exec <<-SQL, args: args
+        INSERT INTO ledger(
+          from_id, from_bal, to_id, to_bal, amount, time
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?
+        )
+        SQL
     end
 
     Result::TransferSuccess.new "Transfer sucessful", from_balance, to_balance

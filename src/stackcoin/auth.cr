@@ -42,7 +42,9 @@ class StackCoin::Auth
     return result if !result.is_a? Bank::Result::Success
 
     token = Random::Secure.hex(32)
-    @db.exec "INSERT INTO token VALUES (?, ?)", user_id.to_s, token
+    @db.exec <<-SQL, user_id.to_s, token
+      INSERT INTO token VALUES (?, ?)
+      SQL
 
     Result::AccountCreated.new "Account created", token
   end
@@ -50,10 +52,17 @@ class StackCoin::Auth
   def authenticate(user_id : UInt64, token : String)
     @db.transaction do |tx|
       cnn = tx.connection
-      token_exists = cnn.query_one("SELECT EXISTS(SELECT 1 FROM token WHERE user_id = ?)", user_id.to_s, as: Int) == 1
+
+      token_exists = cnn.query_one(<<-SQL, user_id.to_s, as: Int) == 1
+        SELECT EXISTS(SELECT 1 FROM token WHERE user_id = ?)
+        SQL
+
       return Result::NoSuchAccount.new tx, "No such account" unless token_exists
 
-      db_token = cnn.query_one "SELECT token FROM token WHERE user_id = ?", user_id.to_s, as: String
+      db_token = cnn.query_one <<-SQL, user_id.to_s, as: String
+        SELECT token FROM token WHERE user_id = ?
+        SQL
+
       return Result::InvalidToken.new tx, "Invalid Token" unless db_token == token
     end
 
