@@ -35,7 +35,14 @@ class StackCoin::Bank
 
   @@dole_amount : Int32 = 10
 
+  @@instance : self? = nil
+
+  def self.get
+    @@instance.not_nil!
+  end
+
   def initialize(@db : DB::Database, @banned : Banned)
+    @@instance = self
   end
 
   def db

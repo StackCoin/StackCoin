@@ -53,6 +53,10 @@ class StackCoin::Statistics < StackCoin::Bank
     end
   end
 
+  def self.get
+    @@instance.not_nil!.as(Statistics)
+  end
+
   private def handle_balance_result_set(query, args)
     balances = {} of UInt64 => Int32
     @db.query(query, args: args) do |rs|

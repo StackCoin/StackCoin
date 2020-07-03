@@ -1,4 +1,4 @@
-<%= render "src/views/header.ecr" %>
+<%= template("header.ecr") %>
 <%- users.each do |id, user| -%>
-<%= render "src/views/user-base.ecr" %>
+<%= template("user-base.ecr") %>
 <%- end -%>

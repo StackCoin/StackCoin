@@ -9,9 +9,9 @@ dependencies:
     github: discordcr/discordcr
     branch: master
 
-  kemal:
-    github: kemalcr/kemal
-    commit: a8c0f09b858162bd13c96663febef5527b322a32
+  action-controller:
+    github: spider-gazelle/action-controller
+    version: "~> 3.0"
 
   dotenv:
     github: gdotdesign/cr-dotenv
@@ -27,3 +27,6 @@ dependencies:
 
   json_mapping:
     github: crystal-lang/json_mapping.cr
+
+  kilt:
+    github: jeromegn/kilt

@@ -17,7 +17,7 @@ class StackCoin::Api
         user["id"] = id.to_s
         user["bal"] = bal.to_s
 
-        next render("src/views/user.ecr") if should_return_html(env)
+        next template("src/views/user.ecr") if should_return_html(env)
         user.to_json
       end
 
@@ -29,7 +29,7 @@ class StackCoin::Api
           users[id.to_s]["bal"] = balance
         end
 
-        next render("src/views/users.ecr") if should_return_html(env)
+        next template("src/views/users.ecr") if should_return_html(env)
         users.to_json
       end
     end
