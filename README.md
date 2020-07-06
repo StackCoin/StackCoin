@@ -1,8 +1,6 @@
-[![docs](https://img.shields.io/badge/docs-latest-green.svg?style=flat-square)](https://jackharrhy.github.io/StackCoin/)
+[![Documentation badge](https://img.shields.io/badge/docs-latest-green.svg?style=flat-square)](https://jackharrhy.github.io/StackCoin/)
 
-![](https://img.shields.io/badge/Docs-latest-green)
-
-![](https://github.com/jackharrhy/StackCoin/workflows/Deploy%20to%20Dockerhub/badge.svg)
+![Deploy to Dockerhub badge](https://github.com/jackharrhy/StackCoin/workflows/Deploy%20to%20Dockerhub/badge.svg)
 
 # StackCoin
 
