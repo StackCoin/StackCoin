@@ -4,11 +4,11 @@
 
 # StackCoin
 
-![StackCoin coin of Stack on coin](https://i.imgur.com/ou12BG6.png | width=100)
+![StackCoin coin of Stack on coin](https://i.imgur.com/ou12BG6.png)
 
 a discord pseudo currency, written using (discordcr)[https://github.com/discordcr/discordcr]
 
-![Creator of StackCoin running commands in a private guild, showing the different usages of the bot, such as collecting a daily dole, sending StackCoin to other users, checking a graph of data showing their balance over time, and the leaderboard of the current highest balances of the top 5 accounts](https://i.imgur.com/alF7EcU.png | width=100)
+![Creator of StackCoin running commands in a private guild, showing the different usages of the bot, such as collecting a daily dole, sending StackCoin to other users, checking a graph of data showing their balance over time, and the leaderboard of the current highest balances of the top 5 accounts](https://i.imgur.com/alF7EcU.png)
 
 ---
 
