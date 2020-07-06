@@ -20,9 +20,9 @@ a discord pseudo currency, written using (discordcr)[https://github.com/discordc
 ```sh
 cp .env.dist .env # then populate .env
 
-shards # installs deps
+shards # install deps
 
-crystal run src/stackcoin.cr # runs bot!
+crystal run src/stackcoin.cr # run bot!
 ```
 
 ---
