@@ -45,11 +45,28 @@ abstract class Application < ActionController::Base
     end
   end
 
+  # TODO error type + message from results
+  macro unprocessable_entity
+    respond_with(:unprocessable_entity) do
+      json({error: "Unprocessable Entity"})
+    end
+  end
+
+  macro unauthorized
+    respond_with(:bad_request) do
+      json({error: "Unauthorized"})
+    end
+  end
+
   def stats
     StackCoin::Statistics.get
   end
 
   def bank
     StackCoin::Bank.get
+  end
+
+  def auth
+    StackCoin::Auth.get
   end
 end

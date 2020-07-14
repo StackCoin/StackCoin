@@ -34,7 +34,14 @@ class StackCoin::Auth
     end
   end
 
+  @@instance : self? = nil
+
+  def self.get
+    @@instance.not_nil!
+  end
+
   def initialize(@db : DB::Database, @bank : Bank, @jwt_secret_key : String)
+    @@instance = self
   end
 
   def create_account_with_token(user_id : UInt64)
