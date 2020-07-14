@@ -1,3 +1,4 @@
 module StackCoin
-  EPOCH = Time.unix 1574467200
+  DEBUG = ENV["DEBUG"]?
+  EPOCH = Time.unix(1574467200)
 end

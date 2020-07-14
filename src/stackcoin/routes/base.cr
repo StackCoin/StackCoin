@@ -27,7 +27,7 @@ abstract class StackCoin::Api::Route
     @auth = context.auth
     @config = context.config
     Route.list << self
-    Log.info { "Initialized route: #{self.class.name}" }
+    Log.debug { "Initialized route: #{self.class.name}" }
   end
 
   property routes : Array(String) = [] of String

@@ -1,5 +1,5 @@
 # build
-FROM crystallang/crystal:0.34.0-alpine-build as build
+FROM crystallang/crystal:0.35.1-alpine-build as build
 
 RUN apk add --update --no-cache --force-overwrite \
         sqlite-static \

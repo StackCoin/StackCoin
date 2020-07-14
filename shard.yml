@@ -8,13 +8,22 @@ dependencies:
   discordcr:
     github: discordcr/discordcr
     branch: master
+
   kemal:
     github: kemalcr/kemal
+    commit: a8c0f09b858162bd13c96663febef5527b322a32
+
   dotenv:
     github: gdotdesign/cr-dotenv
+
   sqlite3:
     github: crystal-lang/crystal-sqlite3
+
   humanize_time:
     github: mamantoha/humanize_time
+
   jwt:
     github: crystal-community/jwt
+
+  json_mapping:
+    github: crystal-lang/json_mapping.cr

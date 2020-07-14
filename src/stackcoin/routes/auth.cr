@@ -6,10 +6,9 @@ class StackCoin::Api
     end
 
     class AuthPostBody
-      JSON.mapping(
-        user_id: UInt64,
-        token: String,
-      )
+      include JSON::Serializable
+      property user_id : UInt64
+      property token : String
     end
 
     def setup

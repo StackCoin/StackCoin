@@ -1,58 +1,62 @@
-version: 1.0
+version: 2.0
 shards:
   bindata:
-    github: spider-gazelle/bindata
-    version: 1.5.2
+    git: https://github.com/spider-gazelle/bindata.git
+    version: 1.5.5
 
   db:
-    github: crystal-lang/crystal-db
+    git: https://github.com/crystal-lang/crystal-db.git
     version: 0.9.0
 
   discordcr:
-    github: discordcr/discordcr
-    commit: 619e08d31fd10918f2554f7623e2066ac308c439
+    git: https://github.com/discordcr/discordcr.git
+    version: 0.4.0+git.commit.619e08d31fd10918f2554f7623e2066ac308c439
 
   dotenv:
-    github: gdotdesign/cr-dotenv
+    git: https://github.com/gdotdesign/cr-dotenv.git
     version: 0.7.0
 
   exception_page:
-    github: crystal-loot/exception_page
+    git: https://github.com/crystal-loot/exception_page.git
     version: 0.1.4
 
   humanize_time:
-    github: mamantoha/humanize_time
+    git: https://github.com/mamantoha/humanize_time.git
     version: 0.6.0
 
   i18n:
-    github: TechMagister/i18n.cr
+    git: https://github.com/TechMagister/i18n.cr.git
     version: 0.3.1
 
   i18n_plural_rules:
-    github: mamantoha/i18n_plural_rules
+    git: https://github.com/mamantoha/i18n_plural_rules.git
     version: 0.1.1
 
+  json_mapping:
+    git: https://github.com/crystal-lang/json_mapping.cr.git
+    version: 0.1.0
+
   jwt:
-    github: crystal-community/jwt
-    version: 1.4.1
+    git: https://github.com/crystal-community/jwt.git
+    version: 1.4.2
 
   kemal:
-    github: kemalcr/kemal
-    version: 0.26.1
+    git: https://github.com/kemalcr/kemal.git
+    version: 0.26.1+git.commit.a8c0f09b858162bd13c96663febef5527b322a32
 
   kilt:
-    github: jeromegn/kilt
+    git: https://github.com/jeromegn/kilt.git
     version: 0.4.0
 
   openssl_ext:
-    github: stakach/openssl_ext
-    version: 1.2.0
+    git: https://github.com/stakach/openssl_ext.git
+    version: 1.2.2
 
   radix:
-    github: luislavena/radix
+    git: https://github.com/luislavena/radix.git
     version: 0.3.9
 
   sqlite3:
-    github: crystal-lang/crystal-sqlite3
+    git: https://github.com/crystal-lang/crystal-sqlite3.git
     version: 0.16.0
 

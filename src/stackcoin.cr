@@ -1,19 +1,17 @@
 require "log"
 
+require "json_mapping" # TODO remove once deps no longer have usages of JSON.mapping
+
 require "dotenv"
 
 require "./stackcoin/*"
-
-stdout_backend = Log::IOBackend.new
-Log.builder.bind "*", :info, stdout_backend
-Log.builder.bind "stackcoin", :debug, stdout_backend
 
 StackCoin::Log.info { "Loading .env" }
 begin
   Dotenv.load
 end
 
-StackCoin::Log.info { "Creaitng /tmp/stackcoin" }
+StackCoin::Log.info { "Creating /tmp/stackcoin" }
 Dir.mkdir_p("/tmp/stackcoin/")
 
 config = StackCoin::Config.from_env

@@ -24,7 +24,7 @@ abstract class StackCoin::Bot::Command
     @banned = context.banned
     @config = context.config
     Command.lookup[@trigger] = self
-    Log.info { "Initialized command: #{self.class.name}" }
+    Log.debug { "Initialized command: #{self.class.name}" }
   end
 
   def send_msg(message, content)
