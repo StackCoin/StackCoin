@@ -11,7 +11,7 @@ begin
   Dotenv.load
 end
 
-StackCoin::Log.info { "Creaitng /tmp/stackcoin" }
+StackCoin::Log.info { "Creating /tmp/stackcoin" }
 Dir.mkdir_p("/tmp/stackcoin/")
 
 config = StackCoin::Config.from_env
