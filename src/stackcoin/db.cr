@@ -1,6 +1,7 @@
 require "sqlite3"
 require "db"
 require "file_utils"
+require "compress/gzip"
 
 class StackCoin::Database
   def initialize(@config : Config, @db : DB::Database)
@@ -49,13 +50,13 @@ class StackCoin::Database
   end
 
   def backup
-    db_file = @config.database_url.lchop "sqlite3://"
+    db_file = @config.database_url.lchop("sqlite3://")
     backup_file = "#{db_file}.backup.#{Time.utc}.gz"
     Log.info { "gzipping #{db_file} to #{backup_file}..." }
 
     File.open(db_file, "r") do |database_file|
       File.open(backup_file, "w") do |backup_file|
-        Gzip::Writer.open(backup_file) do |gzip|
+        Compress::Gzip::Writer.open(backup_file) do |gzip|
           IO.copy(database_file, gzip)
         end
       end

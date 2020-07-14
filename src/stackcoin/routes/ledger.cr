@@ -7,10 +7,9 @@ class StackCoin::Api
     end
 
     class LedgerPostBody
-      JSON.mapping(
-        to_id: UInt64,
-        amount: Int32,
-      )
+      include JSON::Serializable
+      property to_id : UInt64
+      property amount : Int32
     end
 
     def setup
