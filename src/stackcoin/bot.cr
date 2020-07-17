@@ -28,6 +28,19 @@ class StackCoin::Bot
     end
   end
 
+  def self.cleaned_message_content(prefix, message_content)
+    cleaned = message_content.strip.split(' ').select { |i| i != "" }
+
+    cleaned[0] = cleaned[0].downcase.lchop(prefix)
+
+    if cleaned[0] == "" && cleaned.size >= 2
+      cleaned.shift
+      cleaned[0] = cleaned[0].downcase.lchop(prefix)
+    end
+
+    cleaned
+  end
+
   def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth, banned : Banned)
     @client = Discord::Client.new(token: config.token, client_id: config.client_id)
     @cache = Discord::Cache.new(@client)
@@ -66,7 +79,7 @@ class StackCoin::Bot
       msg = message.content
 
       begin
-        next if !msg.starts_with?(config.prefix)
+        next if !msg.downcase.starts_with?(config.prefix)
 
         if banned.is_banned(message.author.id.to_u64)
           next
@@ -74,8 +87,13 @@ class StackCoin::Bot
 
         @client.trigger_typing_indicator(message.channel_id)
 
-        msg_parts = msg.split " "
-        command_key = msg_parts.first.lchop(config.prefix)
+        msg_parts = Bot.cleaned_message_content(config.prefix, message.content)
+        command_key = msg_parts.first
+
+        if command_key == ""
+          command_lookup["help"].invoke(message)
+          next
+        end
 
         if command_lookup.has_key?(command_key)
           command_lookup[command_key].invoke(message)
