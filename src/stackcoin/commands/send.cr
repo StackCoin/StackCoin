@@ -14,7 +14,7 @@ class StackCoin::Bot
       mention = mentions[0]
       return Result::Error.new(@client, message, "Mentioned a non-user entity in your message") if !mention.is_a? Discord::Mention::User
 
-      msg_parts = message.content.split(" ")
+      msg_parts = Bot.cleaned_message_content(@config.prefix, message.content)
       return Result::Error.new(@client, message, "Too many arguments in message, found #{msg_parts.size}") if msg_parts.size > 3
 
       amount = msg_parts.last.to_i?

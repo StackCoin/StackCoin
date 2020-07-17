@@ -33,7 +33,7 @@ class StackCoin::Bot
     end
 
     def invoke(message)
-      msg_parts = message.content.split(" ")
+      msg_parts = Bot.cleaned_message_content(@config.prefix, message.content)
       return Result::Error.new(@client, message, "Too many arguments in message, found #{msg_parts.size}") if msg_parts.size > 2
 
       if msg_parts.size == 1
