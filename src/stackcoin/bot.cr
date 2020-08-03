@@ -28,10 +28,14 @@ class StackCoin::Bot
     end
   end
 
+  def self.simplified_message_content_for_parsing(message_content)
+    message_content.downcase.gsub("$", "s")
+  end
+
   def self.cleaned_message_content(prefix, message_content)
     cleaned = message_content.strip.split(' ').select { |i| i != "" }
 
-    cleaned[0] = cleaned[0].downcase.lchop(prefix)
+    cleaned[0] = Bot.simplified_message_content_for_parsing(cleaned[0]).lchop(prefix)
 
     if cleaned[0] == "" && cleaned.size >= 2
       cleaned.shift
@@ -79,7 +83,7 @@ class StackCoin::Bot
       msg = message.content
 
       begin
-        next if !msg.downcase.starts_with?(config.prefix)
+        next if !Bot.simplified_message_content_for_parsing(msg).starts_with?(config.prefix)
 
         if banned.is_banned(message.author.id.to_u64)
           next
