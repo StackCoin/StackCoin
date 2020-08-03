@@ -124,9 +124,7 @@ class StackCoin::Statistics < StackCoin::Bank
     stdout = process.output.gets_to_end
     stderr = process.error.gets_to_end
 
-    if stderr != ""
-      raise stderr
-    end
+    raise stderr if stderr != ""
 
     Result::Graph::Success.new(File.open(image_filename))
   end

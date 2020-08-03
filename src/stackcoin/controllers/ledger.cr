@@ -30,4 +30,3 @@ class Ledger < Application
     end
   end
 end
-

@@ -21,10 +21,7 @@ class Users < Application
 
     bal = bank.balance(id)
 
-    if bal.is_a?(Nil)
-      # TODO 404
-      return
-    end
+    head :not_found if bal.nil?
 
     user = Hash(String, String | Int32).new
     user["id"] = id.to_s
