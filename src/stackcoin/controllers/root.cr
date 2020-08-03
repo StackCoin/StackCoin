@@ -3,8 +3,8 @@ class Root < Application
 
   def index
     respond_with do
-      html template("home.ecr")
       json(nil) # TODO root
+      html template("home.ecr")
     end
   end
 end
