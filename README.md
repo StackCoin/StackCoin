@@ -33,7 +33,9 @@ crystal run src/stackcoin.cr # run bot!
 - [z64](https://github.com/z64) - made small typo fix, and fixed the specs running, but also maintainer of discordcr, and wrote code that has influenced this bot heavily
 - [Mudkip](https://github.com/Mudkip) - wrote the `s!unban` command, since he was banned for a short period of time while the feature did not exist :)
 - [SteveParson](https://github.com/SteveParson) - wrote the first iteration of the `s!leaderboard` command
+- [jonyick](https://github.com/jonyick) - increased the max value that can be sent in a single transaction from `10k` -> `100k`
 - [ranguli](https://github.com/ranguli) - removed the header in the readme as a meme
+- [rfh473](https://github.com/rfh473) - gave some much needed feedback on the impl. of how stackcoin parses `$` as `s`
 
 ---
 
