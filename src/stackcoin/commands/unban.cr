@@ -2,6 +2,7 @@ class StackCoin::Bot
   class Unban < Command
     def initialize(context : Context)
       @trigger = "unban"
+      @aliases = ["pardon"]
       @usage = "<@user>"
       @desc = "Allows a banned account to use the bot again"
       super(context)

@@ -74,12 +74,6 @@ class StackCoin::Statistics < StackCoin::Bank
       SQL
   end
 
-  def leaderboard(limit = 5)
-    self.handle_balance_result_set(<<-SQL, [limit])
-      SELECT user_id, bal FROM balance ORDER BY bal DESC LIMIT ?
-      SQL
-  end
-
   def graph(id)
     query = <<-SQL
       SELECT time, to_bal, amount FROM ledger

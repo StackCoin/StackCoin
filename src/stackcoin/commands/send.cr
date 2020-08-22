@@ -2,6 +2,7 @@ class StackCoin::Bot
   class Send < Command
     def initialize(context : Context)
       @trigger = "send"
+      @aliases = ["transfer"]
       @usage = "<@user> <#amount>"
       @desc = "Send your STK to others"
       super(context)

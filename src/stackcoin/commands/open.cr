@@ -2,6 +2,7 @@ class StackCoin::Bot
   class Open < Command
     def initialize(context : Context)
       @trigger = "open"
+      @aliases = ["create"]
       @desc = "Open an account"
       super(context)
     end

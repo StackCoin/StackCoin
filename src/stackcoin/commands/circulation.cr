@@ -2,6 +2,7 @@ class StackCoin::Bot
   class Circulation < Command
     def initialize(context : Context)
       @trigger = "circulation"
+      @aliases = ["total"]
       @desc = "See the STK currently in circulation"
       super(context)
     end

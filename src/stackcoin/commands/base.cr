@@ -3,8 +3,10 @@ end
 
 abstract class StackCoin::Bot::Command
   class_getter lookup : Hash(String, Command) = {} of String => Command
+  class_getter commands : Hash(String, Command) = {} of String => Command
 
   getter trigger : String = ""
+  getter aliases : Array(String) = [] of String
   getter usage : String | Nil
   getter desc : String = ""
   property client : Discord::Client
@@ -23,7 +25,13 @@ abstract class StackCoin::Bot::Command
     @auth = context.auth
     @banned = context.banned
     @config = context.config
+
+    Command.commands[@trigger] = self
     Command.lookup[@trigger] = self
+    @aliases.each do |command_alias|
+      Command.lookup[command_alias] = self
+    end
+
     Log.debug { "Initialized command: #{self.class.name}" }
   end
 

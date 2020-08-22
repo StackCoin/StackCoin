@@ -2,6 +2,7 @@ class StackCoin::Bot
   class Graph < Command
     def initialize(context : Context)
       @trigger = "graph"
+      @aliases = ["chart"]
       @desc = "Graph different data points."
       super(context)
     end

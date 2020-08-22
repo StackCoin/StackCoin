@@ -5,14 +5,13 @@ class StackCoin::Bot
 
     def initialize(context : Context)
       @trigger = "help"
+      @aliases = ["why"]
       @usage = "?<subcommand>"
       @desc = "This command you're seeing right now!"
       super(context)
 
-      command_lookup = Command.lookup
-
       all_fields = [] of Discord::EmbedField
-      command_lookup.each_value do |command|
+      Command.commands.each_value do |command|
         name = "#{command.trigger}"
         name = "#{name} - #{command.usage}" if command.usage
 

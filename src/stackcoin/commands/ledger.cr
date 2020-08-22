@@ -2,6 +2,7 @@ class StackCoin::Bot
   class Ledger < Command
     def initialize(context : Context)
       @trigger = "ledger"
+      @aliases = ["transactions"]
       @usage = "?<date> ?<@user-a> ?<@user-b>"
       @desc = "View/search previous transactions"
       super(context)
