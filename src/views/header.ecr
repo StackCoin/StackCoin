@@ -1,21 +1,70 @@
 <style>
+a {
+    text-decoration: none;
+    color: black;
+}
+.center {
+    text-align: center;
+}
+.half-opacity {
+    opacity: 0.5;
+}
+.italic {
+    font-style: italic;
+}
 body {
     margin: 2rem;
     font-family: sans-serif;
 }
-.bal {
+.box {
     margin: 1rem 0;
     padding: 1rem;
     border-radius: 4px;
     border: 1px solid rgba(0,0,0,0.25);
 }
-.bal p {
+.box p {
     margin: 0;
+}
+.pagination {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+}
+.pagination .count {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.pagination .box {
+    padding: .5rem 1rem;
+}
+.pagination a {
+    font-weight: 900;
+}
+.user {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    grid-template-rows: 4rem;
+}
+.user img {
+    height: 100%;
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.25);
+}
+.user .info {
+    display: flex;
+    align-items: center;
+    margin-left: 1.4rem;
+}
+.user .info p:last-of-type {
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
 }
 </style>
 
 <a href="/">
     <p align="center">
-        <img width="512" height="512" src="https://i.imgur.com/ou12BG6.png">
+        <img width="256" height="256" src="https://i.imgur.com/ou12BG6.png">
     </p>
 </a>

@@ -57,7 +57,7 @@ class StackCoin::Statistics < StackCoin::Bank
     @@instance.not_nil!.as(Statistics)
   end
 
-  private def handle_balance_result_set(query, args)
+  private def handle_balance_result_set(query, args = nil)
     balances = {} of UInt64 => Int32
     @db.query(query, args: args) do |rs|
       rs.each do
@@ -68,9 +68,9 @@ class StackCoin::Statistics < StackCoin::Bank
     balances
   end
 
-  def all_balances
-    self.handle_balance_result_set(<<-SQL, nil)
-      SELECT user_id, bal FROM balance
+  def all_balances(limit, offset)
+    self.handle_balance_result_set(<<-SQL, [limit, offset])
+      SELECT user_id, bal FROM balance ORDER BY bal DESC LIMIT ? OFFSET ?
       SQL
   end
 

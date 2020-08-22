@@ -1,13 +1,34 @@
 class Users < Application
+  BASE = "/users/"
   base "/users/"
 
-  def index
-    users = Hash(String, Hash(String, UInt64 | Int32)).new
+  PAGINATION_LIMIT = 15
 
-    stats.all_balances.each do |id, balance|
-      users[id.to_s] = Hash(String, UInt64 | Int32).new
-      users[id.to_s]["id"] = id
-      users[id.to_s]["bal"] = balance
+  def formatted_user(user, balance)
+    {
+      id:       user.id,
+      username: user.username,
+      avatar:   user.avatar_url,
+      balance: balance,
+    }
+  end
+
+  def index
+    limit = (params["limit"]? || PAGINATION_LIMIT).to_i32
+    offset = (params["offset"]? || 0).to_i32
+
+    head :bad_request if limit > PAGINATION_LIMIT || limit < 0 || offset < 0
+
+    users = [] of NamedTuple(
+      id: Discord::Snowflake,
+      username: String,
+      avatar: String,
+      balance: Int32
+    )
+
+    stats.all_balances(limit, offset).each do |id, balance|
+      user = bot.cache.resolve_user(id)
+      users << formatted_user(user, balance)
     end
 
     respond_with do
@@ -19,13 +40,11 @@ class Users < Application
   def show
     id = params["id"].to_u64
 
-    bal = bank.balance(id)
+    balance = bank.balance(id)
 
-    head :not_found if bal.nil?
+    head :not_found if balance.nil?
 
-    user = Hash(String, String | Int32).new
-    user["id"] = id.to_s
-    user["bal"] = bal.to_s
+    user = formatted_user(bot.cache.resolve_user(id), balance)
 
     respond_with do
       json(user)

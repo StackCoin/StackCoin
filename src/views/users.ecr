@@ -1,4 +1,13 @@
 <%= template("header.ecr") %>
-<%- users.each do |id, user| -%>
+<%= template("pagination.ecr") %>
+<%- if users.size == 0 %>
+<div class="center italic half-opacity">
+  <p>*empty*</p>
+</div>
+<%- end -%>
+<%- users.each do |user| -%>
 <%= template("user-base.ecr") %>
+<%- end -%>
+<%- if users.size != 0 && users.size == limit -%>
+<%= template("pagination.ecr") %>
 <%- end -%>

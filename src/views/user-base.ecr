@@ -1,4 +1,13 @@
-<div class="bal">
-    <a href="/users/<%= id %>/"><p>ID: <%= id %></p></a>
-    <p>Bal: <%= user["bal"] %></p>
-</div>
+<a href="/users/<%= user[:id] %>/">
+    <div class="box user">
+        <div class="avatar">
+            <img src="<%= HTML.escape(user[:avatar]) %>"/>
+        </div>
+        <div class="info">
+            <div>
+                <p><%= HTML.escape(user[:username]) %></p>
+                <p><%= user[:balance] %> STK</p>
+            </div>
+        </div>
+    </div>
+</a>

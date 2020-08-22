@@ -1,0 +1,27 @@
+<div class="pagination">
+    <%- if offset != 0 -%>
+    <a href="<%= BASE %>?<%= pagination_params_back(limit, offset) %>">
+        <div class="box">
+            <p>&lt;</p>
+        </div>
+    </a>
+    <%- else -%>
+    <div></div>
+    <%- end -%>
+
+    <div class="count">
+        <div>
+            <p>Page <%= (offset // limit + 1) %></p>
+        </div>
+    </div>
+
+    <%- if users.size != 0 && users.size == limit -%>
+    <a href="<%= BASE %>?<%= pagination_params_next(limit, offset) %>">
+        <div class="box">
+            <p>&gt;</p>
+        </div>
+    </a>
+    <%- else -%>
+    <div></div>
+    <%- end -%>
+</div>

@@ -11,6 +11,19 @@ abstract class Application < ActionController::Base
     StackCoin::Api.prod?
   end
 
+  def pagination_params_back(limit, old_offset)
+    new_offset = old_offset - limit
+
+    new_offset = 0 if new_offset < 0
+
+    "limit=#{limit}&offset=#{new_offset}"
+  end
+
+  def pagination_params_next(limit, old_offset)
+    new_offset = old_offset + limit
+    "limit=#{limit}&offset=#{new_offset}"
+  end
+
   rescue_from JSON::MappingError do |error|
     Log.debug(exception: error) { "missing/extraneous properties in client JSON" }
 
@@ -68,5 +81,9 @@ abstract class Application < ActionController::Base
 
   def auth
     StackCoin::Auth.get
+  end
+
+  def bot
+    StackCoin::Bot.get
   end
 end

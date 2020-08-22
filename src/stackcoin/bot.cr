@@ -41,6 +41,16 @@ class StackCoin::Bot
     cleaned
   end
 
+  @@instance : self? = nil
+
+  def self.get
+    @@instance.not_nil!
+  end
+
+  def cache
+    @cache
+  end
+
   def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth, banned : Banned)
     @client = Discord::Client.new(token: config.token, client_id: config.client_id)
     @cache = Discord::Cache.new(@client)
@@ -49,6 +59,8 @@ class StackCoin::Bot
     @bank = bank
     @auth = auth
     @stats = stats
+
+    @@instance = self
 
     context = Context.new(@client, @cache, bank, stats, auth, banned, config)
 
