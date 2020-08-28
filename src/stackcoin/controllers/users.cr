@@ -1,30 +1,27 @@
 class Users < Application
-  BASE = "/users/"
+  getter pagination_base = "/users/"
   base "/users/"
 
-  PAGINATION_LIMIT = 15
+  PAGINATION_LIMIT = 3
 
   def formatted_user(user, balance)
     {
       id:       user.id,
       username: user.username,
       avatar:   user.avatar_url,
-      balance: balance,
+      balance:  balance,
     }
   end
 
   def index
-    limit = (params["limit"]? || PAGINATION_LIMIT).to_i32
-    offset = (params["offset"]? || 0).to_i32
-
-    head :bad_request if limit > PAGINATION_LIMIT || limit < 0 || offset < 0
+    limit, offset = pagination(PAGINATION_LIMIT)
+    head :bad_request if !valid_pagination(PAGINATION_LIMIT, limit, offset)
 
     users = [] of NamedTuple(
       id: Discord::Snowflake,
       username: String,
       avatar: String,
-      balance: Int32
-    )
+      balance: Int32)
 
     stats.all_balances(limit, offset).each do |id, balance|
       user = bot.cache.resolve_user(id)
@@ -33,7 +30,12 @@ class Users < Application
 
     respond_with do
       json(users)
-      html template("users.ecr")
+      html do
+        has_previous = offset != 0
+        is_empty = users.size == 0
+        has_next = !is_empty && users.size == limit
+        template("users.ecr")
+      end
     end
   end
 
@@ -45,6 +47,8 @@ class Users < Application
     head :not_found if balance.nil?
 
     user = formatted_user(bot.cache.resolve_user(id), balance)
+
+    limit, offset = pagination(PAGINATION_LIMIT)
 
     respond_with do
       json(user)

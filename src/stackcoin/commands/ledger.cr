@@ -38,7 +38,7 @@ class StackCoin::Bot
         end
       end
 
-      report = @stats.ledger(dates, from_ids, to_ids)
+      report = @stats.ledger(dates: dates, from_ids: from_ids, to_ids: to_ids)
 
       report.results.each_with_index do |result, i|
         begin

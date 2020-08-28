@@ -11,6 +11,16 @@ abstract class Application < ActionController::Base
     StackCoin::Api.prod?
   end
 
+  def pagination(pagination_limit)
+    limit = (params["limit"]? || pagination_limit).to_i32
+    offset = (params["offset"]? || 0).to_i32
+    [limit, offset]
+  end
+
+  def valid_pagination(pagination_limit, limit, offset)
+    limit < pagination_limit || limit > 0 || offset > 0
+  end
+
   def pagination_params_back(limit, old_offset)
     new_offset = old_offset - limit
 

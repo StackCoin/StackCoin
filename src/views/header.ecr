@@ -3,6 +3,17 @@ a {
     text-decoration: none;
     color: black;
 }
+body {
+    margin: 2rem;
+    font-family: sans-serif;
+}
+iframe {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.25);
+}
+
 .center {
     text-align: center;
 }
@@ -12,10 +23,7 @@ a {
 .italic {
     font-style: italic;
 }
-body {
-    margin: 2rem;
-    font-family: sans-serif;
-}
+
 .box {
     margin: 1rem 0;
     padding: 1rem;
@@ -25,10 +33,24 @@ body {
 .box p {
     margin: 0;
 }
+
+.info {
+    display: flex;
+    align-items: center;
+    margin: 0 1.3rem;
+}
+.info p {
+    text-overflow: ellipsis;
+}
+.info p:last-of-type {
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+}
+
 .pagination {
     width: 100%;
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 2.8rem 1fr 2.8rem;
 }
 .pagination .count {
     display: flex;
@@ -41,30 +63,44 @@ body {
 .pagination a {
     font-weight: 900;
 }
+
 .user {
-    display: grid;
-    grid-template-columns: 4rem 1fr;
-    grid-template-rows: 4rem;
+    display: flex;
 }
 .user img {
-    height: 100%;
-    width: 100%;
+    height: 4rem;
+    width: 4rem;
     border-radius: 4px;
     border: 1px solid rgba(0,0,0,0.25);
 }
-.user .info {
-    display: flex;
-    align-items: center;
-    margin-left: 1.4rem;
+
+.transaction {
+    display: grid;
+    grid-template-columns: 1.2fr .2fr 0.8fr .2fr 1.2fr;
 }
-.user .info p:last-of-type {
-    margin-top: 0.3rem;
-    font-size: 0.8rem;
+.transaction a {
+    align-self: center;
+}
+
+.transaction a > .info {
+    flex-direction: column;
+    text-align: center;
+}
+.transaction .user {
+}
+.transaction .to {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+.transaction .to .info {
+    flex-direction: row-reverse;
 }
 </style>
 
+<%- if !params["iframe"]? -%>
 <a href="/">
     <p align="center">
         <img width="256" height="256" src="https://i.imgur.com/ou12BG6.png">
     </p>
 </a>
+<%- end -%>

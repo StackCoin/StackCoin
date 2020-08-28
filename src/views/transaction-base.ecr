@@ -1,0 +1,40 @@
+<div class="box transaction">
+    <a target="_parent" href="/users/<%= transaction[:from][:id] %>/">
+        <div class="from user box">
+            <div class="avatar left">
+                <img src="<%= HTML.escape(transaction[:from][:avatar]) %>"/>
+            </div>
+            <div class="info">
+                <div>
+                    <p><%= HTML.escape(transaction[:from][:username]) %></p>
+                    <p><%= transaction[:from][:balance] %> STK</p>
+                </div>
+            </div>
+        </div>
+    </a>
+
+    <div></div>
+
+    <a target="_parent" href="/ledger/<%= transaction[:id] %>/">
+        <div class="box info">
+            <p><%= transaction[:amount] %> STK</p>
+            <p><%= transaction[:time] %></p>
+        </div>
+    </a>
+
+    <div></div>
+
+    <a target="_parent" href="/users/<%= transaction[:to][:id] %>/">
+        <div class="to user box">
+            <div class="avatar right">
+                <img src="<%= HTML.escape(transaction[:to][:avatar]) %>"/>
+            </div>
+            <div class="info">
+                <div>
+                    <p><%= HTML.escape(transaction[:to][:username]) %></p>
+                    <p><%= transaction[:to][:balance] %> STK</p>
+                </div>
+            </div>
+        </div>
+    </a>
+</div>

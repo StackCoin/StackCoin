@@ -34,7 +34,7 @@ StackCoin::Log.info { "Spawning API" }
 spawn (api.run!)
 
 StackCoin::Log.info { "Spawning Bot" }
-spawn (bot.run!)
+# spawn (bot.run!)
 
 {Signal::INT, Signal::TERM}.each &.trap do
   StackCoin::Log.info { "Got signal to die" }

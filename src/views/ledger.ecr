@@ -1,8 +1,8 @@
 <%= template("header.ecr") %>
 <%= template("pagination.ecr") %>
 
-<%- users.each do |user| -%>
-<%= template("user-base.ecr") %>
+<%- transactions.each do |transaction| -%>
+<%= template("transaction-base.ecr") %>
 <%- end -%>
 
 <%- if has_next -%>
