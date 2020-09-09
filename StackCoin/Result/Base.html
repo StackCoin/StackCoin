@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Crystal Docs 0.34.0">
+<meta name="crystal_docs.project_version" content="HEAD">
+<meta name="crystal_docs.project_name" content="stackcoin">
+
+
+<link href="../../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../../js/doc.js"></script>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+
+  <meta id="repository-name" content="stackcoin">
+  <title>StackCoin::Result::Base - stackcoin HEAD</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../../";
+  </script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../../index.html">
+          stackcoin
+        </a>
+      </h1>
+
+      <span class="project-version">
+        HEAD
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results" class="hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="stackcoin/CrystalLogHandler" data-name="crystalloghandler">
+      <a href="../../CrystalLogHandler.html">CrystalLogHandler</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="stackcoin/StackCoin" data-name="stackcoin">
+      <a href="../../StackCoin.html">StackCoin</a>
+      
+        <ul>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Api" data-name="stackcoin::api">
+      <a href="../../StackCoin/Api.html">Api</a>
+      
+        <ul>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Api/Auth" data-name="stackcoin::api::auth">
+      <a href="../../StackCoin/Api/Auth.html">Auth</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Api/Auth/AuthPostBody" data-name="stackcoin::api::auth::authpostbody">
+      <a href="../../StackCoin/Api/Auth/AuthPostBody.html">AuthPostBody</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Api/Context" data-name="stackcoin::api::context">
+      <a href="../../StackCoin/Api/Context.html">Context</a>
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Api/Ledger" data-name="stackcoin::api::ledger">
+      <a href="../../StackCoin/Api/Ledger.html">Ledger</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Api/Ledger/LedgerPostBody" data-name="stackcoin::api::ledger::ledgerpostbody">
+      <a href="../../StackCoin/Api/Ledger/LedgerPostBody.html">LedgerPostBody</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Api/Root" data-name="stackcoin::api::root">
+      <a href="../../StackCoin/Api/Root.html">Root</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Api/Route" data-name="stackcoin::api::route">
+      <a href="../../StackCoin/Api/Route.html">Route</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Api/User" data-name="stackcoin::api::user">
+      <a href="../../StackCoin/Api/User.html">User</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Auth" data-name="stackcoin::auth">
+      <a href="../../StackCoin/Auth.html">Auth</a>
+      
+        <ul>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Auth/Result" data-name="stackcoin::auth::result">
+      <a href="../../StackCoin/Auth/Result.html">Result</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Auth/Result/AccountCreated" data-name="stackcoin::auth::result::accountcreated">
+      <a href="../../StackCoin/Auth/Result/AccountCreated.html">AccountCreated</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Auth/Result/Authenticated" data-name="stackcoin::auth::result::authenticated">
+      <a href="../../StackCoin/Auth/Result/Authenticated.html">Authenticated</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Auth/Result/InvalidAccessToken" data-name="stackcoin::auth::result::invalidaccesstoken">
+      <a href="../../StackCoin/Auth/Result/InvalidAccessToken.html">InvalidAccessToken</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Auth/Result/InvalidToken" data-name="stackcoin::auth::result::invalidtoken">
+      <a href="../../StackCoin/Auth/Result/InvalidToken.html">InvalidToken</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Auth/Result/NoSuchAccount" data-name="stackcoin::auth::result::nosuchaccount">
+      <a href="../../StackCoin/Auth/Result/NoSuchAccount.html">NoSuchAccount</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Auth/Result/ValidAccessToken" data-name="stackcoin::auth::result::validaccesstoken">
+      <a href="../../StackCoin/Auth/Result/ValidAccessToken.html">ValidAccessToken</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Bank" data-name="stackcoin::bank">
+      <a href="../../StackCoin/Bank.html">Bank</a>
+      
+        <ul>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Bank/Result" data-name="stackcoin::bank::result">
+      <a href="../../StackCoin/Bank/Result.html">Result</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/BannedUser" data-name="stackcoin::bank::result::banneduser">
+      <a href="../../StackCoin/Bank/Result/BannedUser.html">BannedUser</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/InsufficientFunds" data-name="stackcoin::bank::result::insufficientfunds">
+      <a href="../../StackCoin/Bank/Result/InsufficientFunds.html">InsufficientFunds</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/InvalidAmount" data-name="stackcoin::bank::result::invalidamount">
+      <a href="../../StackCoin/Bank/Result/InvalidAmount.html">InvalidAmount</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/NoSuchAccount" data-name="stackcoin::bank::result::nosuchaccount">
+      <a href="../../StackCoin/Bank/Result/NoSuchAccount.html">NoSuchAccount</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/PreexistingAccount" data-name="stackcoin::bank::result::preexistingaccount">
+      <a href="../../StackCoin/Bank/Result/PreexistingAccount.html">PreexistingAccount</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/PrematureDole" data-name="stackcoin::bank::result::prematuredole">
+      <a href="../../StackCoin/Bank/Result/PrematureDole.html">PrematureDole</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/TransferSelf" data-name="stackcoin::bank::result::transferself">
+      <a href="../../StackCoin/Bank/Result/TransferSelf.html">TransferSelf</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bank/Result/TransferSuccess" data-name="stackcoin::bank::result::transfersuccess">
+      <a href="../../StackCoin/Bank/Result/TransferSuccess.html">TransferSuccess</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Banned" data-name="stackcoin::banned">
+      <a href="../../StackCoin/Banned.html">Banned</a>
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Bot" data-name="stackcoin::bot">
+      <a href="../../StackCoin/Bot.html">Bot</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Auth" data-name="stackcoin::bot::auth">
+      <a href="../../StackCoin/Bot/Auth.html">Auth</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Bal" data-name="stackcoin::bot::bal">
+      <a href="../../StackCoin/Bot/Bal.html">Bal</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Ban" data-name="stackcoin::bot::ban">
+      <a href="../../StackCoin/Bot/Ban.html">Ban</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Circulation" data-name="stackcoin::bot::circulation">
+      <a href="../../StackCoin/Bot/Circulation.html">Circulation</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Command" data-name="stackcoin::bot::command">
+      <a href="../../StackCoin/Bot/Command.html">Command</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Context" data-name="stackcoin::bot::context">
+      <a href="../../StackCoin/Bot/Context.html">Context</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Dole" data-name="stackcoin::bot::dole">
+      <a href="../../StackCoin/Bot/Dole.html">Dole</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Graph" data-name="stackcoin::bot::graph">
+      <a href="../../StackCoin/Bot/Graph.html">Graph</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Help" data-name="stackcoin::bot::help">
+      <a href="../../StackCoin/Bot/Help.html">Help</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Leaderboard" data-name="stackcoin::bot::leaderboard">
+      <a href="../../StackCoin/Bot/Leaderboard.html">Leaderboard</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Ledger" data-name="stackcoin::bot::ledger">
+      <a href="../../StackCoin/Bot/Ledger.html">Ledger</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Mark" data-name="stackcoin::bot::mark">
+      <a href="../../StackCoin/Bot/Mark.html">Mark</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Open" data-name="stackcoin::bot::open">
+      <a href="../../StackCoin/Bot/Open.html">Open</a>
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Bot/Result" data-name="stackcoin::bot::result">
+      <a href="../../StackCoin/Bot/Result.html">Result</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Result/Base" data-name="stackcoin::bot::result::base">
+      <a href="../../StackCoin/Bot/Result/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Result/Error" data-name="stackcoin::bot::result::error">
+      <a href="../../StackCoin/Bot/Result/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Send" data-name="stackcoin::bot::send">
+      <a href="../../StackCoin/Bot/Send.html">Send</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Bot/Unban" data-name="stackcoin::bot::unban">
+      <a href="../../StackCoin/Bot/Unban.html">Unban</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Config" data-name="stackcoin::config">
+      <a href="../../StackCoin/Config.html">Config</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Database" data-name="stackcoin::database">
+      <a href="../../StackCoin/Database.html">Database</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/DesignatedChannel" data-name="stackcoin::designatedchannel">
+      <a href="../../StackCoin/DesignatedChannel.html">DesignatedChannel</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="stackcoin/StackCoin/Result" data-name="stackcoin::result">
+      <a href="../../StackCoin/Result.html">Result</a>
+      
+        <ul>
+  
+  <li class=" current" data-id="stackcoin/StackCoin/Result/Base" data-name="stackcoin::result::base">
+      <a href="../../StackCoin/Result/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Result/Error" data-name="stackcoin::result::error">
+      <a href="../../StackCoin/Result/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Result/Success" data-name="stackcoin::result::success">
+      <a href="../../StackCoin/Result/Success.html">Success</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Statistics" data-name="stackcoin::statistics">
+      <a href="../../StackCoin/Statistics.html">Statistics</a>
+      
+        <ul>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Statistics/Result" data-name="stackcoin::statistics::result">
+      <a href="../../StackCoin/Statistics/Result.html">Result</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Statistics/Result/Base" data-name="stackcoin::statistics::result::base">
+      <a href="../../StackCoin/Statistics/Result/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Statistics/Result/Error" data-name="stackcoin::statistics::result::error">
+      <a href="../../StackCoin/Statistics/Result/Error.html">Error</a>
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Statistics/Result/Graph" data-name="stackcoin::statistics::result::graph">
+      <a href="../../StackCoin/Statistics/Result/Graph.html">Graph</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Statistics/Result/Graph/Error" data-name="stackcoin::statistics::result::graph::error">
+      <a href="../../StackCoin/Statistics/Result/Graph/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Statistics/Result/Graph/Success" data-name="stackcoin::statistics::result::graph::success">
+      <a href="../../StackCoin/Statistics/Result/Graph/Success.html">Success</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="stackcoin/StackCoin/Statistics/Result/Report" data-name="stackcoin::statistics::result::report">
+      <a href="../../StackCoin/Statistics/Result/Report.html">Report</a>
+      
+        <ul>
+  
+  <li class=" " data-id="stackcoin/StackCoin/Statistics/Result/Report/Transaction" data-name="stackcoin::statistics::result::report::transaction">
+      <a href="../../StackCoin/Statistics/Result/Report/Transaction.html">Transaction</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">class</span> StackCoin::Result::Base
+
+</h1>
+
+
+  <ul class="superclass-hierarchy"><li class="superclass"><a href="../../StackCoin/Result/Base.html">StackCoin::Result::Base</a></li><li class="superclass">Reference</li><li class="superclass">Object</li></ul>
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="included-modules" class="anchor" href="#included-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Included Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type">JSON::Serializable</li>
+    
+  </ul>
+
+
+
+
+
+  <h2>
+    <a id="direct-known-subclasses" class="anchor" href="#direct-known-subclasses">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Direct Known Subclasses
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type"><a href="../../StackCoin/Result/Error.html">StackCoin::Result::Error</a></li>
+    
+      <li class="other-type"><a href="../../StackCoin/Result/Success.html">StackCoin::Result::Success</a></li>
+    
+  </ul>
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      <a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L2" target="_blank">
+        stackcoin/result.cr
+      </a>
+    
+    <br/>
+  
+
+
+
+
+
+  <h2>
+    <a id="constructors" class="anchor" href="#constructors">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructors
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#new(pull:JSON::PullParser)-class-method" class="signature"><strong>.new</strong>(pull : JSON::PullParser)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#new(message)-class-method" class="signature"><strong>.new</strong>(message)</a>
+        
+      </li>
+    
+  </ul>
+
+
+
+
+
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#error:String?-instance-method" class="signature"><strong>#error</strong> : String?</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#error=(error:String?)-instance-method" class="signature"><strong>#error=</strong>(error : String?)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#message:String-instance-method" class="signature"><strong>#message</strong> : String</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#message=(message:String)-instance-method" class="signature"><strong>#message=</strong>(message : String)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#name-instance-method" class="signature"><strong>#name</strong></a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#success:String?-instance-method" class="signature"><strong>#success</strong> : String?</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#success=(success:String?)-instance-method" class="signature"><strong>#success=</strong>(success : String?)</a>
+        
+      </li>
+    
+  </ul>
+
+
+
+
+
+<div class="methods-inherited">
+  
+    
+
+
+    
+
+
+    
+
+
+  
+    
+
+
+    
+
+
+    
+
+
+  
+    
+
+
+    
+
+
+    
+
+
+  
+</div>
+
+
+  <h2>
+    <a id="constructor-detail" class="anchor" href="#constructor-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructor Detail
+  </h2>
+  
+    <div class="entry-detail" id="new(pull:JSON::PullParser)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(pull : JSON::PullParser)
+
+        <a class="method-permalink" href="#new(pull:JSON::PullParser)-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L3" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(message)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(message)
+
+        <a class="method-permalink" href="#new(message)-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L9" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+
+
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="error:String?-instance-method">
+      <div class="signature">
+        
+        def <strong>error</strong> : String?
+
+        <a class="method-permalink" href="#error:String?-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L6" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="error=(error:String?)-instance-method">
+      <div class="signature">
+        
+        def <strong>error=</strong>(error : String?)
+
+        <a class="method-permalink" href="#error=(error:String?)-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L6" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="message:String-instance-method">
+      <div class="signature">
+        
+        def <strong>message</strong> : String
+
+        <a class="method-permalink" href="#message:String-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L5" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="message=(message:String)-instance-method">
+      <div class="signature">
+        
+        def <strong>message=</strong>(message : String)
+
+        <a class="method-permalink" href="#message=(message:String)-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L5" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="name-instance-method">
+      <div class="signature">
+        
+        def <strong>name</strong>
+
+        <a class="method-permalink" href="#name-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L12" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="success:String?-instance-method">
+      <div class="signature">
+        
+        def <strong>success</strong> : String?
+
+        <a class="method-permalink" href="#success:String?-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L7" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="success=(success:String?)-instance-method">
+      <div class="signature">
+        
+        def <strong>success=</strong>(success : String?)
+
+        <a class="method-permalink" href="#success=(success:String?)-instance-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/jackharrhy/StackCoin/blob/aa1af14b894382571a4f2e590bc951c901b01d0b/src/stackcoin/result.cr#L7" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+
+</div>
+
+</body>
+</html>
