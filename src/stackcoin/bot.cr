@@ -22,9 +22,10 @@ class StackCoin::Bot
     getter stats : Statistics
     getter auth : StackCoin::Auth
     getter banned : StackCoin::Banned
+    getter designated_channel : StackCoin::DesignatedChannel
     getter config : Config
 
-    def initialize(@client, @cache, @bank, @stats, @auth, @banned, @config)
+    def initialize(@client, @cache, @bank, @stats, @auth, @banned, @designated_channel, @config)
     end
   end
 
@@ -45,7 +46,7 @@ class StackCoin::Bot
     cleaned
   end
 
-  def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth, banned : Banned)
+  def initialize(config : Config, bank : Bank, stats : Statistics, auth : StackCoin::Auth, banned : Banned, designated_channel : StackCoin::DesignatedChannel)
     @client = Discord::Client.new(token: config.token, client_id: config.client_id)
     @cache = Discord::Cache.new(@client)
     @client.cache = @cache
@@ -54,7 +55,7 @@ class StackCoin::Bot
     @auth = auth
     @stats = stats
 
-    context = Context.new(@client, @cache, bank, stats, auth, banned, config)
+    context = Context.new(@client, @cache, bank, stats, auth, banned, designated_channel, config)
 
     Log.info { "Initializing commands" }
     Auth.new(context)
@@ -69,6 +70,7 @@ class StackCoin::Bot
     Open.new(context)
     Send.new(context)
     Unban.new(context)
+    Mark.new(context)
 
     Help.new(context)
 
@@ -86,6 +88,16 @@ class StackCoin::Bot
         next if !Bot.simplified_message_content_for_parsing(msg).starts_with?(config.prefix)
 
         if banned.is_banned(message.author.id.to_u64)
+          next
+        end
+
+        if !designated_channel.is_permitted_to_reply_in(guild_id.not_nil!, message.channel_id)
+          designated_channel_for_guild = designated_channel.for_guild(guild_id.not_nil!)
+          message_to_nuke = @client.create_message(message.channel_id, "The designated channel for StackCoin messages in this guild is <##{designated_channel_for_guild}>, not <##{message.channel_id}>")
+          spawn do
+            sleep 10.seconds
+            @client.delete_message(message_to_nuke.channel_id, message_to_nuke.id)
+          end
           next
         end
 

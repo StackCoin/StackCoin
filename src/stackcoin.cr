@@ -22,12 +22,13 @@ database = StackCoin::Database.new(config, db)
 
 StackCoin::Log.info { "Initializing modules" }
 banned = StackCoin::Banned.new(db)
+designated_channel = StackCoin::DesignatedChannel.new(db)
 
 bank = StackCoin::Bank.new(db, banned)
 stats = StackCoin::Statistics.new(db, banned)
 auth = StackCoin::Auth.new(db, bank, config.jwt_secret_key)
 
-bot = StackCoin::Bot.new(config, bank, stats, auth, banned)
+bot = StackCoin::Bot.new(config, bank, stats, auth, banned, designated_channel)
 api = StackCoin::Api.new(config, bank, stats, auth)
 
 StackCoin::Log.info { "Spawning API" }

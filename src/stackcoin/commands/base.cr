@@ -13,6 +13,7 @@ abstract class StackCoin::Bot::Command
   property stats : Statistics
   property auth : StackCoin::Auth
   property banned : Banned
+  property designated_channel : DesignatedChannel
   property config : Config
 
   def initialize(context : Context)
@@ -22,6 +23,7 @@ abstract class StackCoin::Bot::Command
     @stats = context.stats
     @auth = context.auth
     @banned = context.banned
+    @designated_channel = context.designated_channel
     @config = context.config
     Command.lookup[@trigger] = self
     Log.debug { "Initialized command: #{self.class.name}" }
