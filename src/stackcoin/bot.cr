@@ -92,11 +92,14 @@ class StackCoin::Bot
         end
 
         if !designated_channel.is_permitted_to_reply_in(guild_id.not_nil!, message.channel_id)
-          designated_channel_for_guild = designated_channel.for_guild(guild_id.not_nil!)
-          message_to_nuke = @client.create_message(message.channel_id, "The designated channel for StackCoin messages in this guild is <##{designated_channel_for_guild}>, not <##{message.channel_id}>")
-          spawn do
-            sleep 10.seconds
-            @client.delete_message(message_to_nuke.channel_id, message_to_nuke.id)
+          if designated_channel_for_guild = designated_channel.for_guild(guild_id.not_nil!)
+            message_to_nuke = @client.create_message(message.channel_id, "The designated channel for StackCoin messages in this guild is <##{designated_channel_for_guild}>, not <##{message.channel_id}>")
+            spawn do
+              sleep 10.seconds
+              @client.delete_message(message_to_nuke.channel_id, message_to_nuke.id)
+            end
+          else
+            @client.create_message(message.channel_id, "This guild lacks a designated channel for StackCoin messages, therefore this bot will not function")
           end
           next
         end

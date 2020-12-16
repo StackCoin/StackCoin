@@ -18,8 +18,9 @@ class StackCoin::Api
     Log.info { "Initializing routes" }
     context = Context.new(bank, stats, auth, config)
 
-    Ledger.new(context)
     Auth.new(context)
+    Benefit.new(context)
+    Ledger.new(context)
     User.new(context)
 
     Root.new(context)

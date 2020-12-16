@@ -13,6 +13,12 @@ class StackCoin::Api
     end
 
     def setup
+      get "/ledger/" do |env|
+        ledger = @stats.ledger
+        next render("src/views/ledger.ecr") if should_return_html(env)
+        ledger.to_json
+      end
+
       post "/ledger" do |env|
         next unless env.request.body
         begin

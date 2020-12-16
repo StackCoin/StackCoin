@@ -42,7 +42,7 @@ shards:
 
   kemal:
     git: https://github.com/kemalcr/kemal.git
-    version: 0.26.1+git.commit.a8c0f09b858162bd13c96663febef5527b322a32
+    version: 0.27.0+git.commit.bf9f627ac789d2ebe573629904f02beb9e4089d5
 
   kilt:
     git: https://github.com/jeromegn/kilt.git
