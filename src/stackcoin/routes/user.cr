@@ -22,13 +22,7 @@ class StackCoin::Api
       end
 
       get "/user/" do |env|
-        users = Hash(String, Hash(String, UInt64 | Int32)).new
-        @stats.all_balances.each do |id, balance|
-          users[id.to_s] = Hash(String, UInt64 | Int32).new
-          users[id.to_s]["id"] = id
-          users[id.to_s]["bal"] = balance
-        end
-
+        users = @stats.all_balances
         next render("src/views/users.ecr") if should_return_html(env)
         users.to_json
       end

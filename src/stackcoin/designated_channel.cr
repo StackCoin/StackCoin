@@ -18,14 +18,14 @@ class StackCoin::DesignatedChannel
 
   def is_permitted_to_reply_in(guild_id : Discord::Snowflake, channel_id : Discord::Snowflake)
     if permitted_channel = @designated_channels[guild_id]?
-      return permitted_channel== channel_id
+      return permitted_channel == channel_id
     end
 
     true
   end
 
   def for_guild(guild_id : Discord::Snowflake)
-    @designated_channels[guild_id]
+    @designated_channels[guild_id]?
   end
 
   def mark(guild_id : Discord::Snowflake, channel_id : Discord::Snowflake)

@@ -64,10 +64,22 @@ class StackCoin::Statistics < StackCoin::Bank
     balances
   end
 
+  def ledger
+    @db.query_all(<<-SQL, as: {id : Int32, from_id : String, from_bal : Int32, to_id : String, to_bal : Int32, amount : Int32, time : Time})
+      SELECT id, from_id, from_bal, to_id, to_bal, amount, time FROM ledger
+    SQL
+  end
+
   def all_balances
-    self.handle_balance_result_set(<<-SQL, nil)
-      SELECT user_id, bal FROM balance
-      SQL
+    @db.query_all(<<-SQL, as: {id: Int32, user_id: String, bal: Int32})
+      SELECT id, user_id, bal FROM balance
+    SQL
+  end
+
+  def all_benefits
+    @db.query_all(<<-SQL, as: {id: Int32, user_id: String, user_bal: Int32, amount: Int32, time: Time})
+      SELECT id, user_id, user_bal, amount, time FROM benefit
+    SQL
   end
 
   def leaderboard(limit = 5)
