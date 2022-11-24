@@ -12,7 +12,7 @@ jobs:
       image: crystallang/crystal
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Deps.
         run: shards install
@@ -21,7 +21,7 @@ jobs:
         run: crystal docs
 
       - name: Deploy docs
-        uses: crazy-max/ghaction-github-pages@v1.2.5
+        uses: crazy-max/ghaction-github-pages@v3.1.0
         with:
           target_branch: gh-pages
           build_dir: docs
