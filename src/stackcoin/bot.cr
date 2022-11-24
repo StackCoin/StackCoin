@@ -87,6 +87,13 @@ class StackCoin::Bot
       begin
         next if !Bot.simplified_message_content_for_parsing(msg).starts_with?(config.prefix)
 
+        @client.create_message(
+          message.channel_id,
+          "Due to a oopsie on Jacks part, the database for StackCoin has been lost, rebuilding will be possible by scraping all previously posted messages, but this might take some time :("
+        )
+
+        next
+
         if banned.is_banned(message.author.id.to_u64)
           next
         end
