@@ -4,7 +4,9 @@ defmodule StackCoin.Bot.Discord.Commands do
   """
 
   alias Nostrum.Api.ApplicationCommand
-  alias StackCoin.Bot.Discord.Balance
+  alias Nostrum.Api
+  alias Nostrum.Constants.InteractionCallbackType
+  alias StackCoin.Bot.Discord.{Balance, Admin, Dole}
 
   @doc """
   Ensures Nostrum is connected and ready before proceeding.
@@ -26,7 +28,9 @@ defmodule StackCoin.Bot.Discord.Commands do
   """
   def command_definitions do
     [
-      Balance.definition()
+      Balance.definition(),
+      Admin.definition(),
+      Dole.definition()
     ]
   end
 
@@ -88,5 +92,38 @@ defmodule StackCoin.Bot.Discord.Commands do
       successes: Enum.map(successes, fn {:ok, cmd} -> cmd end),
       errors: Enum.map(errors, fn {:error, {name, error}} -> {name, error} end)
     }
+  end
+
+  @doc """
+  Sends an ephemeral error response for common error cases.
+  """
+  def send_error_response(interaction, error_type) do
+    content =
+      case error_type do
+        :guild_not_registered ->
+          "❌ This server is not registered with StackCoin."
+
+        {:wrong_channel, guild} ->
+          "❌ This command can only be used in the designated StackCoin channel: <##{guild.designated_channel_snowflake}>"
+
+        :user_not_found ->
+          "❌ You don't have a StackCoin account yet. Use `/dole` to get started!"
+
+        :insufficient_reserve_balance ->
+          "❌ The reserve system doesn't have enough StackCoins to give you dole!"
+
+        {:dole_already_given_today, next_timestamp} ->
+          "❌ You have already received your daily dole today, next dole available: <t:#{next_timestamp}:R>"
+
+        reason ->
+          "❌ An error occurred: #{inspect(reason)}"
+      end
+
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.channel_message_with_source(),
+      data: %{
+        content: content
+      }
+    })
   end
 end

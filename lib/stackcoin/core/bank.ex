@@ -1,0 +1,192 @@
+defmodule StackCoin.Core.Bank do
+  @moduledoc """
+  Core banking operations and user/guild management.
+  """
+
+  alias StackCoin.Repo
+  alias StackCoin.Schema.{User, DiscordUser, DiscordGuild, Transaction}
+  import Ecto.Query
+
+  @doc """
+  Gets a user by their Discord snowflake ID.
+  """
+  def get_user_by_discord_id(discord_snowflake) do
+    query =
+      from(du in DiscordUser,
+        join: u in User,
+        on: du.id == u.id,
+        where: du.snowflake == ^to_string(discord_snowflake),
+        select: u
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :user_not_found}
+      user -> {:ok, user}
+    end
+  end
+
+  @doc """
+  Gets a user by their internal user ID.
+  """
+  def get_user_by_id(user_id) do
+    case Repo.get(User, user_id) do
+      nil -> {:error, :user_not_found}
+      user -> {:ok, user}
+    end
+  end
+
+  @doc """
+  Creates a new user account with Discord information.
+  """
+  def create_user_account(discord_snowflake, username, opts \\ []) do
+    admin = Keyword.get(opts, :admin, false)
+    balance = Keyword.get(opts, :balance, 0)
+
+    Repo.transaction(fn ->
+      user_attrs = %{
+        username: username,
+        balance: balance,
+        admin: admin,
+        banned: false
+      }
+
+      with {:ok, user} <- Repo.insert(User.changeset(%User{}, user_attrs)),
+           discord_user_attrs = %{
+             id: user.id,
+             snowflake: to_string(discord_snowflake),
+             last_updated: NaiveDateTime.utc_now()
+           },
+           {:ok, _discord_user} <-
+             Repo.insert(DiscordUser.changeset(%DiscordUser{}, discord_user_attrs)) do
+        user
+      else
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  @doc """
+  Checks if a user has admin permissions.
+  """
+  def is_user_admin?(discord_snowflake) do
+    case get_user_by_discord_id(discord_snowflake) do
+      {:ok, user} -> {:ok, user.admin}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Gets a guild by its Discord snowflake ID.
+  """
+  def get_guild_by_discord_id(guild_snowflake) do
+    case Repo.get_by(DiscordGuild, snowflake: to_string(guild_snowflake)) do
+      nil -> {:error, :guild_not_registered}
+      guild -> {:ok, guild}
+    end
+  end
+
+  @doc """
+  Creates or updates a guild registration.
+  """
+  def register_guild(guild_snowflake, name, channel_snowflake) do
+    guild_attrs = %{
+      snowflake: to_string(guild_snowflake),
+      name: name,
+      designated_channel_snowflake: to_string(channel_snowflake),
+      last_updated: NaiveDateTime.utc_now()
+    }
+
+    case Repo.get_by(DiscordGuild, snowflake: to_string(guild_snowflake)) do
+      nil ->
+        Repo.insert(DiscordGuild.changeset(%DiscordGuild{}, guild_attrs))
+
+      existing_guild ->
+        Repo.update(DiscordGuild.changeset(existing_guild, guild_attrs))
+    end
+  end
+
+  @doc """
+  Checks if a channel is the designated StackCoin channel for a guild.
+  """
+  def validate_channel(guild, channel_id) do
+    if to_string(channel_id) == guild.designated_channel_snowflake do
+      {:ok, :valid}
+    else
+      {:error, {:wrong_channel, guild}}
+    end
+  end
+
+  @doc """
+  Creates a transaction between two users.
+  Updates both user balances and creates a transaction record.
+  """
+  def transfer_between_users(from_user_id, to_user_id, amount, label \\ nil) do
+    Repo.transaction(fn ->
+      with {:ok, from_user} <- get_user_by_id(from_user_id),
+           {:ok, to_user} <- get_user_by_id(to_user_id),
+           {:ok, _balance_check} <- check_sufficient_balance(from_user, amount),
+           {:ok, transaction} <- create_transaction(from_user, to_user, amount, label) do
+        transaction
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+  end
+
+  @doc """
+  Gets the balance of a user.
+  """
+  def get_user_balance(user_id) do
+    case get_user_by_id(user_id) do
+      {:ok, user} -> {:ok, user.balance}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Updates a user's balance directly.
+  """
+  def update_user_balance(user_id, new_balance) do
+    case get_user_by_id(user_id) do
+      {:ok, user} ->
+        user
+        |> User.changeset(%{balance: new_balance})
+        |> Repo.update()
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp check_sufficient_balance(user, amount) do
+    if user.balance >= amount do
+      {:ok, :sufficient}
+    else
+      {:error, :insufficient_balance}
+    end
+  end
+
+  defp create_transaction(from_user, to_user, amount, label) do
+    new_from_balance = from_user.balance - amount
+    new_to_balance = to_user.balance + amount
+
+    transaction_attrs = %{
+      from_id: from_user.id,
+      from_new_balance: new_from_balance,
+      to_id: to_user.id,
+      to_new_balance: new_to_balance,
+      amount: amount,
+      time: NaiveDateTime.utc_now(),
+      label: label
+    }
+
+    with {:ok, transaction} <-
+           Repo.insert(Transaction.changeset(%Transaction{}, transaction_attrs)),
+         {:ok, _from_user} <- update_user_balance(from_user.id, new_from_balance),
+         {:ok, _to_user} <- update_user_balance(to_user.id, new_to_balance) do
+      {:ok, transaction}
+    else
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+end

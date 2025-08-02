@@ -28,3 +28,5 @@ stackcoin-*.tar
 .env
 *.db*
 *.secret*
+
+.DS_Store
