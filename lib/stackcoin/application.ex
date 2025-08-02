@@ -5,7 +5,7 @@ defmodule StackCoin.Application do
   def start(_type, _args) do
     children = [
       StackCoin.Repo,
-      StackCoin.Bot.Discord,
+      StackCoin.Bot.Discord
     ]
 
     opts = [strategy: :one_for_one, name: StackCoin.Supervisor]
