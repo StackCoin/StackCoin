@@ -121,6 +121,9 @@ defmodule StackCoin.Bot.Discord.Commands do
         {:dole_already_given_today, next_timestamp} ->
           "❌ You have already received your daily dole today, next dole available: <t:#{next_timestamp}:R>"
 
+        :not_admin ->
+          "❌ You don't have permission to use admin commands."
+
         reason ->
           "❌ An error occurred: #{inspect(reason)}"
       end
