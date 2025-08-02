@@ -4,13 +4,13 @@ defmodule StackCoin.Bot.Discord.Commands do
   """
 
   alias Nostrum.Api.ApplicationCommand
-  alias Nostrum.Cache.Me
+  alias StackCoin.Bot.Discord.Balance
 
   @doc """
   Ensures Nostrum is connected and ready before proceeding.
   """
   def ensure_ready do
-    case Me.get() do
+    case Nostrum.Cache.Me.get() do
       nil ->
         Mix.shell().info("Waiting for Nostrum to connect...")
         :timer.sleep(1000)
@@ -26,14 +26,7 @@ defmodule StackCoin.Bot.Discord.Commands do
   """
   def command_definitions do
     [
-      %{
-        name: "hello",
-        description: "Say hello to the bot"
-      },
-      %{
-        name: "ping",
-        description: "Check if the bot is responsive"
-      }
+      Balance.definition()
     ]
   end
 

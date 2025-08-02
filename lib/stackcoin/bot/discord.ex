@@ -4,6 +4,8 @@ defmodule StackCoin.Bot.Discord do
   alias Nostrum.Api
   alias Nostrum.Struct.Interaction
 
+  alias StackCoin.Bot.Discord.Balance
+
   def handle_event(
         {:INTERACTION_CREATE, %Interaction{data: %{name: name}} = interaction, _ws_state}
       ) do
@@ -12,26 +14,8 @@ defmodule StackCoin.Bot.Discord do
 
   def handle_event(_), do: :ok
 
-  defp handle_slash_command("hello", interaction) do
-    response = %{
-      type: 4,
-      data: %{
-        content: "Hello there! 👋"
-      }
-    }
-
-    Api.Interaction.create_response(interaction, response)
-  end
-
-  defp handle_slash_command("ping", interaction) do
-    response = %{
-      type: 4,
-      data: %{
-        content: "Pong! 🏓"
-      }
-    }
-
-    Api.Interaction.create_response(interaction, response)
+  defp handle_slash_command("balance", interaction) do
+    Balance.handle(interaction)
   end
 
   defp handle_slash_command(command_name, interaction) do
