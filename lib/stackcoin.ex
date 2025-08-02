@@ -1,0 +1,2 @@
+defmodule StackCoin do
+end
