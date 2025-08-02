@@ -1,7 +1,0 @@
-*.swp
-
-lib/
-docs/
-
-.env
-*.db
