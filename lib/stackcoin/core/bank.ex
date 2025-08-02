@@ -76,6 +76,28 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
+  Checks if a Discord user has admin permissions, including config-based admin.
+  Creates admin user if they don't exist and are configured as admin.
+  """
+  def check_admin_permissions(discord_snowflake) do
+    admin_user_id = Application.get_env(:stackcoin, :admin_user_id)
+    user_snowflake_str = to_string(discord_snowflake)
+
+    cond do
+      admin_user_id && user_snowflake_str == admin_user_id ->
+        ensure_admin_user_exists(user_snowflake_str)
+        {:ok, :admin}
+
+      true ->
+        case is_user_admin?(user_snowflake_str) do
+          {:ok, true} -> {:ok, :admin}
+          {:ok, false} -> {:error, :not_admin}
+          {:error, :user_not_found} -> {:error, :not_admin}
+        end
+    end
+  end
+
+  @doc """
   Gets a guild by its Discord snowflake ID.
   """
   def get_guild_by_discord_id(guild_snowflake) do
@@ -109,6 +131,18 @@ defmodule StackCoin.Core.Bank do
           {:ok, guild} -> {:ok, {guild, :updated}}
           {:error, changeset} -> {:error, changeset}
         end
+    end
+  end
+
+  @doc """
+  Admin-only guild registration with permission check.
+  """
+  def admin_register_guild(admin_discord_snowflake, guild_snowflake, name, channel_snowflake) do
+    with {:ok, _admin_check} <- check_admin_permissions(admin_discord_snowflake) do
+      register_guild(guild_snowflake, name, channel_snowflake)
+    else
+      {:error, :not_admin} -> {:error, :not_admin}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -170,6 +204,19 @@ defmodule StackCoin.Core.Bank do
       {:ok, :sufficient}
     else
       {:error, :insufficient_balance}
+    end
+  end
+
+  defp ensure_admin_user_exists(user_snowflake) do
+    case get_user_by_discord_id(user_snowflake) do
+      {:ok, _user} ->
+        :ok
+
+      {:error, :user_not_found} ->
+        case create_user_account(user_snowflake, "Admin User", admin: true) do
+          {:ok, _user} -> :ok
+          {:error, _} -> :error
+        end
     end
   end
 

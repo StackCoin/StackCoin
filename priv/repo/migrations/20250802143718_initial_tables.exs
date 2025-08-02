@@ -13,6 +13,8 @@ defmodule StackCoin.Repo.Migrations.InitialTables do
       add(:last_given_dole, :naive_datetime)
       add(:admin, :boolean, null: false)
       add(:banned, :boolean, null: false)
+
+      timestamps(type: :utc_datetime)
     end
 
     create table(:internal_user, primary_key: false) do
@@ -83,7 +85,8 @@ defmodule StackCoin.Repo.Migrations.InitialTables do
       INSERT INTO "user"
         (
           id,
-          created_at,
+          inserted_at,
+          updated_at,
           username,
           balance,
           last_given_dole,
@@ -93,6 +96,7 @@ defmodule StackCoin.Repo.Migrations.InitialTables do
       VALUES
         (
           1,
+          datetime('now'),
           datetime('now'),
           'StackCoin Reserve System',
           0,
