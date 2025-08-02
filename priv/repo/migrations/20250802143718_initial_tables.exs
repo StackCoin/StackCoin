@@ -102,12 +102,18 @@ defmodule StackCoin.Repo.Migrations.InitialTables do
           0,
           0
         );
+      """,
+      """
+      DELETE FROM "user" WHERE id = 1;
+      """
+    )
 
+    execute(
+      """
       INSERT INTO "internal_user" (id, identifier) VALUES (1, 'StackCoin Reserve System');
       """,
       """
       DELETE FROM "internal_user" WHERE id = 1;
-      DELETE FROM "user" WHERE id = 1;
       """
     )
   end

@@ -3,8 +3,9 @@ defmodule StackCoin.Bot.Discord do
 
   alias Nostrum.Api
   alias Nostrum.Struct.Interaction
+  alias Nostrum.Constants.InteractionCallbackType
 
-  alias StackCoin.Bot.Discord.Balance
+  alias StackCoin.Bot.Discord.{Balance, Admin, Dole}
 
   def handle_event(
         {:INTERACTION_CREATE, %Interaction{data: %{name: name}} = interaction, _ws_state}
@@ -18,12 +19,19 @@ defmodule StackCoin.Bot.Discord do
     Balance.handle(interaction)
   end
 
+  defp handle_slash_command("admin", interaction) do
+    Admin.handle(interaction)
+  end
+
+  defp handle_slash_command("dole", interaction) do
+    Dole.handle(interaction)
+  end
+
   defp handle_slash_command(command_name, interaction) do
     response = %{
-      type: 4,
+      type: InteractionCallbackType.channel_message_with_source(),
       data: %{
-        content: "Unknown command: #{command_name}",
-        flags: 64
+        content: "Unknown command: #{command_name}"
       }
     }
 
