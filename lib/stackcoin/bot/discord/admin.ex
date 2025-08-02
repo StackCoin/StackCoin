@@ -4,6 +4,7 @@ defmodule StackCoin.Bot.Discord.Admin do
   """
 
   alias StackCoin.Core.Bank
+  alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Api.Guild
   alias Nostrum.Constants.{ApplicationCommandOptionType, InteractionCallbackType}
@@ -118,8 +119,7 @@ defmodule StackCoin.Bot.Discord.Admin do
     case Guild.get(guild_id) do
       {:ok, guild_info} ->
         case Bank.register_guild(guild_id, guild_info.name, channel_id) do
-          {:ok, guild} ->
-            action = if guild.inserted_at == guild.last_updated, do: :created, else: :updated
+          {:ok, {_guild, action}} ->
             send_success_response(interaction, action)
 
           {:error, changeset} ->
@@ -149,15 +149,7 @@ defmodule StackCoin.Bot.Discord.Admin do
             title: "✅ Server #{String.capitalize(action_text)}",
             description:
               "This channel has been #{action_text} as the StackCoin channel for this server.",
-            color: 0x00FF00,
-            fields: [
-              %{
-                name: "Channel",
-                value: "<##{interaction.channel_id}>",
-                inline: true
-              }
-            ],
-            timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+            color: Commands.stackcoin_color()
           }
         ]
       }

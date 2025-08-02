@@ -39,18 +39,9 @@ defmodule StackCoin.Bot.Discord.Dole do
       data: %{
         embeds: [
           %{
-            title: "💰 Daily Dole Received!",
-            description:
-              "You've received **#{transaction.amount}** StackCoins from the reserve system!",
-            color: 0x00FF00,
-            fields: [
-              %{
-                name: "Your New Balance",
-                value: "**#{transaction.to_new_balance}** StackCoins",
-                inline: true
-              }
-            ],
-            timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+            title: "#{Commands.stackcoin_emoji()} Received #{transaction.amount} StackCoins",
+            description: "New Balance: **#{transaction.to_new_balance}** StackCoins",
+            color: Commands.stackcoin_color()
           }
         ]
       }

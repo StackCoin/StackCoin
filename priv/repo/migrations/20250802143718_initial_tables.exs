@@ -13,8 +13,6 @@ defmodule StackCoin.Repo.Migrations.InitialTables do
       add(:last_given_dole, :naive_datetime)
       add(:admin, :boolean, null: false)
       add(:banned, :boolean, null: false)
-
-      timestamps(inserted_at: :created_at, updated_at: false)
     end
 
     create table(:internal_user, primary_key: false) do
