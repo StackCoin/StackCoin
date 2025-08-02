@@ -1,0 +1,11 @@
+services:
+  stackcoin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/data
+    environment:
+      - STACKCOIN_DATABASE=/data/stackcoin.db
+    env_file:
+      - .env
