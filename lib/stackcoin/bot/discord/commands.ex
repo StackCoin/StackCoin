@@ -8,6 +8,12 @@ defmodule StackCoin.Bot.Discord.Commands do
   alias Nostrum.Constants.InteractionCallbackType
   alias StackCoin.Bot.Discord.{Balance, Admin, Dole}
 
+  @stackcoin_emoji "🪙"
+  @stackcoin_color 0xFFFD5D
+
+  def stackcoin_emoji, do: @stackcoin_emoji
+  def stackcoin_color, do: @stackcoin_color
+
   @doc """
   Ensures Nostrum is connected and ready before proceeding.
   """
@@ -107,7 +113,7 @@ defmodule StackCoin.Bot.Discord.Commands do
           "❌ This command can only be used in the designated StackCoin channel: <##{guild.designated_channel_snowflake}>"
 
         :user_not_found ->
-          "❌ You don't have a StackCoin account yet. Use `/dole` to get started!"
+          "❌ You don't have a StackCoin account yet. Use `/dole` to get started."
 
         :insufficient_reserve_balance ->
           "❌ The reserve system doesn't have enough StackCoins to give you dole!"

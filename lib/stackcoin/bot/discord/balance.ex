@@ -38,22 +38,8 @@ defmodule StackCoin.Bot.Discord.Balance do
       data: %{
         embeds: [
           %{
-            title: "💰 Your StackCoin Balance",
-            description: "**#{user.balance}** StackCoins",
-            color: 0x00FF00,
-            fields: [
-              %{
-                name: "Username",
-                value: user.username,
-                inline: true
-              },
-              %{
-                name: "Account Status",
-                value: if(user.banned, do: "🚫 Banned", else: "✅ Active"),
-                inline: true
-              }
-            ],
-            timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+            title: "#{Commands.stackcoin_emoji()} You have #{user.balance} StackCoins",
+            color: Commands.stackcoin_color()
           }
         ]
       }

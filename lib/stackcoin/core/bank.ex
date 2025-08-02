@@ -87,6 +87,7 @@ defmodule StackCoin.Core.Bank do
 
   @doc """
   Creates or updates a guild registration.
+  Returns {:ok, {guild, :created}} or {:ok, {guild, :updated}} on success.
   """
   def register_guild(guild_snowflake, name, channel_snowflake) do
     guild_attrs = %{
@@ -98,10 +99,16 @@ defmodule StackCoin.Core.Bank do
 
     case Repo.get_by(DiscordGuild, snowflake: to_string(guild_snowflake)) do
       nil ->
-        Repo.insert(DiscordGuild.changeset(%DiscordGuild{}, guild_attrs))
+        case Repo.insert(DiscordGuild.changeset(%DiscordGuild{}, guild_attrs)) do
+          {:ok, guild} -> {:ok, {guild, :created}}
+          {:error, changeset} -> {:error, changeset}
+        end
 
       existing_guild ->
-        Repo.update(DiscordGuild.changeset(existing_guild, guild_attrs))
+        case Repo.update(DiscordGuild.changeset(existing_guild, guild_attrs)) do
+          {:ok, guild} -> {:ok, {guild, :updated}}
+          {:error, changeset} -> {:error, changeset}
+        end
     end
   end
 

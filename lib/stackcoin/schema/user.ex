@@ -14,8 +14,6 @@ defmodule StackCoin.Schema.User do
     has_many(:transactions_from, StackCoin.Schema.Transaction, foreign_key: :from_id)
     has_many(:transactions_to, StackCoin.Schema.Transaction, foreign_key: :to_id)
     has_many(:pumps, StackCoin.Schema.Pump, foreign_key: :signee_id)
-
-    timestamps(inserted_at: :created_at, updated_at: false)
   end
 
   def changeset(user, attrs) do
