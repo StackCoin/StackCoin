@@ -285,6 +285,53 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
+  Gets a user's balance history over time based on their transactions.
+  Returns a list of {timestamp, balance} tuples showing balance after each transaction.
+  """
+  def get_user_balance_history(user_id) do
+    with {:ok, user} <- get_user_by_id(user_id) do
+      query =
+        from(t in Transaction,
+          where: t.from_id == ^user_id or t.to_id == ^user_id,
+          order_by: [asc: t.time],
+          select: %{
+            time: t.time,
+            from_id: t.from_id,
+            to_id: t.to_id,
+            from_new_balance: t.from_new_balance,
+            to_new_balance: t.to_new_balance
+          }
+        )
+
+      transactions = Repo.all(query)
+
+      balance_history =
+        transactions
+        |> Enum.map(fn transaction ->
+          balance =
+            if transaction.from_id == user_id do
+              transaction.from_new_balance
+            else
+              transaction.to_new_balance
+            end
+
+          {transaction.time, balance}
+        end)
+
+      # Add current balance as the latest point if there are transactions
+      final_history =
+        case balance_history do
+          [] -> [{NaiveDateTime.utc_now(), user.balance}]
+          _ -> balance_history ++ [{NaiveDateTime.utc_now(), user.balance}]
+        end
+
+      {:ok, final_history}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
   Searches transactions with various filters.
   Options:
   - :from_user_id - filter by sender
