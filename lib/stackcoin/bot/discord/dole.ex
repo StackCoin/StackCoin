@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Dole do
   Discord dole command implementation.
   """
 
-  alias StackCoin.Core.{Bank, Reserve}
+  alias StackCoin.Core.{Reserve, User}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -22,8 +22,8 @@ defmodule StackCoin.Bot.Discord.Dole do
   Handles the dole command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- Bank.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- Bank.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
          {:ok, user} <- get_or_create_user(interaction.user),
          {:ok, transaction} <- Reserve.transfer_dole_to_user(user.id) do
       send_success_response(interaction, user, transaction)
@@ -34,13 +34,13 @@ defmodule StackCoin.Bot.Discord.Dole do
   end
 
   defp get_or_create_user(discord_user) do
-    case Bank.get_user_by_discord_id(discord_user.id) do
+    case User.get_user_by_discord_id(discord_user.id) do
       {:ok, user} ->
         {:ok, user}
 
       {:error, :user_not_found} ->
         username = discord_user.username
-        Bank.create_user_account(discord_user.id, username)
+        User.create_user_account(discord_user.id, username)
 
       {:error, reason} ->
         {:error, reason}

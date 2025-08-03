@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Transactions do
   Discord transactions command implementation.
   """
 
-  alias StackCoin.Core.Bank
+  alias StackCoin.Core.{Bank, User}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -52,8 +52,8 @@ defmodule StackCoin.Bot.Discord.Transactions do
   Handles the transactions command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- Bank.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- Bank.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
          {:ok, search_opts} <- parse_search_options(interaction),
          {:ok, transactions} <- Bank.search_transactions(search_opts) do
       send_transactions_response(interaction, transactions, search_opts)
@@ -110,7 +110,7 @@ defmodule StackCoin.Bot.Discord.Transactions do
   defp get_user_id_from_option(nil), do: nil
 
   defp get_user_id_from_option(discord_snowflake) do
-    case Bank.get_user_by_discord_id(discord_snowflake) do
+    case User.get_user_by_discord_id(discord_snowflake) do
       {:ok, user} -> user.id
       {:error, _} -> nil
     end

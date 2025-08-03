@@ -4,7 +4,7 @@ defmodule StackCoinTest.Bot.Discord.Balance do
   import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.{Admin, Balance}
-  alias StackCoin.Core.Bank
+  alias StackCoin.Core.{Bank, User}
 
   setup do
     # Ensure clean database state for each test
@@ -59,11 +59,11 @@ defmodule StackCoinTest.Bot.Discord.Balance do
     end
 
     # Verify guild was created
-    {:ok, guild} = Bank.get_guild_by_discord_id(guild_id)
+    {:ok, guild} = User.get_guild_by_discord_id(guild_id)
     assert guild.designated_channel_snowflake == to_string(designated_channel_id)
 
     # Create a regular user for balance testing
-    {:ok, _regular_user} = Bank.create_user_account(regular_user_id, "RegularUser")
+    {:ok, _regular_user} = User.create_user_account(regular_user_id, "RegularUser")
 
     # Test balance command in wrong channel - should fail
     wrong_channel_interaction =
@@ -122,8 +122,8 @@ defmodule StackCoinTest.Bot.Discord.Balance do
 
     # Set up users
     setup_admin_user(admin_user_id)
-    {:ok, _regular_user} = Bank.create_user_account(regular_user_id, "RegularUser")
-    {:ok, target_user} = Bank.create_user_account(target_user_id, "TargetUser")
+    {:ok, _regular_user} = User.create_user_account(regular_user_id, "RegularUser")
+    {:ok, target_user} = User.create_user_account(target_user_id, "TargetUser")
 
     # Set up guild (skip the full admin register flow for this test)
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)

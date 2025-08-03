@@ -1,6 +1,6 @@
 defmodule StackCoinTest.Support.DiscordUtils do
   import Mock
-  alias StackCoin.Core.Bank
+  alias StackCoin.Core.User
 
   def setup_admin_user(admin_user_id) do
     # Set up admin user in config for this test
@@ -20,8 +20,8 @@ defmodule StackCoinTest.Support.DiscordUtils do
     setup_admin_user(admin_user_id)
 
     # Create users
-    {:ok, sender} = Bank.create_user_account(sender_id, "SenderUser")
-    {:ok, recipient} = Bank.create_user_account(recipient_id, "RecipientUser")
+    {:ok, sender} = User.create_user_account(sender_id, "SenderUser")
+    {:ok, recipient} = User.create_user_account(recipient_id, "RecipientUser")
 
     # Set up guild
     with_mocks([
@@ -37,7 +37,7 @@ defmodule StackCoinTest.Support.DiscordUtils do
        ]}
     ]) do
       {:ok, {_guild, :created}} =
-        Bank.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
+        User.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
     end
 
     {sender, recipient}
@@ -60,7 +60,7 @@ defmodule StackCoinTest.Support.DiscordUtils do
        ]}
     ]) do
       {:ok, {guild, :created}} =
-        Bank.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
+        User.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
 
       guild
     end

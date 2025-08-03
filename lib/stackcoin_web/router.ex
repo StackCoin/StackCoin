@@ -20,10 +20,14 @@ defmodule StackCoinWeb.Router do
     get("/", PageController, :home)
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", StackCoinWeb do
-  #   pipe_through :api
-  # end
+  # Bot API routes
+  scope "/api/bot", StackCoinWeb do
+    pipe_through([:api, StackCoinWeb.Plugs.BotAuth])
+
+    get("/balance", BotApiController, :balance)
+    get("/balance/:user_id", BotApiController, :user_balance)
+    post("/send", BotApiController, :send_tokens)
+  end
 
   # Enable LiveDashboard in development
   if Application.compile_env(:stackcoin, :dev_routes) do

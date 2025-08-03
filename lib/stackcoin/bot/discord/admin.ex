@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Admin do
   Discord admin command implementation.
   """
 
-  alias StackCoin.Core.{Bank, Reserve}
+  alias StackCoin.Core.{User, Reserve}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Api.Guild
@@ -133,7 +133,7 @@ defmodule StackCoin.Bot.Discord.Admin do
   defp register_channel(guild_id, channel_id, interaction) do
     case Guild.get(guild_id) do
       {:ok, guild_info} ->
-        case Bank.admin_register_guild(interaction.user.id, guild_id, guild_info.name, channel_id) do
+        case User.admin_register_guild(interaction.user.id, guild_id, guild_info.name, channel_id) do
           {:ok, {_guild, action}} ->
             send_register_success_response(interaction, action)
 
@@ -266,7 +266,7 @@ defmodule StackCoin.Bot.Discord.Admin do
   end
 
   defp ban_user(target_user_id, interaction) do
-    case Bank.admin_ban_user(interaction.user.id, target_user_id) do
+    case User.admin_ban_user(interaction.user.id, target_user_id) do
       {:ok, user} ->
         send_ban_success_response(interaction, user)
 
@@ -294,7 +294,7 @@ defmodule StackCoin.Bot.Discord.Admin do
   end
 
   defp unban_user(target_user_id, interaction) do
-    case Bank.admin_unban_user(interaction.user.id, target_user_id) do
+    case User.admin_unban_user(interaction.user.id, target_user_id) do
       {:ok, user} ->
         send_unban_success_response(interaction, user)
 

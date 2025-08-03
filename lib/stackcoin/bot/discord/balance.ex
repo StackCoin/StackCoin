@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Balance do
   Discord balance command implementation.
   """
 
-  alias StackCoin.Core.Bank
+  alias StackCoin.Core.User
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -31,8 +31,8 @@ defmodule StackCoin.Bot.Discord.Balance do
   Handles the balance command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- Bank.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- Bank.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
          {:ok, {target_user, is_self}} <- get_target_user(interaction) do
       send_balance_response(interaction, target_user, is_self)
     else
@@ -45,9 +45,9 @@ defmodule StackCoin.Bot.Discord.Balance do
     case get_user_option(interaction) do
       nil ->
         # No user specified, check own balance
-        case Bank.get_user_by_discord_id(interaction.user.id) do
+        case User.get_user_by_discord_id(interaction.user.id) do
           {:ok, user} ->
-            case Bank.check_user_banned(user) do
+            case User.check_user_banned(user) do
               {:ok, :not_banned} -> {:ok, {user, true}}
               {:error, :user_banned} -> {:error, :user_banned}
             end
@@ -58,7 +58,7 @@ defmodule StackCoin.Bot.Discord.Balance do
 
       target_user_id ->
         # User specified, check their balance
-        case Bank.get_user_by_discord_id(target_user_id) do
+        case User.get_user_by_discord_id(target_user_id) do
           {:ok, user} -> {:ok, {user, false}}
           {:error, :user_not_found} -> {:error, :other_user_not_found}
           {:error, reason} -> {:error, reason}
