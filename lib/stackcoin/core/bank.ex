@@ -269,6 +269,21 @@ defmodule StackCoin.Core.Bank do
     end
   end
 
+  @doc """
+  Gets the top N users by balance.
+  """
+  def get_top_users(limit \\ 5) do
+    query =
+      from(u in User,
+        where: u.banned == false,
+        order_by: [desc: u.balance],
+        limit: ^limit,
+        select: u
+      )
+
+    {:ok, Repo.all(query)}
+  end
+
   defp validate_transfer_amount(amount) when amount <= 0, do: {:error, :invalid_amount}
   defp validate_transfer_amount(_amount), do: {:ok, :valid}
 
