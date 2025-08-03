@@ -1,6 +1,7 @@
 defmodule StackCoinTest.Bot.Discord.Balance do
   use ExUnit.Case
   import Mock
+  import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.{Admin, Balance}
   alias StackCoin.Core.Bank
@@ -9,20 +10,6 @@ defmodule StackCoinTest.Bot.Discord.Balance do
     # Ensure clean database state for each test
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(StackCoin.Repo)
     :ok
-  end
-
-  defp setup_admin_user(admin_user_id) do
-    # Set up admin user in config for this test
-    Application.put_env(:stackcoin, :admin_user_id, to_string(admin_user_id))
-  end
-
-  defp create_mock_interaction(user_id, guild_id, channel_id, data) do
-    %{
-      user: %{id: user_id},
-      guild_id: guild_id,
-      channel_id: channel_id,
-      data: data
-    }
   end
 
   test "admin register command creates guild and balance command validates channel" do
@@ -139,21 +126,7 @@ defmodule StackCoinTest.Bot.Discord.Balance do
     {:ok, target_user} = Bank.create_user_account(target_user_id, "TargetUser")
 
     # Set up guild (skip the full admin register flow for this test)
-    with_mocks([
-      {Nostrum.Api.User, [],
-       [
-         get: fn user_id ->
-           if user_id == admin_user_id or user_id == to_string(admin_user_id) do
-             {:ok, %{id: admin_user_id, username: "TestAdmin"}}
-           else
-             {:error, :not_found}
-           end
-         end
-       ]}
-    ]) do
-      {:ok, {_guild, :created}} =
-        Bank.admin_register_guild(admin_user_id, guild_id, "Test Guild", designated_channel_id)
-    end
+    setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
 
     # Test balance command checking another user's balance
     interaction =

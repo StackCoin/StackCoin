@@ -53,7 +53,7 @@ defmodule StackCoin.Core.Reserve do
   Pumps money into the reserve system.
   Creates a pump record and updates the reserve balance.
   """
-  def pump_reserve(signee_user_id, amount, label \\ "Admin pump") do
+  def pump_reserve(signee_user_id, amount, label) do
     Repo.transaction(fn ->
       with {:ok, signee} <- Bank.get_user_by_id(signee_user_id),
            {:ok, reserve_user} <- Bank.get_user_by_id(@reserve_user_id),
@@ -70,7 +70,7 @@ defmodule StackCoin.Core.Reserve do
   @doc """
   Admin-only pump operation with permission check.
   """
-  def admin_pump_reserve(admin_discord_snowflake, amount, label \\ "Admin pump") do
+  def admin_pump_reserve(admin_discord_snowflake, amount, label) do
     with {:ok, _admin_check} <- Bank.check_admin_permissions(admin_discord_snowflake),
          {:ok, admin_user} <- Bank.get_user_by_discord_id(admin_discord_snowflake) do
       pump_reserve(admin_user.id, amount, label)

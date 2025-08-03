@@ -37,15 +37,15 @@ defmodule StackCoin.Bot.Discord.Admin do
             %{
               type: ApplicationCommandOptionType.string(),
               name: "label",
-              description: "Optional label for this pump operation",
-              required: false
+              description: "Label for this pump operation",
+              required: true
             }
           ]
         },
         %{
           type: ApplicationCommandOptionType.sub_command(),
           name: "ban",
-          description: "Ban a user from the StackCoin system",
+          description: "Ban a user from StackCoin",
           options: [
             %{
               type: ApplicationCommandOptionType.user(),
@@ -58,7 +58,7 @@ defmodule StackCoin.Bot.Discord.Admin do
         %{
           type: ApplicationCommandOptionType.sub_command(),
           name: "unban",
-          description: "Unban a user from the StackCoin system",
+          description: "Unban a user from StackCoin",
           options: [
             %{
               type: ApplicationCommandOptionType.user(),
@@ -187,9 +187,9 @@ defmodule StackCoin.Bot.Discord.Admin do
 
   defp get_pump_label(interaction) do
     case get_option_value(interaction, "label") do
-      nil -> {:ok, "Admin pump"}
+      nil -> {:error, :missing_label}
       label when is_binary(label) -> {:ok, label}
-      _ -> {:ok, "Admin pump"}
+      _ -> {:error, :invalid_label}
     end
   end
 

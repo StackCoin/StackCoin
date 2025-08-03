@@ -200,7 +200,7 @@ defmodule StackCoin.Bot.Discord.Commands do
           "❌ The recipient doesn't have a StackCoin account yet. They need to use `/dole` first to create an account."
 
         :user_banned ->
-          "❌ You have been banned from the StackCoin system."
+          "❌ You have been banned from StackCoin."
 
         :recipient_banned ->
           "❌ You cannot send STK to a banned user."

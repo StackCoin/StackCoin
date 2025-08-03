@@ -230,7 +230,7 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
-  Bans a user from the StackCoin system.
+  Bans a user from StackCoin.
   """
   def ban_user(user) do
     user
@@ -239,7 +239,7 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
-  Unbans a user from the StackCoin system.
+  Unbans a user from StackCoin.
   """
   def unban_user(user) do
     user
@@ -335,7 +335,7 @@ defmodule StackCoin.Core.Bank do
   Searches transactions with various filters.
   Options:
   - :from_user_id - filter by sender
-  - :to_user_id - filter by recipient  
+  - :to_user_id - filter by recipient
   - :includes_user_id - filter by either sender or recipient
   - :limit - number of results to return
   - :offset - number of results to skip
