@@ -23,7 +23,9 @@ defmodule StackCoin.MixProject do
       {:ecto_sql, "~> 3.13"},
       {:ecto_sqlite3, "~> 0.21"},
       {:nostrum, "~> 0.10"},
-      {:dotenvy, "~> 1.1.0"}
+      {:dotenvy, "~> 1.1.0"},
+      {:vega_lite, "~> 0.1.11"},
+      {:vega_lite_convert, "~> 1.0"}
     ]
   end
 end
