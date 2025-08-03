@@ -13,3 +13,7 @@ config :stackcoin,
 config :nostrum,
   id: env!("STACKCOIN_DISCORD_APPLICATION_ID", :integer, nil),
   token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil)
+
+if System.get_env("PHX_SERVER") do
+  config :stackcoin, StackcoinWeb.Endpoint, server: true
+end
