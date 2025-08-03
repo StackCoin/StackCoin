@@ -14,7 +14,7 @@ defmodule StackCoin.Bot.Discord.Dole do
   def definition do
     %{
       name: "dole",
-      description: "Receive daily dole from the reserve system"
+      description: "Receive daily dole from the reserve"
     }
   end
 
