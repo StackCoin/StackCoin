@@ -11,7 +11,7 @@ import sys
 
 # Database connections
 PG_CONNECTION_STRING = "postgres://postgres:password@localhost:5432/stackcoin"
-SQLITE_DB_PATH = "./data/stackcoin.db"
+SQLITE_DB_PATH = "../data/stackcoin.db"
 
 
 def connect_databases():
