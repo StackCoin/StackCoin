@@ -4,7 +4,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
   import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.{Admin, Dole}
-  alias StackCoin.Core.{Bank, Reserve}
+  alias StackCoin.Core.{Bank, Reserve, User}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(StackCoin.Repo)
@@ -14,17 +14,17 @@ defmodule StackCoinTest.Bot.Discord.Dole do
   defp create_reserve_user(balance \\ 0) do
     # Create or update the reserve user (ID 1) that the system expects
     # Use Bank.update_user_balance which handles the database operations safely
-    case Bank.get_user_by_id(1) do
+    case User.get_user_by_id(1) do
       {:ok, _user} ->
         # Reserve user exists, update balance
         Bank.update_user_balance(1, balance)
 
       {:error, :user_not_found} ->
         # Reserve user doesn't exist, create it manually
-        alias StackCoin.Schema.User
+        alias StackCoin.Schema
 
         {:ok, user} =
-          StackCoin.Repo.insert(%User{
+          StackCoin.Repo.insert(%Schema.User{
             id: 1,
             username: "Reserve",
             balance: balance,
@@ -93,7 +93,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     end
 
     # Verify user was created and has correct balance
-    {:ok, user} = Bank.get_user_by_discord_id(new_user_id)
+    {:ok, user} = User.get_user_by_discord_id(new_user_id)
     assert user.username == "NewUser"
     assert user.balance == 10
 
@@ -114,7 +114,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     # Explicitly set to 0
     create_reserve_user(0)
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
-    {:ok, _user} = Bank.create_user_account(user_id, "TestUser")
+    {:ok, _user} = User.create_user_account(user_id, "TestUser")
 
     # Create dole interaction
     interaction = create_dole_interaction(user_id, guild_id, designated_channel_id)
@@ -141,7 +141,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     end
 
     # Verify user balance unchanged
-    {:ok, user} = Bank.get_user_by_discord_id(user_id)
+    {:ok, user} = User.get_user_by_discord_id(user_id)
     assert user.balance == 0
   end
 
@@ -156,7 +156,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     setup_admin_user(admin_user_id)
     create_reserve_user(100)
     # Create admin user account first
-    {:ok, _admin_user} = Bank.create_user_account(admin_user_id, "TestAdmin", admin: true)
+    {:ok, _admin_user} = User.create_user_account(admin_user_id, "TestAdmin", admin: true)
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
 
     # Create admin pump interaction
@@ -217,9 +217,9 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     # Start with empty reserve
     create_reserve_user(0)
     # Create admin user account first
-    {:ok, _admin_user} = Bank.create_user_account(admin_user_id, "TestAdmin", admin: true)
+    {:ok, _admin_user} = User.create_user_account(admin_user_id, "TestAdmin", admin: true)
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
-    {:ok, _user} = Bank.create_user_account(user_id, "TestUser")
+    {:ok, _user} = User.create_user_account(user_id, "TestUser")
 
     # First pump insufficient amount (less than 10 STK needed for dole)
     insufficient_pump =
@@ -321,7 +321,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     end
 
     # Verify final balances
-    {:ok, user} = Bank.get_user_by_discord_id(user_id)
+    {:ok, user} = User.get_user_by_discord_id(user_id)
     assert user.balance == 10
 
     {:ok, reserve_balance} = Reserve.get_reserve_balance()
@@ -340,7 +340,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     create_reserve_user(100)
 
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
-    {:ok, _user} = Bank.create_user_account(user_id, "TestUser")
+    {:ok, _user} = User.create_user_account(user_id, "TestUser")
 
     # Create dole interaction
     interaction = create_dole_interaction(user_id, guild_id, designated_channel_id)
@@ -375,7 +375,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     end
 
     # Verify user only got one dole
-    {:ok, user} = Bank.get_user_by_discord_id(user_id)
+    {:ok, user} = User.get_user_by_discord_id(user_id)
     assert user.balance == 10
   end
 
@@ -391,7 +391,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     create_reserve_user(100)
 
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
-    {:ok, _user} = Bank.create_user_account(user_id, "TestUser")
+    {:ok, _user} = User.create_user_account(user_id, "TestUser")
 
     # Create dole interaction in wrong channel
     interaction = create_dole_interaction(user_id, guild_id, wrong_channel_id)
@@ -412,7 +412,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     end
 
     # Verify user balance unchanged
-    {:ok, user} = Bank.get_user_by_discord_id(user_id)
+    {:ok, user} = User.get_user_by_discord_id(user_id)
     assert user.balance == 0
   end
 
@@ -427,10 +427,10 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     create_reserve_user(100)
 
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
-    {:ok, user} = Bank.create_user_account(user_id, "TestUser")
+    {:ok, user} = User.create_user_account(user_id, "TestUser")
 
     # Ban the user
-    {:ok, _banned_user} = Bank.ban_user(user)
+    {:ok, _banned_user} = User.ban_user(user)
 
     # Create dole interaction
     interaction = create_dole_interaction(user_id, guild_id, designated_channel_id)
@@ -451,7 +451,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     end
 
     # Verify user balance unchanged
-    {:ok, user} = Bank.get_user_by_discord_id(user_id)
+    {:ok, user} = User.get_user_by_discord_id(user_id)
     assert user.balance == 0
   end
 
@@ -465,9 +465,9 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     setup_admin_user(admin_user_id)
     create_reserve_user(50)
     # Create admin user account first
-    {:ok, _admin_user} = Bank.create_user_account(admin_user_id, "TestAdmin", admin: true)
+    {:ok, _admin_user} = User.create_user_account(admin_user_id, "TestAdmin", admin: true)
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
-    {:ok, _user} = Bank.create_user_account(regular_user_id, "RegularUser")
+    {:ok, _user} = User.create_user_account(regular_user_id, "RegularUser")
 
     # Create pump interaction from regular user
     interaction =
@@ -510,7 +510,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     create_reserve_user(100)
 
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
-    {:ok, _user} = Bank.create_user_account(user_id, "ExistingUser", balance: 25)
+    {:ok, _user} = User.create_user_account(user_id, "ExistingUser", balance: 25)
 
     # Create dole interaction
     interaction = create_dole_interaction(user_id, guild_id, designated_channel_id)
@@ -533,7 +533,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     end
 
     # Verify user balance increased
-    {:ok, user} = Bank.get_user_by_discord_id(user_id)
+    {:ok, user} = User.get_user_by_discord_id(user_id)
     assert user.balance == 35
 
     # Verify reserve balance decreased by 10

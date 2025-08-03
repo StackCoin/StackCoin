@@ -3,9 +3,9 @@ defmodule StackCoin.Core.Reserve do
   Core logic for handling reserve operations.
   """
 
-  alias StackCoin.Core.Bank
+  alias StackCoin.Core.{Bank, User}
   alias StackCoin.Repo
-  alias StackCoin.Schema.{User, Pump}
+  alias StackCoin.Schema
 
   @reserve_user_id 1
   @dole_amount 10
@@ -15,7 +15,7 @@ defmodule StackCoin.Core.Reserve do
   Returns {:ok, transaction} on success or {:error, reason} on failure.
   """
   def transfer_dole_to_user(user_id) do
-    with {:ok, user} <- Bank.get_user_by_id(user_id),
+    with {:ok, user} <- User.get_user_by_id(user_id),
          {:ok, _dole_check} <- check_daily_dole_eligibility(user),
          {:ok, reserve_balance} <- get_reserve_balance(),
          {:ok, _balance_check} <- check_reserve_balance(reserve_balance),
@@ -55,8 +55,8 @@ defmodule StackCoin.Core.Reserve do
   """
   def pump_reserve(signee_user_id, amount, label) do
     Repo.transaction(fn ->
-      with {:ok, signee} <- Bank.get_user_by_id(signee_user_id),
-           {:ok, reserve_user} <- Bank.get_user_by_id(@reserve_user_id),
+      with {:ok, signee} <- User.get_user_by_id(signee_user_id),
+           {:ok, reserve_user} <- User.get_user_by_id(@reserve_user_id),
            {:ok, pump_record} <- create_pump_record(signee.id, @reserve_user_id, amount, label),
            {:ok, _updated_reserve} <-
              Bank.update_user_balance(@reserve_user_id, reserve_user.balance + amount) do
@@ -71,8 +71,8 @@ defmodule StackCoin.Core.Reserve do
   Admin-only pump operation with permission check.
   """
   def admin_pump_reserve(admin_discord_snowflake, amount, label) do
-    with {:ok, _admin_check} <- Bank.check_admin_permissions(admin_discord_snowflake),
-         {:ok, admin_user} <- Bank.get_user_by_discord_id(admin_discord_snowflake) do
+    with {:ok, _admin_check} <- User.check_admin_permissions(admin_discord_snowflake),
+         {:ok, admin_user} <- User.get_user_by_discord_id(admin_discord_snowflake) do
       pump_reserve(admin_user.id, amount, label)
     else
       {:error, :not_admin} -> {:error, :not_admin}
@@ -112,10 +112,10 @@ defmodule StackCoin.Core.Reserve do
   end
 
   defp update_last_given_dole(user_id) do
-    case Bank.get_user_by_id(user_id) do
+    case User.get_user_by_id(user_id) do
       {:ok, user} ->
         user
-        |> User.changeset(%{last_given_dole: NaiveDateTime.utc_now()})
+        |> Schema.User.changeset(%{last_given_dole: NaiveDateTime.utc_now()})
         |> Repo.update()
 
       {:error, reason} ->
@@ -124,7 +124,7 @@ defmodule StackCoin.Core.Reserve do
   end
 
   defp create_pump_record(signee_id, to_id, amount, label) do
-    with {:ok, reserve_user} <- Bank.get_user_by_id(to_id) do
+    with {:ok, reserve_user} <- User.get_user_by_id(to_id) do
       pump_attrs = %{
         signee_id: signee_id,
         to_id: to_id,
@@ -134,7 +134,7 @@ defmodule StackCoin.Core.Reserve do
         label: label
       }
 
-      Repo.insert(Pump.changeset(%Pump{}, pump_attrs))
+      Repo.insert(Schema.Pump.changeset(%Schema.Pump{}, pump_attrs))
     else
       {:error, reason} -> {:error, reason}
     end
