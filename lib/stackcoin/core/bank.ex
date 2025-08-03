@@ -163,7 +163,9 @@ defmodule StackCoin.Core.Bank do
   """
   def transfer_between_users(from_user_id, to_user_id, amount, label \\ nil) do
     Repo.transaction(fn ->
-      with {:ok, from_user} <- get_user_by_id(from_user_id),
+      with {:ok, _amount_check} <- validate_transfer_amount(amount),
+           {:ok, _self_check} <- validate_not_self_transfer(from_user_id, to_user_id),
+           {:ok, from_user} <- get_user_by_id(from_user_id),
            {:ok, to_user} <- get_user_by_id(to_user_id),
            {:ok, _balance_check} <- check_sufficient_balance(from_user, amount),
            {:ok, transaction} <- create_transaction(from_user, to_user, amount, label) do
@@ -199,6 +201,14 @@ defmodule StackCoin.Core.Bank do
     end
   end
 
+  defp validate_transfer_amount(amount) when amount <= 0, do: {:error, :invalid_amount}
+  defp validate_transfer_amount(_amount), do: {:ok, :valid}
+
+  defp validate_not_self_transfer(from_id, to_id) when from_id == to_id,
+    do: {:error, :self_transfer}
+
+  defp validate_not_self_transfer(_from_id, _to_id), do: {:ok, :valid}
+
   defp check_sufficient_balance(user, amount) do
     if user.balance >= amount do
       {:ok, :sufficient}
@@ -213,7 +223,9 @@ defmodule StackCoin.Core.Bank do
         :ok
 
       {:error, :user_not_found} ->
-        case create_user_account(user_snowflake, "Admin User", admin: true) do
+        {:ok, username} = Nostrum.Api.User.get(user_snowflake)
+
+        case create_user_account(user_snowflake, username, admin: true) do
           {:ok, _user} -> :ok
           {:error, _} -> :error
         end

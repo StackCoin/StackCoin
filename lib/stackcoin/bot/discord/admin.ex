@@ -30,7 +30,7 @@ defmodule StackCoin.Bot.Discord.Admin do
             %{
               type: ApplicationCommandOptionType.integer(),
               name: "amount",
-              description: "Amount of StackCoins to pump into the reserve",
+              description: "Amount of STK to pump into the reserve",
               required: true,
               min_value: 1
             },
@@ -123,18 +123,17 @@ defmodule StackCoin.Bot.Discord.Admin do
       data: %{
         embeds: [
           %{
-            title: "✅ Server #{String.capitalize(action_text)}",
+            title: "#{Commands.stackcoin_emoji()} Server #{String.capitalize(action_text)}",
             description:
               "This channel has been #{action_text} as the StackCoin channel for this server.",
-            color: 0x00FF00,
+            color: Commands.stackcoin_color(),
             fields: [
               %{
                 name: "Channel",
                 value: "<##{interaction.channel_id}>",
                 inline: true
               }
-            ],
-            timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+            ]
           }
         ]
       }
@@ -189,14 +188,14 @@ defmodule StackCoin.Bot.Discord.Admin do
       data: %{
         embeds: [
           %{
-            title: "💰 Reserve Pumped Successfully!",
+            title: "#{Commands.stackcoin_emoji()} Reserve Pumped Successfully!",
             description:
-              "**#{pump_record.amount}** StackCoins have been added to the reserve system.",
-            color: 0x00FF00,
+              "**#{pump_record.amount}** STK have been pumped into the reserve system.",
+            color: Commands.stackcoin_color(),
             fields: [
               %{
                 name: "New Reserve Balance",
-                value: "**#{pump_record.to_new_balance}** StackCoins",
+                value: "**#{pump_record.to_new_balance}** STK",
                 inline: true
               },
               %{
@@ -204,8 +203,7 @@ defmodule StackCoin.Bot.Discord.Admin do
                 value: pump_record.label,
                 inline: true
               }
-            ],
-            timestamp: DateTime.utc_now() |> DateTime.to_iso8601()
+            ]
           }
         ]
       }
