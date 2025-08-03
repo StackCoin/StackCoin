@@ -40,7 +40,7 @@ defmodule StackCoin.Bot.Discord.Leaderboard do
         medal = get_medal(rank)
 
         %{
-          name: "##{rank} - #{user.username}: #{user.balance} STK #{medal}",
+          name: "##{rank} - #{user.username}: **#{user.balance} STK** #{medal}",
           value: "",
           inline: false
         }

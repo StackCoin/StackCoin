@@ -255,9 +255,9 @@ defmodule StackCoin.Bot.Discord.Admin do
           %{
             title: "#{Commands.stackcoin_emoji()} Reserve Pumped Successfully!",
             description:
-              "**#{pump_record.amount}** STK have been pumped into the reserve.\n\n" <>
-                "**New Reserve Balance:** **#{pump_record.to_new_balance}** STK\n" <>
-                "**Label:** #{pump_record.label}",
+              "**#{pump_record.amount} STK** have been pumped into the reserve.\n\n" <>
+                "New Reserve Balance: **#{pump_record.to_new_balance} STK**\n" <>
+                "Label: #{pump_record.label}",
             color: Commands.stackcoin_color()
           }
         ]

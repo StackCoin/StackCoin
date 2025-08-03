@@ -53,8 +53,8 @@ defmodule StackCoin.Bot.Discord.Dole do
       data: %{
         embeds: [
           %{
-            title: "#{Commands.stackcoin_emoji()} Received #{transaction.amount} STK",
-            description: "New Balance: **#{transaction.to_new_balance}** STK",
+            title: "#{Commands.stackcoin_emoji()} Received **#{transaction.amount} STK**",
+            description: "New Balance: **#{transaction.to_new_balance} STK**",
             color: Commands.stackcoin_color()
           }
         ]
