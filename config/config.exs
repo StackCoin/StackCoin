@@ -4,3 +4,5 @@ config :stackcoin,
   ecto_repos: [StackCoin.Repo]
 
 config :stackcoin, env: Mix.env()
+
+import_config "#{config_env()}.exs"
