@@ -5,7 +5,7 @@ defmodule StackCoin.Bot.Discord do
   alias Nostrum.Struct.Interaction
   alias Nostrum.Constants.InteractionCallbackType
 
-  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard}
+  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions}
 
   def handle_event(
         {:INTERACTION_CREATE, %Interaction{data: %{name: name}} = interaction, _ws_state}
@@ -33,6 +33,10 @@ defmodule StackCoin.Bot.Discord do
 
   defp handle_slash_command("leaderboard", interaction) do
     Leaderboard.handle(interaction)
+  end
+
+  defp handle_slash_command("transactions", interaction) do
+    Transactions.handle(interaction)
   end
 
   defp handle_slash_command(command_name, interaction) do

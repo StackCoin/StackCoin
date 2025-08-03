@@ -6,7 +6,7 @@ defmodule StackCoin.Bot.Discord.Commands do
   alias Nostrum.Api.ApplicationCommand
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
-  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard}
+  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions}
 
   @stackcoin_emoji "🪙"
   @stackcoin_color 0xFFFD5D
@@ -38,7 +38,8 @@ defmodule StackCoin.Bot.Discord.Commands do
       Admin.definition(),
       Dole.definition(),
       Send.definition(),
-      Leaderboard.definition()
+      Leaderboard.definition(),
+      Transactions.definition()
     ]
   end
 
@@ -202,6 +203,9 @@ defmodule StackCoin.Bot.Discord.Commands do
 
         :recipient_banned ->
           "❌ You cannot send STK to a banned user."
+
+        :conflicting_transaction_filters ->
+          "❌ You cannot use 'includes' with 'from' or 'to' filters. Use either 'includes' alone, or 'from'/'to' together."
 
         reason ->
           "❌ An error occurred: #{inspect(reason)}"

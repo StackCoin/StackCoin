@@ -44,7 +44,7 @@ defmodule StackCoin.Bot.Discord.Send do
          {:ok, {to_user_id, amount}} <- parse_command_options(interaction),
          {:ok, to_user} <- get_recipient_user(to_user_id),
          {:ok, transaction} <-
-           Bank.transfer_between_users(from_user.id, to_user.id, amount, "Send command") do
+           Bank.transfer_between_users(from_user.id, to_user.id, amount, "via /send") do
       send_success_response(interaction, from_user, to_user, transaction)
     else
       {:error, reason} ->

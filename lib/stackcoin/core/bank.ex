@@ -284,6 +284,75 @@ defmodule StackCoin.Core.Bank do
     {:ok, Repo.all(query)}
   end
 
+  @doc """
+  Searches transactions with various filters.
+  Options:
+  - :from_user_id - filter by sender
+  - :to_user_id - filter by recipient  
+  - :includes_user_id - filter by either sender or recipient
+  - :limit - number of results to return
+  - :offset - number of results to skip
+  """
+  def search_transactions(opts \\ []) do
+    limit = Keyword.get(opts, :limit, 10)
+    offset = Keyword.get(opts, :offset, 0)
+    from_user_id = Keyword.get(opts, :from_user_id)
+    to_user_id = Keyword.get(opts, :to_user_id)
+    includes_user_id = Keyword.get(opts, :includes_user_id)
+
+    # Validate that includes_user_id is not used with from/to filters
+    if includes_user_id && (from_user_id || to_user_id) do
+      {:error, :conflicting_filters}
+    else
+      query = build_transaction_query(from_user_id, to_user_id, includes_user_id, limit, offset)
+      {:ok, Repo.all(query)}
+    end
+  end
+
+  defp build_transaction_query(from_user_id, to_user_id, includes_user_id, limit, offset) do
+    query =
+      from(t in Transaction,
+        join: from_user in User,
+        on: t.from_id == from_user.id,
+        join: to_user in User,
+        on: t.to_id == to_user.id,
+        order_by: [desc: t.time],
+        limit: ^limit,
+        offset: ^offset,
+        select: %{
+          id: t.id,
+          from_username: from_user.username,
+          to_username: to_user.username,
+          amount: t.amount,
+          time: t.time,
+          label: t.label
+        }
+      )
+
+    query
+    |> apply_from_filter(from_user_id)
+    |> apply_to_filter(to_user_id)
+    |> apply_includes_filter(includes_user_id)
+  end
+
+  defp apply_from_filter(query, nil), do: query
+
+  defp apply_from_filter(query, from_user_id) do
+    from(t in query, where: t.from_id == ^from_user_id)
+  end
+
+  defp apply_to_filter(query, nil), do: query
+
+  defp apply_to_filter(query, to_user_id) do
+    from(t in query, where: t.to_id == ^to_user_id)
+  end
+
+  defp apply_includes_filter(query, nil), do: query
+
+  defp apply_includes_filter(query, includes_user_id) do
+    from(t in query, where: t.from_id == ^includes_user_id or t.to_id == ^includes_user_id)
+  end
+
   defp validate_transfer_amount(amount) when amount <= 0, do: {:error, :invalid_amount}
   defp validate_transfer_amount(_amount), do: {:ok, :valid}
 
