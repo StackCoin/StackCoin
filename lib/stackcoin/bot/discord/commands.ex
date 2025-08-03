@@ -8,7 +8,7 @@ defmodule StackCoin.Bot.Discord.Commands do
   alias Nostrum.Constants.InteractionCallbackType
   alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions, Graph}
 
-  @stackcoin_emoji "🪙"
+  @stackcoin_emoji "<:stackcoin:1401621482026827908>"
   @stackcoin_color 0xFFFD5D
 
   def stackcoin_emoji, do: @stackcoin_emoji

@@ -1,12 +1,12 @@
-defmodule StackcoinWeb do
+defmodule StackCoinWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, components, channels, and so on.
 
   This can be used in your application as:
 
-      use StackcoinWeb, :controller
-      use StackcoinWeb, :html
+      use StackCoinWeb, :controller
+      use StackCoinWeb, :html
 
   The definitions below will be executed for every controller,
   component, etc, so keep them short and clean, focused
@@ -17,7 +17,7 @@ defmodule StackcoinWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  def static_paths, do: ~w(assets fonts images robots.txt)
 
   def router do
     quote do
@@ -40,7 +40,7 @@ defmodule StackcoinWeb do
     quote do
       use Phoenix.Controller,
         formats: [:html, :json],
-        layouts: [html: StackcoinWeb.Layouts]
+        layouts: [html: StackCoinWeb.Layouts]
 
       import Plug.Conn
 
@@ -51,7 +51,7 @@ defmodule StackcoinWeb do
   def live_view do
     quote do
       use Phoenix.LiveView,
-        layout: {StackcoinWeb.Layouts, :app}
+        layout: {StackCoinWeb.Layouts, :app}
 
       unquote(html_helpers())
     end
@@ -83,7 +83,7 @@ defmodule StackcoinWeb do
       # HTML escaping functionality
       import Phoenix.HTML
       # Core UI components
-      import StackcoinWeb.CoreComponents
+      import StackCoinWeb.CoreComponents
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
@@ -96,9 +96,9 @@ defmodule StackcoinWeb do
   def verified_routes do
     quote do
       use Phoenix.VerifiedRoutes,
-        endpoint: StackcoinWeb.Endpoint,
-        router: StackcoinWeb.Router,
-        statics: StackcoinWeb.static_paths()
+        endpoint: StackCoinWeb.Endpoint,
+        router: StackCoinWeb.Router,
+        statics: StackCoinWeb.static_paths()
     end
   end
 

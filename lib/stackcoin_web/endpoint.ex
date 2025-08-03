@@ -1,4 +1,4 @@
-defmodule StackcoinWeb.Endpoint do
+defmodule StackCoinWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :stackcoin
 
   # The session will be stored in the cookie and signed,
@@ -24,7 +24,7 @@ defmodule StackcoinWeb.Endpoint do
     at: "/",
     from: :stackcoin,
     gzip: false,
-    only: StackcoinWeb.static_paths()
+    only: StackCoinWeb.static_paths()
   )
 
   # Code reloading can be explicitly enabled under the
@@ -53,5 +53,5 @@ defmodule StackcoinWeb.Endpoint do
   plug(Plug.MethodOverride)
   plug(Plug.Head)
   plug(Plug.Session, @session_options)
-  plug(StackcoinWeb.Router)
+  plug(StackCoinWeb.Router)
 end

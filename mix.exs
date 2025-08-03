@@ -9,6 +9,7 @@ defmodule StackCoin.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
       deps: deps()
     ]
   end
@@ -53,6 +54,19 @@ defmodule StackCoin.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.7"}
+    ]
+  end
+
+  defp aliases do
+    [
+      setup: ["deps.get", "assets.setup", "assets.build"],
+      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+      "assets.build": ["tailwind stackcoin", "esbuild stackcoin"],
+      "assets.deploy": [
+        "tailwind stackcoin --minify",
+        "esbuild stackcoin --minify",
+        "phx.digest"
+      ]
     ]
   end
 end

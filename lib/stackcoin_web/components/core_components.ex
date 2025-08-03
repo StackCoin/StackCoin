@@ -1,4 +1,4 @@
-defmodule StackcoinWeb.CoreComponents do
+defmodule StackCoinWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
 
@@ -658,9 +658,9 @@ defmodule StackcoinWeb.CoreComponents do
     # uncommenting and adjusting the following code:
 
     # if count = opts[:count] do
-    #   Gettext.dngettext(StackcoinWeb.Gettext, "errors", msg, msg, count, opts)
+    #   Gettext.dngettext(StackCoinWeb.Gettext, "errors", msg, msg, count, opts)
     # else
-    #   Gettext.dgettext(StackcoinWeb.Gettext, "errors", msg, opts)
+    #   Gettext.dgettext(StackCoinWeb.Gettext, "errors", msg, opts)
     # end
 
     Enum.reduce(opts, msg, fn {key, value}, acc ->
