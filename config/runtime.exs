@@ -15,5 +15,5 @@ config :nostrum,
   token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil)
 
 if System.get_env("PHX_SERVER") do
-  config :stackcoin, StackcoinWeb.Endpoint, server: true
+  config :stackcoin, StackCoinWeb.Endpoint, server: true
 end

@@ -5,14 +5,14 @@ config :stackcoin,
 
 config :stackcoin, env: Mix.env()
 
-config :stackcoin, StackcoinWeb.Endpoint,
+config :stackcoin, StackCoinWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Phoenix.Endpoint.Cowboy2Adapter,
   render_errors: [
-    formats: [html: StackcoinWeb.ErrorHTML, json: StackcoinWeb.ErrorJSON],
+    formats: [html: StackCoinWeb.ErrorHTML, json: StackCoinWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Stackcoin.PubSub,
+  pubsub_server: StackCoin.PubSub,
   live_view: [signing_salt: "chHXSNvT"]
 
 config :esbuild,

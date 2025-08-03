@@ -1,11 +1,11 @@
-defmodule StackcoinWeb.Router do
-  use StackcoinWeb, :router
+defmodule StackCoinWeb.Router do
+  use StackCoinWeb, :router
 
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_live_flash)
-    plug(:put_root_layout, html: {StackcoinWeb.Layouts, :root})
+    plug(:put_root_layout, html: {StackCoinWeb.Layouts, :root})
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
   end
@@ -14,14 +14,14 @@ defmodule StackcoinWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  scope "/", StackcoinWeb do
+  scope "/", StackCoinWeb do
     pipe_through(:browser)
 
     get("/", PageController, :home)
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", StackcoinWeb do
+  # scope "/api", StackCoinWeb do
   #   pipe_through :api
   # end
 
@@ -37,7 +37,7 @@ defmodule StackcoinWeb.Router do
     scope "/dev" do
       pipe_through(:browser)
 
-      live_dashboard("/dashboard", metrics: StackcoinWeb.Telemetry)
+      live_dashboard("/dashboard", metrics: StackCoinWeb.Telemetry)
     end
   end
 end

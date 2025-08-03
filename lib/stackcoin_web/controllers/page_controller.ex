@@ -1,9 +1,7 @@
-defmodule StackcoinWeb.PageController do
-  use StackcoinWeb, :controller
+defmodule StackCoinWeb.PageController do
+  use StackCoinWeb, :controller
 
   def home(conn, _params) do
-    # The home page is often custom made,
-    # so skip the default app layout.
-    render(conn, :home, layout: false)
+    render(conn, :home)
   end
 end

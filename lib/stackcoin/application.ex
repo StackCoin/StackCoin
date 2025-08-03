@@ -4,12 +4,12 @@ defmodule StackCoin.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      StackcoinWeb.Telemetry,
+      StackCoinWeb.Telemetry,
       StackCoin.Repo,
       StackCoin.Bot.Discord,
       {DNSCluster, query: Application.get_env(:stackcoin, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: Stackcoin.PubSub},
-      StackcoinWeb.Endpoint
+      {Phoenix.PubSub, name: StackCoin.PubSub},
+      StackCoinWeb.Endpoint
     ]
 
     opts = [strategy: :one_for_one, name: StackCoin.Supervisor]

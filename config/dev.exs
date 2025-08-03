@@ -1,6 +1,6 @@
 import Config
 
-config :stackcoin, StackcoinWeb.Endpoint,
+config :stackcoin, StackCoinWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: 4000],
@@ -13,7 +13,7 @@ config :stackcoin, StackcoinWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:stackcoin, ~w(--watch)]}
   ]
 
-config :stackcoin, StackcoinWeb.Endpoint,
+config :stackcoin, StackCoinWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
