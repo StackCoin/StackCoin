@@ -35,12 +35,11 @@ defmodule StackCoin.Repo.Migrations.InitialTables do
     create table(:discord_guild) do
       add(:snowflake, :text, null: false)
       add(:name, :text, null: false)
-      add(:designated_channel_snowflake, :text, null: false)
+      add(:designated_channel_snowflake, :text, null: true)
       add(:last_updated, :naive_datetime, null: false)
     end
 
     create(unique_index(:discord_guild, [:snowflake]))
-    create(unique_index(:discord_guild, [:designated_channel_snowflake]))
 
     create table(:transaction) do
       add(:from_id, references(:user, on_delete: :restrict), null: false)

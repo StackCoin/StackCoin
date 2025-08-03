@@ -15,10 +15,8 @@ defmodule StackCoin.Schema.DiscordGuild do
     |> validate_required([
       :snowflake,
       :name,
-      :designated_channel_snowflake,
       :last_updated
     ])
     |> unique_constraint(:snowflake)
-    |> unique_constraint(:designated_channel_snowflake)
   end
 end

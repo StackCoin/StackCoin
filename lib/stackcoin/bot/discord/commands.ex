@@ -6,7 +6,7 @@ defmodule StackCoin.Bot.Discord.Commands do
   alias Nostrum.Api.ApplicationCommand
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
-  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send}
+  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard}
 
   @stackcoin_emoji "🪙"
   @stackcoin_color 0xFFFD5D
@@ -37,7 +37,8 @@ defmodule StackCoin.Bot.Discord.Commands do
       Balance.definition(),
       Admin.definition(),
       Dole.definition(),
-      Send.definition()
+      Send.definition(),
+      Leaderboard.definition()
     ]
   end
 
@@ -163,7 +164,11 @@ defmodule StackCoin.Bot.Discord.Commands do
           "❌ This server is not registered with StackCoin."
 
         {:wrong_channel, guild} ->
-          "❌ This command can only be used in the designated StackCoin channel: <##{guild.designated_channel_snowflake}>"
+          if is_nil(guild.designated_channel_snowflake) do
+            "❌ There is no designated StackCoin channel set for this server."
+          else
+            "❌ This command can only be used in the designated StackCoin channel: <##{guild.designated_channel_snowflake}>"
+          end
 
         :user_not_found ->
           "❌ You don't have a StackCoin account yet. Use `/dole` to get started."
