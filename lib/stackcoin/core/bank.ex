@@ -147,6 +147,32 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
+  Admin-only user banning with permission check.
+  """
+  def admin_ban_user(admin_discord_snowflake, target_discord_snowflake) do
+    with {:ok, _admin_check} <- check_admin_permissions(admin_discord_snowflake),
+         {:ok, target_user} <- get_user_by_discord_id(target_discord_snowflake) do
+      ban_user(target_user)
+    else
+      {:error, :not_admin} -> {:error, :not_admin}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Admin-only user unbanning with permission check.
+  """
+  def admin_unban_user(admin_discord_snowflake, target_discord_snowflake) do
+    with {:ok, _admin_check} <- check_admin_permissions(admin_discord_snowflake),
+         {:ok, target_user} <- get_user_by_discord_id(target_discord_snowflake) do
+      unban_user(target_user)
+    else
+      {:error, :not_admin} -> {:error, :not_admin}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
   Checks if a channel is the designated StackCoin channel for a guild.
   """
   def validate_channel(guild, channel_id) do
@@ -167,6 +193,8 @@ defmodule StackCoin.Core.Bank do
            {:ok, _self_check} <- validate_not_self_transfer(from_user_id, to_user_id),
            {:ok, from_user} <- get_user_by_id(from_user_id),
            {:ok, to_user} <- get_user_by_id(to_user_id),
+           {:ok, _from_banned_check} <- check_user_banned(from_user),
+           {:ok, _to_banned_check} <- check_recipient_banned(to_user),
            {:ok, _balance_check} <- check_sufficient_balance(from_user, amount),
            {:ok, transaction} <- create_transaction(from_user, to_user, amount, label) do
         transaction
@@ -198,6 +226,46 @@ defmodule StackCoin.Core.Bank do
 
       {:error, reason} ->
         {:error, reason}
+    end
+  end
+
+  @doc """
+  Bans a user from the StackCoin system.
+  """
+  def ban_user(user) do
+    user
+    |> User.changeset(%{banned: true})
+    |> Repo.update()
+  end
+
+  @doc """
+  Unbans a user from the StackCoin system.
+  """
+  def unban_user(user) do
+    user
+    |> User.changeset(%{banned: false})
+    |> Repo.update()
+  end
+
+  @doc """
+  Checks if a user is banned.
+  """
+  def check_user_banned(user) do
+    if user.banned do
+      {:error, :user_banned}
+    else
+      {:ok, :not_banned}
+    end
+  end
+
+  @doc """
+  Checks if a recipient user is banned (different error for sending to banned users).
+  """
+  def check_recipient_banned(user) do
+    if user.banned do
+      {:error, :recipient_banned}
+    else
+      {:ok, :not_banned}
     end
   end
 
