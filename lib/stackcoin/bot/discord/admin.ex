@@ -25,7 +25,7 @@ defmodule StackCoin.Bot.Discord.Admin do
         %{
           type: ApplicationCommandOptionType.sub_command(),
           name: "pump",
-          description: "Pump money into the reserve system",
+          description: "Pump money into the reserve",
           options: [
             %{
               type: ApplicationCommandOptionType.integer(),
@@ -255,7 +255,7 @@ defmodule StackCoin.Bot.Discord.Admin do
           %{
             title: "#{Commands.stackcoin_emoji()} Reserve Pumped Successfully!",
             description:
-              "**#{pump_record.amount}** STK have been pumped into the reserve system.\n\n" <>
+              "**#{pump_record.amount}** STK have been pumped into the reserve.\n\n" <>
                 "**New Reserve Balance:** **#{pump_record.to_new_balance}** STK\n" <>
                 "**Label:** #{pump_record.label}",
             color: Commands.stackcoin_color()

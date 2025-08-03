@@ -1,6 +1,6 @@
 defmodule StackCoin.Core.Reserve do
   @moduledoc """
-  Core logic for handling reserve system operations.
+  Core logic for handling reserve operations.
   """
 
   alias StackCoin.Core.Bank
@@ -11,7 +11,7 @@ defmodule StackCoin.Core.Reserve do
   @dole_amount 10
 
   @doc """
-  Transfers the dole amount from the reserve system to a user.
+  Transfers the dole amount from the reserve to a user.
   Returns {:ok, transaction} on success or {:error, reason} on failure.
   """
   def transfer_dole_to_user(user_id) do
@@ -39,7 +39,7 @@ defmodule StackCoin.Core.Reserve do
   end
 
   @doc """
-  Gets the current balance of the reserve system.
+  Gets the current balance of the reserve.
   """
   def get_reserve_balance do
     case Bank.get_user_balance(@reserve_user_id) do
@@ -50,7 +50,7 @@ defmodule StackCoin.Core.Reserve do
   end
 
   @doc """
-  Pumps money into the reserve system.
+  Pumps money into the reserve.
   Creates a pump record and updates the reserve balance.
   """
   def pump_reserve(signee_user_id, amount, label) do

@@ -179,7 +179,7 @@ defmodule StackCoin.Bot.Discord.Commands do
           "❌ That user doesn't have a StackCoin account yet."
 
         :insufficient_reserve_balance ->
-          "❌ The reserve system doesn't have enough STK to give you dole!"
+          "❌ The reserve doesn't have enough STK to give you dole!"
 
         {:dole_already_given_today, next_timestamp} ->
           "❌ You have already received your daily dole today, next dole available: <t:#{next_timestamp}:R>"
