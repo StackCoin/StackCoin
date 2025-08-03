@@ -14,7 +14,7 @@ defmodule StackCoin.Bot.Discord.Dole do
   def definition do
     %{
       name: "dole",
-      description: "Receive your daily dole of 10 StackCoins from the reserve system"
+      description: "Receive daily dole from the reserve system"
     }
   end
 
@@ -24,12 +24,26 @@ defmodule StackCoin.Bot.Discord.Dole do
   def handle(interaction) do
     with {:ok, guild} <- Bank.get_guild_by_discord_id(interaction.guild_id),
          {:ok, _channel_check} <- Bank.validate_channel(guild, interaction.channel_id),
-         {:ok, user} <- Bank.get_user_by_discord_id(interaction.user.id),
+         {:ok, user} <- get_or_create_user(interaction.user),
          {:ok, transaction} <- Reserve.transfer_dole_to_user(user.id) do
       send_success_response(interaction, user, transaction)
     else
       {:error, reason} ->
         Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp get_or_create_user(discord_user) do
+    case Bank.get_user_by_discord_id(discord_user.id) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, :user_not_found} ->
+        username = discord_user.username || "User"
+        Bank.create_user_account(discord_user.id, username)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -39,8 +53,8 @@ defmodule StackCoin.Bot.Discord.Dole do
       data: %{
         embeds: [
           %{
-            title: "#{Commands.stackcoin_emoji()} Received #{transaction.amount} StackCoins",
-            description: "New Balance: **#{transaction.to_new_balance}** StackCoins",
+            title: "#{Commands.stackcoin_emoji()} Received #{transaction.amount} STK",
+            description: "New Balance: **#{transaction.to_new_balance}** STK",
             color: Commands.stackcoin_color()
           }
         ]
