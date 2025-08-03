@@ -168,6 +168,9 @@ defmodule StackCoin.Bot.Discord.Commands do
         :user_not_found ->
           "❌ You don't have a StackCoin account yet. Use `/dole` to get started."
 
+        :other_user_not_found ->
+          "❌ That user doesn't have a StackCoin account yet."
+
         :insufficient_reserve_balance ->
           "❌ The reserve system doesn't have enough STK to give you dole!"
 
@@ -188,6 +191,12 @@ defmodule StackCoin.Bot.Discord.Commands do
 
         :recipient_not_found ->
           "❌ The recipient doesn't have a StackCoin account yet. They need to use `/dole` first to create an account."
+
+        :user_banned ->
+          "❌ You have been banned from the StackCoin system."
+
+        :recipient_banned ->
+          "❌ You cannot send STK to a banned user."
 
         reason ->
           "❌ An error occurred: #{inspect(reason)}"

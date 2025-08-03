@@ -41,6 +41,32 @@ defmodule StackCoin.Bot.Discord.Admin do
               required: false
             }
           ]
+        },
+        %{
+          type: ApplicationCommandOptionType.sub_command(),
+          name: "ban",
+          description: "Ban a user from the StackCoin system",
+          options: [
+            %{
+              type: ApplicationCommandOptionType.user(),
+              name: "user",
+              description: "User to ban",
+              required: true
+            }
+          ]
+        },
+        %{
+          type: ApplicationCommandOptionType.sub_command(),
+          name: "unban",
+          description: "Unban a user from the StackCoin system",
+          options: [
+            %{
+              type: ApplicationCommandOptionType.user(),
+              name: "user",
+              description: "User to unban",
+              required: true
+            }
+          ]
         }
       ]
     }
@@ -80,6 +106,24 @@ defmodule StackCoin.Bot.Discord.Admin do
     with {:ok, amount} <- get_pump_amount(interaction),
          {:ok, label} <- get_pump_label(interaction) do
       pump_reserve(amount, label, interaction)
+    else
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp handle_subcommand("ban", interaction) do
+    with {:ok, target_user_id} <- get_ban_user(interaction) do
+      ban_user(target_user_id, interaction)
+    else
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp handle_subcommand("unban", interaction) do
+    with {:ok, target_user_id} <- get_unban_user(interaction) do
+      unban_user(target_user_id, interaction)
     else
       {:error, reason} ->
         Commands.send_error_response(interaction, reason)
@@ -126,14 +170,7 @@ defmodule StackCoin.Bot.Discord.Admin do
             title: "#{Commands.stackcoin_emoji()} Server #{String.capitalize(action_text)}",
             description:
               "This channel has been #{action_text} as the StackCoin channel for this server.",
-            color: Commands.stackcoin_color(),
-            fields: [
-              %{
-                name: "Channel",
-                value: "<##{interaction.channel_id}>",
-                inline: true
-              }
-            ]
+            color: Commands.stackcoin_color()
           }
         ]
       }
@@ -169,6 +206,34 @@ defmodule StackCoin.Bot.Discord.Admin do
     end
   end
 
+  defp get_ban_user(interaction) do
+    case get_user_option_from_subcommand(interaction) do
+      nil -> {:error, :missing_user}
+      user_id when is_integer(user_id) -> {:ok, user_id}
+      _ -> {:error, :invalid_user}
+    end
+  end
+
+  defp get_unban_user(interaction) do
+    case get_user_option_from_subcommand(interaction) do
+      nil -> {:error, :missing_user}
+      user_id when is_integer(user_id) -> {:ok, user_id}
+      _ -> {:error, :invalid_user}
+    end
+  end
+
+  defp get_user_option_from_subcommand(interaction) do
+    case interaction.data.options do
+      [%{options: sub_options} | _] ->
+        Enum.find_value(sub_options, fn option ->
+          if option.name == "user", do: option.value, else: nil
+        end)
+
+      _ ->
+        nil
+    end
+  end
+
   defp pump_reserve(amount, label, interaction) do
     case Reserve.admin_pump_reserve(interaction.user.id, amount, label) do
       {:ok, pump_record} ->
@@ -190,20 +255,66 @@ defmodule StackCoin.Bot.Discord.Admin do
           %{
             title: "#{Commands.stackcoin_emoji()} Reserve Pumped Successfully!",
             description:
-              "**#{pump_record.amount}** STK have been pumped into the reserve system.",
-            color: Commands.stackcoin_color(),
-            fields: [
-              %{
-                name: "New Reserve Balance",
-                value: "**#{pump_record.to_new_balance}** STK",
-                inline: true
-              },
-              %{
-                name: "Label",
-                value: pump_record.label,
-                inline: true
-              }
-            ]
+              "**#{pump_record.amount}** STK have been pumped into the reserve system.\n\n" <>
+                "**New Reserve Balance:** **#{pump_record.to_new_balance}** STK\n" <>
+                "**Label:** #{pump_record.label}",
+            color: Commands.stackcoin_color()
+          }
+        ]
+      }
+    })
+  end
+
+  defp ban_user(target_user_id, interaction) do
+    case Bank.admin_ban_user(interaction.user.id, target_user_id) do
+      {:ok, user} ->
+        send_ban_success_response(interaction, user)
+
+      {:error, :not_admin} ->
+        Commands.send_error_response(interaction, :not_admin)
+
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp send_ban_success_response(interaction, user) do
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.channel_message_with_source(),
+      data: %{
+        embeds: [
+          %{
+            title: "#{Commands.stackcoin_emoji()} User Banned",
+            description: "**#{user.username}** has been banned from the StackCoin.",
+            color: Commands.stackcoin_color()
+          }
+        ]
+      }
+    })
+  end
+
+  defp unban_user(target_user_id, interaction) do
+    case Bank.admin_unban_user(interaction.user.id, target_user_id) do
+      {:ok, user} ->
+        send_unban_success_response(interaction, user)
+
+      {:error, :not_admin} ->
+        Commands.send_error_response(interaction, :not_admin)
+
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp send_unban_success_response(interaction, user) do
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.channel_message_with_source(),
+      data: %{
+        embeds: [
+          %{
+            title: "#{Commands.stackcoin_emoji()} User Unbanned",
+            description: "**#{user.username}** has been unbanned from the StackCoin.",
+            color: Commands.stackcoin_color()
           }
         ]
       }

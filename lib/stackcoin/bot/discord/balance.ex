@@ -46,14 +46,21 @@ defmodule StackCoin.Bot.Discord.Balance do
       nil ->
         # No user specified, check own balance
         case Bank.get_user_by_discord_id(interaction.user.id) do
-          {:ok, user} -> {:ok, {user, true}}
-          {:error, reason} -> {:error, reason}
+          {:ok, user} ->
+            case Bank.check_user_banned(user) do
+              {:ok, :not_banned} -> {:ok, {user, true}}
+              {:error, :user_banned} -> {:error, :user_banned}
+            end
+
+          {:error, reason} ->
+            {:error, reason}
         end
 
       target_user_id ->
         # User specified, check their balance
         case Bank.get_user_by_discord_id(target_user_id) do
           {:ok, user} -> {:ok, {user, false}}
+          {:error, :user_not_found} -> {:error, :other_user_not_found}
           {:error, reason} -> {:error, reason}
         end
     end
