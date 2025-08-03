@@ -1,4 +1,3 @@
-```sql
 CREATE TABLE "user" (
   "id" serial PRIMARY KEY,
   "created_at" timestamp without time zone not null,
@@ -50,29 +49,3 @@ CREATE TABLE "pump" (
   "label" text not null,
   CHECK ("signee_id" <> "to_id")
 );
-
-WITH stackcoin_reserve_system_user AS (
-  INSERT INTO "user"
-    (
-      id,
-      created_at,
-      username,
-      balance,
-      last_given_dole,
-      admin,
-      banned
-    )
-  VALUES
-    (
-      1,
-      now() at time zone 'utc',
-      'StackCoin Reserve System',
-      0,
-      null,
-      false,
-      false
-    )
-  RETURNING id, username
-)
-INSERT INTO "internal_user" SELECT id, username AS identifier FROM stackcoin_reserve_system_user;
-```
