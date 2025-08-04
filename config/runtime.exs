@@ -12,7 +12,10 @@ config :stackcoin,
 
 config :nostrum,
   id: env!("STACKCOIN_DISCORD_APPLICATION_ID", :integer, nil),
-  token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil)
+  token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil),
+  ffmpeg: nil,
+  youtube_dl: nil,
+  streamlink: nil
 
 if System.get_env("PHX_SERVER") do
   config :stackcoin, StackCoinWeb.Endpoint, server: true

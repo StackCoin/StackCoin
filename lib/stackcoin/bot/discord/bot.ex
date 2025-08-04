@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Bot do
   Discord bot management command implementation for all users.
   """
 
-  alias StackCoin.Core.Bot
+  alias StackCoin.Core.{Bot, User}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.{ApplicationCommandOptionType, InteractionCallbackType}
@@ -69,7 +69,9 @@ defmodule StackCoin.Bot.Discord.Bot do
   Handles the bot command interaction.
   """
   def handle(interaction) do
-    with {:ok, subcommand} <- get_subcommand(interaction) do
+    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+         {:ok, subcommand} <- get_subcommand(interaction) do
       handle_subcommand(subcommand, interaction)
     else
       {:error, reason} ->
@@ -195,7 +197,7 @@ defmodule StackCoin.Bot.Discord.Bot do
           %{
             title: "#{Commands.stackcoin_emoji()} Bot Created Successfully!",
             description:
-              "Bot **#{bot.user.username}** (ID: #{bot.id}) has been created.\n\nYour bot token will be sent to you via direct message.",
+              "Bot **#{bot.name}** (ID: #{bot.id}) has been created.\n\nYour bot token will be sent to you via direct message.",
             color: Commands.stackcoin_color()
           }
         ]
@@ -211,7 +213,7 @@ defmodule StackCoin.Bot.Discord.Bot do
         "You have no active bots."
       else
         bots
-        |> Enum.map(fn bot -> "• **#{bot.user.username}** (ID: #{bot.id})" end)
+        |> Enum.map(fn bot -> "• **#{bot.name}** (ID: #{bot.id})" end)
         |> Enum.join("\n")
       end
 
@@ -237,7 +239,7 @@ defmodule StackCoin.Bot.Discord.Bot do
           %{
             title: "#{Commands.stackcoin_emoji()} Bot Token Reset",
             description:
-              "Token for bot **#{bot.user.username}** has been reset.\n\nYour new bot token will be sent to you via direct message.",
+              "Token for bot **#{bot.name}** has been reset.\n\nYour new bot token will be sent to you via direct message.",
             color: Commands.stackcoin_color()
           }
         ]
@@ -254,7 +256,7 @@ defmodule StackCoin.Bot.Discord.Bot do
         embeds: [
           %{
             title: "#{Commands.stackcoin_emoji()} Bot Deleted",
-            description: "Bot **#{bot.user.username}** has been deleted.",
+            description: "Bot **#{bot.name}** has been deleted.",
             color: Commands.stackcoin_color()
           }
         ]
@@ -271,7 +273,7 @@ defmodule StackCoin.Bot.Discord.Bot do
             %{
               title: "#{Commands.stackcoin_emoji()} Bot Token",
               description:
-                "Here is the token for your bot **#{bot.user.username}**:\n\n```\n#{bot.token}\n```\n\n**Keep this token secure!** Use it in the `Authorization: Bearer <token>` header for API requests.",
+                "Here is the token for your bot **#{bot.name}**:\n\n```\n#{bot.token}\n```\n\n**Keep this token secure!** Use it in the `Authorization: Bearer <token>` header for API requests.",
               color: Commands.stackcoin_color()
             }
           ]

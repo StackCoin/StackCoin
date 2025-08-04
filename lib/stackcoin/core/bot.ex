@@ -28,6 +28,7 @@ defmodule StackCoin.Core.Bot do
           token = Schema.BotUser.generate_token()
 
           bot_attrs = %{
+            name: bot_name,
             token: token,
             user_id: bot_user.id,
             owner_id: owner.id,
@@ -113,6 +114,30 @@ defmodule StackCoin.Core.Bot do
       nil -> {:error, :invalid_token}
       bot -> {:ok, Repo.preload(bot, [:user, :owner])}
     end
+  end
+
+  @doc """
+  Gets a bot user by name.
+  """
+  def get_bot_by_name(bot_name) do
+    case Repo.get_by(Schema.BotUser, name: bot_name, active: true) do
+      nil -> {:error, :bot_not_found}
+      bot -> {:ok, Repo.preload(bot, [:user, :owner])}
+    end
+  end
+
+  @doc """
+  Gets all active bot names for autocomplete.
+  """
+  def get_all_bot_names do
+    query =
+      from(b in Schema.BotUser,
+        where: b.active == true,
+        select: b.name,
+        order_by: [asc: b.name]
+      )
+
+    Repo.all(query)
   end
 
   defp get_bot_by_id_and_owner(bot_id, owner_id) do

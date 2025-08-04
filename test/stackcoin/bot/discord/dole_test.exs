@@ -1,5 +1,5 @@
 defmodule StackCoinTest.Bot.Discord.Dole do
-  use ExUnit.Case, async: false
+  use ExUnit.Case
   import Mock
   import StackCoinTest.Support.DiscordUtils
 
@@ -11,7 +11,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     :ok
   end
 
-  defp create_reserve_user(balance \\ 0) do
+  defp create_reserve_user(balance) do
     # Create or update the reserve user (ID 1) that the system expects
     # Use Bank.update_user_balance which handles the database operations safely
     case User.get_user_by_id(1) do

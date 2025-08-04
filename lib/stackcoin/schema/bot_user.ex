@@ -3,6 +3,7 @@ defmodule StackCoin.Schema.BotUser do
   import Ecto.Changeset
 
   schema "bot_user" do
+    field(:name, :string)
     field(:token, :string)
     field(:active, :boolean, default: true)
 
@@ -14,9 +15,11 @@ defmodule StackCoin.Schema.BotUser do
 
   def changeset(bot_user, attrs) do
     bot_user
-    |> cast(attrs, [:token, :user_id, :owner_id, :active])
-    |> validate_required([:token, :user_id, :owner_id])
+    |> cast(attrs, [:name, :token, :user_id, :owner_id, :active])
+    |> validate_required([:name, :token, :user_id, :owner_id])
+    |> validate_length(:name, min: 1, max: 50)
     |> validate_length(:token, is: 32)
+    |> unique_constraint(:name)
     |> unique_constraint(:token)
     |> unique_constraint(:user_id)
     |> foreign_key_constraint(:user_id)

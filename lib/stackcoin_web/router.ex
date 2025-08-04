@@ -24,9 +24,9 @@ defmodule StackCoinWeb.Router do
   scope "/api/bot", StackCoinWeb do
     pipe_through([:api, StackCoinWeb.Plugs.BotAuth])
 
-    get("/balance", BotApiController, :balance)
-    get("/balance/:user_id", BotApiController, :user_balance)
-    post("/send", BotApiController, :send_tokens)
+    get("/self/balance", BotApiController, :balance)
+    get("/user/:user_id/balance", BotApiController, :user_balance)
+    post("/user/:user_id/send", BotApiController, :send_tokens)
   end
 
   # Enable LiveDashboard in development

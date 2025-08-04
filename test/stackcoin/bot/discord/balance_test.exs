@@ -4,7 +4,7 @@ defmodule StackCoinTest.Bot.Discord.Balance do
   import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.{Admin, Balance}
-  alias StackCoin.Core.{Bank, User}
+  alias StackCoin.Core.User
 
   setup do
     # Ensure clean database state for each test
