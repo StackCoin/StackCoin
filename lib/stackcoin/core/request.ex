@@ -5,7 +5,7 @@ defmodule StackCoin.Core.Request do
 
   alias StackCoin.Repo
   alias StackCoin.Schema
-  alias StackCoin.Core.User
+  alias StackCoin.Core.{User, Bank}
   import Ecto.Query
 
   @doc """
@@ -95,15 +95,13 @@ defmodule StackCoin.Core.Request do
          :ok <- validate_request_responder(request, responder_id),
          :ok <- validate_request_pending(request) do
       Repo.transaction(fn ->
-        # Create the transaction using Bank.transfer
-        case StackCoin.Core.Bank.transfer_between_users(
+        case Bank.transfer_between_users(
                responder_id,
                request.requester_id,
                request.amount,
                request.label
              ) do
           {:ok, transaction} ->
-            # Update the request status
             request_attrs = %{
               status: "accepted",
               resolved_at: NaiveDateTime.utc_now(),
@@ -114,7 +112,7 @@ defmodule StackCoin.Core.Request do
                  |> Schema.Request.changeset(request_attrs)
                  |> Repo.update() do
               {:ok, updated_request} ->
-                Repo.preload(updated_request, [:requester, :responder, :transaction])
+                Repo.preload(updated_request, [:requester, :responder, :transaction], force: true)
 
               {:error, changeset} ->
                 Repo.rollback(changeset)

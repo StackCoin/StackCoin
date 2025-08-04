@@ -797,7 +797,7 @@ defmodule StackCoinWebTest.BotApiController do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/bot/requests//accept")
+        |> post(~p"/api/bot/requests/accept")
 
       assert json_response(conn, 400) == %{"error" => "Missing required parameter: request_id"}
     end
@@ -910,7 +910,7 @@ defmodule StackCoinWebTest.BotApiController do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/bot/requests//deny")
+        |> post(~p"/api/bot/requests/deny")
 
       assert json_response(conn, 400) == %{"error" => "Missing required parameter: request_id"}
     end
