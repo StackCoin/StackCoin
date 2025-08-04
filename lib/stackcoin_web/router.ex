@@ -27,6 +27,12 @@ defmodule StackCoinWeb.Router do
     get("/self/balance", BotApiController, :balance)
     get("/user/:user_id/balance", BotApiController, :user_balance)
     post("/user/:user_id/send", BotApiController, :send_tokens)
+
+    # Request endpoints
+    post("/user/:user_id/request", BotApiController, :create_request)
+    get("/requests", BotApiController, :get_requests)
+    post("/requests/:request_id/accept", BotApiController, :accept_request)
+    post("/requests/:request_id/deny", BotApiController, :deny_request)
   end
 
   # Enable LiveDashboard in development
