@@ -21,7 +21,7 @@ defmodule StackCoin.Bot.Discord.Graph do
         %{
           type: ApplicationCommandOptionType.user(),
           name: "user",
-          description: "User whose balance graph to view (optional)",
+          description: "User whose balance graph to view",
           required: false
         }
       ]

@@ -1,6 +1,7 @@
 defmodule StackCoinTest.Support.DiscordUtils do
   import Mock
   alias StackCoin.Core.User
+  alias Nostrum.Constants.InteractionType
 
   def setup_admin_user(admin_user_id) do
     # Set up admin user in config for this test
@@ -9,6 +10,7 @@ defmodule StackCoinTest.Support.DiscordUtils do
 
   def create_mock_interaction(user_id, guild_id, channel_id, data) do
     %{
+      type: InteractionType.application_command(),
       user: %{id: user_id},
       guild_id: guild_id,
       channel_id: channel_id,

@@ -3,6 +3,19 @@ defmodule StackCoinWeb.BotApiController do
 
   alias StackCoin.Core.{Bank, User}
 
+  defp error_to_status_and_message(error_atom) do
+    case error_atom do
+      :bot_not_found -> {:unauthorized, "bot_not_found"}
+      :user_not_found -> {:not_found, "user_not_found"}
+      :invalid_amount -> {:bad_request, "invalid_amount"}
+      :self_transfer -> {:bad_request, "self_transfer"}
+      :user_banned -> {:forbidden, "user_banned"}
+      :recipient_banned -> {:forbidden, "recipient_banned"}
+      :insufficient_balance -> {:unprocessable_entity, "insufficient_balance"}
+      _ -> {:internal_server_error, Atom.to_string(error_atom)}
+    end
+  end
+
   def balance(conn, _params) do
     current_bot = conn.assigns.current_bot
     bot_user = current_bot.user
@@ -29,38 +42,48 @@ defmodule StackCoinWeb.BotApiController do
     end
   end
 
-  def send_tokens(conn, %{"to_user_id" => to_user_id_str, "amount" => amount} = params) do
+  def send_tokens(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
 
-    with {to_user_id, ""} <- Integer.parse(to_user_id_str),
-         {amount_int, ""} <- Integer.parse(to_string(amount)) do
-      case Bank.bot_transfer(current_bot.token, to_user_id, amount_int, label) do
-        {:ok, transaction} ->
-          json(conn, %{
-            success: true,
-            transaction_id: transaction.id,
-            amount: transaction.amount,
-            from_new_balance: transaction.from_new_balance,
-            to_new_balance: transaction.to_new_balance
-          })
+    case Integer.parse(user_id_str) do
+      {to_user_id, ""} ->
+        cond do
+          not is_integer(amount) ->
+            conn
+            |> put_status(:bad_request)
+            |> json(%{error: "Invalid amount. Must be an integer."})
 
-        {:error, reason} ->
-          conn
-          |> put_status(:internal_server_error)
-          |> json(%{error: "Transfer failed: #{inspect(reason)}"})
-      end
-    else
+          true ->
+            case Bank.bot_transfer(current_bot.token, to_user_id, amount, label) do
+              {:ok, transaction} ->
+                json(conn, %{
+                  success: true,
+                  transaction_id: transaction.id,
+                  amount: transaction.amount,
+                  from_new_balance: transaction.from_new_balance,
+                  to_new_balance: transaction.to_new_balance
+                })
+
+              {:error, reason} ->
+                {status, message} = error_to_status_and_message(reason)
+
+                conn
+                |> put_status(status)
+                |> json(%{error: message})
+            end
+        end
+
       _ ->
         conn
         |> put_status(:bad_request)
-        |> json(%{error: "Invalid user ID or amount"})
+        |> json(%{error: "Invalid user ID"})
     end
   end
 
   def send_tokens(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: "Missing required parameters: to_user_id, amount"})
+    |> json(%{error: "Missing required parameters: amount"})
   end
 end

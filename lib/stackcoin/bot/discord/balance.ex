@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Balance do
   Discord balance command implementation.
   """
 
-  alias StackCoin.Core.User
+  alias StackCoin.Core.{User, Bot}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -15,13 +15,20 @@ defmodule StackCoin.Bot.Discord.Balance do
   def definition do
     %{
       name: "balance",
-      description: "Check your StackCoin balance or another user's balance",
+      description: "Check your StackCoin balance, another user's balance, or a bot's balance",
       options: [
         %{
           type: ApplicationCommandOptionType.user(),
           name: "user",
-          description: "User whose balance to check (optional)",
+          description: "User whose balance to check",
           required: false
+        },
+        %{
+          type: ApplicationCommandOptionType.string(),
+          name: "bot",
+          description: "Bot whose balance to check",
+          required: false,
+          autocomplete: true
         }
       ]
     }
@@ -31,37 +38,77 @@ defmodule StackCoin.Bot.Discord.Balance do
   Handles the balance command interaction.
   """
   def handle(interaction) do
+    cond do
+      interaction.type == Nostrum.Constants.InteractionType.application_command_autocomplete() ->
+        handle_autocomplete(interaction)
+
+      interaction.type == Nostrum.Constants.InteractionType.application_command() ->
+        handle_command(interaction)
+
+      true ->
+        Commands.send_error_response(interaction, :unknown_interaction_type)
+    end
+  end
+
+  defp handle_command(interaction) do
     with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
          {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
-         {:ok, {target_user, is_self}} <- get_target_user(interaction) do
-      send_balance_response(interaction, target_user, is_self)
+         {:ok, {target, target_type, is_self}} <- get_target(interaction) do
+      send_balance_response(interaction, target, target_type, is_self)
     else
       {:error, reason} ->
         Commands.send_error_response(interaction, reason)
     end
   end
 
-  defp get_target_user(interaction) do
-    case get_user_option(interaction) do
-      nil ->
-        # No user specified, check own balance
+  defp handle_autocomplete(interaction) do
+    focused_option = get_focused_option(interaction)
+
+    case focused_option do
+      %{name: "bot", value: partial_name} ->
+        suggestions = get_bot_suggestions(partial_name)
+        send_autocomplete_response(interaction, suggestions)
+
+      _ ->
+        send_autocomplete_response(interaction, [])
+    end
+  end
+
+  defp get_target(interaction) do
+    user_option = get_user_option(interaction)
+    bot_option = get_bot_option(interaction)
+
+    cond do
+      user_option && bot_option ->
+        {:error, :both_user_and_bot_specified}
+
+      user_option ->
+        # User specified, check their balance
+        case User.get_user_by_discord_id(user_option) do
+          {:ok, user} -> {:ok, {user, :user, false}}
+          {:error, :user_not_found} -> {:error, :other_user_not_found}
+          {:error, reason} -> {:error, reason}
+        end
+
+      bot_option ->
+        # Bot specified, check their balance
+        case Bot.get_bot_by_name(bot_option) do
+          {:ok, bot} -> {:ok, {bot, :bot, false}}
+          {:error, :bot_not_found} -> {:error, :bot_not_found}
+          {:error, reason} -> {:error, reason}
+        end
+
+      true ->
+        # No user or bot specified, check own balance
         case User.get_user_by_discord_id(interaction.user.id) do
           {:ok, user} ->
             case User.check_user_banned(user) do
-              {:ok, :not_banned} -> {:ok, {user, true}}
+              {:ok, :not_banned} -> {:ok, {user, :user, true}}
               {:error, :user_banned} -> {:error, :user_banned}
             end
 
           {:error, reason} ->
             {:error, reason}
-        end
-
-      target_user_id ->
-        # User specified, check their balance
-        case User.get_user_by_discord_id(target_user_id) do
-          {:ok, user} -> {:ok, {user, false}}
-          {:error, :user_not_found} -> {:error, :other_user_not_found}
-          {:error, reason} -> {:error, reason}
         end
     end
   end
@@ -78,12 +125,61 @@ defmodule StackCoin.Bot.Discord.Balance do
     end
   end
 
-  defp send_balance_response(interaction, user, is_self) do
+  defp get_bot_option(interaction) do
+    case interaction.data.options do
+      nil ->
+        nil
+
+      options ->
+        Enum.find_value(options, fn option ->
+          if option.name == "bot", do: option.value, else: nil
+        end)
+    end
+  end
+
+  defp get_focused_option(interaction) do
+    case interaction.data.options do
+      nil ->
+        nil
+
+      options ->
+        Enum.find(options, fn option ->
+          Map.get(option, :focused, false)
+        end)
+    end
+  end
+
+  defp get_bot_suggestions(partial_name) do
+    Bot.get_all_bot_names()
+    |> Enum.filter(fn name ->
+      String.contains?(String.downcase(name), String.downcase(partial_name))
+    end)
+    |> Enum.take(25)
+    |> Enum.map(fn name ->
+      %{name: name, value: name}
+    end)
+  end
+
+  defp send_autocomplete_response(interaction, suggestions) do
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.application_command_autocomplete_result(),
+      data: %{
+        choices: suggestions
+      }
+    })
+  end
+
+  defp send_balance_response(interaction, target, target_type, is_self) do
     title =
-      if is_self do
-        "#{Commands.stackcoin_emoji()} Your balance: #{user.balance} STK"
-      else
-        "#{Commands.stackcoin_emoji()} #{user.username}'s balance: #{user.balance} STK"
+      case {target_type, is_self} do
+        {:user, true} ->
+          "#{Commands.stackcoin_emoji()} Your balance: #{target.balance} STK"
+
+        {:user, false} ->
+          "#{Commands.stackcoin_emoji()} #{target.username}'s balance: #{target.balance} STK"
+
+        {:bot, false} ->
+          "#{Commands.stackcoin_emoji()} Bot #{target.name}'s balance: #{target.user.balance} STK"
       end
 
     Api.create_interaction_response(interaction, %{
