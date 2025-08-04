@@ -3,19 +3,56 @@ defmodule StackCoinWeb.BotApiController do
 
   alias StackCoin.Core.{Bank, User, Request}
 
-  defp error_to_status_and_message(error_atom) do
-    case error_atom do
-      :bot_not_found -> {:unauthorized, "bot_not_found"}
-      :user_not_found -> {:not_found, "user_not_found"}
-      :invalid_amount -> {:bad_request, "invalid_amount"}
-      :self_transfer -> {:bad_request, "self_transfer"}
-      :user_banned -> {:forbidden, "user_banned"}
-      :recipient_banned -> {:forbidden, "recipient_banned"}
-      :insufficient_balance -> {:unprocessable_entity, "insufficient_balance"}
-      :request_not_found -> {:not_found, "request_not_found"}
-      :not_request_responder -> {:forbidden, "not_request_responder"}
-      :request_not_pending -> {:bad_request, "request_not_pending"}
-      _ -> {:internal_server_error, Atom.to_string(error_atom)}
+  defp error_to_status_and_message(error) do
+    case error do
+      :bot_not_found ->
+        {:unauthorized, "bot_not_found"}
+
+      :user_not_found ->
+        {:not_found, "user_not_found"}
+
+      :invalid_amount ->
+        {:bad_request, "invalid_amount"}
+
+      :self_transfer ->
+        {:bad_request, "self_transfer"}
+
+      :user_banned ->
+        {:forbidden, "user_banned"}
+
+      :recipient_banned ->
+        {:forbidden, "recipient_banned"}
+
+      :insufficient_balance ->
+        {:unprocessable_entity, "insufficient_balance"}
+
+      :request_not_found ->
+        {:not_found, "request_not_found"}
+
+      :not_request_responder ->
+        {:forbidden, "not_request_responder"}
+
+      :request_not_pending ->
+        {:bad_request, "request_not_pending"}
+
+      %Ecto.Changeset{} = changeset ->
+        # Handle validation errors from changesets
+        cond do
+          Keyword.has_key?(changeset.errors, :amount) ->
+            {:bad_request, "invalid_amount"}
+
+          Keyword.has_key?(changeset.errors, :responder_id) ->
+            {:bad_request, "self_transfer"}
+
+          true ->
+            {:bad_request, "validation_error"}
+        end
+
+      error_atom when is_atom(error_atom) ->
+        {:internal_server_error, Atom.to_string(error_atom)}
+
+      _ ->
+        {:internal_server_error, "unknown_error"}
     end
   end
 

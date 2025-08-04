@@ -24,7 +24,8 @@ defmodule StackCoin.Core.Bank do
            {:ok, transaction} <- create_transaction(from_user, to_user, amount, label) do
         transaction
       else
-        {:error, reason} -> Repo.rollback(reason)
+        {:error, reason} ->
+          Repo.rollback(reason)
       end
     end)
   end

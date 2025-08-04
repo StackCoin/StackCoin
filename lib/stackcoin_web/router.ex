@@ -33,6 +33,9 @@ defmodule StackCoinWeb.Router do
     get("/requests", BotApiController, :get_requests)
     post("/requests/:request_id/accept", BotApiController, :accept_request)
     post("/requests/:request_id/deny", BotApiController, :deny_request)
+    # Routes for missing parameters (to trigger 400 instead of 404)
+    post("/requests/accept", BotApiController, :accept_request)
+    post("/requests/deny", BotApiController, :deny_request)
   end
 
   # Enable LiveDashboard in development
