@@ -15,7 +15,7 @@ defmodule StackCoin.Bot.Discord.Balance do
   def definition do
     %{
       name: "balance",
-      description: "Check your StackCoin balances",
+      description: "Check StackCoin balances",
       options: [
         %{
           type: ApplicationCommandOptionType.user(),

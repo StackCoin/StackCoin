@@ -147,15 +147,15 @@ defmodule StackCoin.Bot.Discord.Bot do
   end
 
   defp create_bot(bot_name, interaction) do
-    case Bot.create_bot_user(interaction.user.id, bot_name) do
+    case Bot.admin_create_bot_user(interaction.user.id, bot_name) do
       {:ok, bot} ->
         send_bot_created_response(interaction, bot)
 
+      {:error, :not_admin} ->
+        Commands.send_error_response(interaction, :not_admin)
+
       {:error, changeset} ->
-        Commands.send_error_response(
-          interaction,
-          "Failed to create bot: #{inspect(changeset.errors)}"
-        )
+        Commands.send_error_response(interaction, changeset)
     end
   end
 

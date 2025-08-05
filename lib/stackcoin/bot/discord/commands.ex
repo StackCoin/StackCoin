@@ -209,6 +209,24 @@ defmodule StackCoin.Bot.Discord.Commands do
         :conflicting_transaction_filters ->
           "❌ You cannot use 'includes' with 'from' or 'to' filters. Use either 'includes' alone, or 'from'/'to' together."
 
+        :bot_not_found ->
+          "❌ Bot not found or you don't have permission to access it."
+
+        :missing_name ->
+          "❌ Bot name is required."
+
+        :invalid_name ->
+          "❌ Invalid bot name provided."
+
+        :missing_bot_id ->
+          "❌ Bot ID is required."
+
+        :invalid_bot_id ->
+          "❌ Invalid bot ID provided."
+
+        :no_subcommand ->
+          "❌ No subcommand specified."
+
         reason ->
           "❌ An error occurred: #{inspect(reason)}"
       end
