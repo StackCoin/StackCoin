@@ -273,7 +273,7 @@ defmodule StackCoin.Bot.Discord.Bot do
             %{
               title: "#{Commands.stackcoin_emoji()} Bot Token",
               description:
-                "Here is the token for your bot **#{bot.name}**:\n\n```\n#{bot.token}\n```\n\n**Keep this token secure!** Use it in the `Authorization: Bearer <token>` header for API requests.",
+                "Here is the token for your bot **#{bot.name}**:\n\n||#{bot.token}||\n\n**Keep this token secure!** Use it in the `Authorization: Bearer <token>` header for API requests.",
               color: Commands.stackcoin_color()
             }
           ]

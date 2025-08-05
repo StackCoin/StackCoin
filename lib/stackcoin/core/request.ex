@@ -8,6 +8,8 @@ defmodule StackCoin.Core.Request do
   alias StackCoin.Core.{User, Bank}
   import Ecto.Query
 
+  @max_limit 100
+
   @doc """
   Creates a new payment request from requester to responder.
   """
@@ -26,8 +28,13 @@ defmodule StackCoin.Core.Request do
       }
 
       case Repo.insert(Schema.Request.changeset(%Schema.Request{}, request_attrs)) do
-        {:ok, request} -> {:ok, Repo.preload(request, [:requester, :responder])}
-        {:error, changeset} -> {:error, changeset}
+        {:ok, request} ->
+          preloaded_request = Repo.preload(request, [:requester, :responder])
+          StackCoin.Bot.Discord.Request.send_request_notification(preloaded_request)
+          {:ok, preloaded_request}
+
+        {:error, changeset} ->
+          {:error, changeset}
       end
     else
       {:error, reason} -> {:error, reason}
@@ -45,14 +52,18 @@ defmodule StackCoin.Core.Request do
   end
 
   @doc """
-  Gets requests for a user with optional filtering.
+  Gets requests for a user with optional filtering and pagination.
   Options:
   - :role - :requester (requests made by user) or :responder (requests to user)
   - :status - filter by status ("pending", "accepted", "denied", "expired")
+  - :limit - number of results to return (max #{@max_limit})
+  - :offset - number of results to skip
   """
   def get_requests_for_user(user_id, opts \\ []) do
     role = Keyword.get(opts, :role, :requester)
     status = Keyword.get(opts, :status)
+    limit = min(Keyword.get(opts, :limit, 20), @max_limit)
+    offset = Keyword.get(opts, :offset, 0)
 
     base_query =
       case role do
@@ -71,7 +82,7 @@ defmodule StackCoin.Core.Request do
           )
       end
 
-    query =
+    filtered_query =
       case status do
         nil ->
           base_query
@@ -84,7 +95,19 @@ defmodule StackCoin.Core.Request do
           from(r in base_query, where: false)
       end
 
-    {:ok, Repo.all(query)}
+    # Get total count for pagination metadata
+    total_count = Repo.aggregate(filtered_query, :count, :id)
+
+    # Apply pagination
+    paginated_query =
+      from(r in filtered_query,
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    requests = Repo.all(paginated_query)
+
+    {:ok, %{requests: requests, total_count: total_count}}
   end
 
   @doc """

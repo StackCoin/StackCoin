@@ -38,6 +38,9 @@ defmodule StackCoinWeb.BotApiController do
       :request_not_pending ->
         {:bad_request, "request_not_pending"}
 
+      :conflicting_filters ->
+        {:bad_request, "conflicting_filters"}
+
       %Ecto.Changeset{} = changeset ->
         # Handle validation errors from changesets
         cond do
@@ -197,41 +200,71 @@ defmodule StackCoinWeb.BotApiController do
 
     status = Map.get(params, "status")
 
-    opts = [role: role]
+    # Parse pagination parameters
+    page =
+      case Map.get(params, "page") do
+        nil ->
+          1
+
+        page_str ->
+          case Integer.parse(page_str) do
+            {page_num, ""} when page_num > 0 -> page_num
+            _ -> 1
+          end
+      end
+
+    limit =
+      case Map.get(params, "limit") do
+        nil ->
+          20
+
+        limit_str ->
+          case Integer.parse(limit_str) do
+            {limit_num, ""} when limit_num > 0 -> limit_num
+            _ -> 20
+          end
+      end
+
+    offset = (page - 1) * limit
+
+    opts = [role: role, limit: limit, offset: offset]
     opts = if status, do: Keyword.put(opts, :status, status), else: opts
 
-    case Request.get_requests_for_user(current_bot.user.id, opts) do
-      {:ok, requests} ->
-        formatted_requests =
-          Enum.map(requests, fn request ->
-            %{
-              id: request.id,
-              amount: request.amount,
-              status: request.status,
-              requested_at: request.requested_at,
-              resolved_at: request.resolved_at,
-              label: request.label,
-              requester: %{
-                id: request.requester.id,
-                username: request.requester.username
-              },
-              responder: %{
-                id: request.responder.id,
-                username: request.responder.username
-              },
-              transaction_id: if(request.transaction, do: request.transaction.id, else: nil)
-            }
-          end)
+    {:ok, %{requests: requests, total_count: total_count}} =
+      Request.get_requests_for_user(current_bot.user.id, opts)
 
-        json(conn, %{requests: formatted_requests})
+    formatted_requests =
+      Enum.map(requests, fn request ->
+        %{
+          id: request.id,
+          amount: request.amount,
+          status: request.status,
+          requested_at: request.requested_at,
+          resolved_at: request.resolved_at,
+          label: request.label,
+          requester: %{
+            id: request.requester.id,
+            username: request.requester.username
+          },
+          responder: %{
+            id: request.responder.id,
+            username: request.responder.username
+          },
+          transaction_id: if(request.transaction, do: request.transaction.id, else: nil)
+        }
+      end)
 
-      {:error, reason} ->
-        {status, message} = error_to_status_and_message(reason)
+    total_pages = ceil(total_count / limit)
 
-        conn
-        |> put_status(status)
-        |> json(%{error: message})
-    end
+    json(conn, %{
+      requests: formatted_requests,
+      pagination: %{
+        page: page,
+        limit: limit,
+        total: total_count,
+        total_pages: total_pages
+      }
+    })
   end
 
   def accept_request(conn, %{"request_id" => request_id_str}) do
@@ -297,5 +330,117 @@ defmodule StackCoinWeb.BotApiController do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "Missing required parameter: request_id"})
+  end
+
+  def get_transactions(conn, params) do
+    current_bot = conn.assigns.current_bot
+
+    # Parse pagination parameters
+    page =
+      case Map.get(params, "page") do
+        nil ->
+          1
+
+        page_str ->
+          case Integer.parse(page_str) do
+            {page_num, ""} when page_num > 0 -> page_num
+            _ -> 1
+          end
+      end
+
+    limit =
+      case Map.get(params, "limit") do
+        nil ->
+          20
+
+        limit_str ->
+          case Integer.parse(limit_str) do
+            {limit_num, ""} when limit_num > 0 -> limit_num
+            _ -> 20
+          end
+      end
+
+    offset = (page - 1) * limit
+
+    # Parse filter parameters
+    from_user_id =
+      case Map.get(params, "from_user_id") do
+        nil ->
+          nil
+
+        user_id_str ->
+          case Integer.parse(user_id_str) do
+            {user_id, ""} -> user_id
+            _ -> nil
+          end
+      end
+
+    to_user_id =
+      case Map.get(params, "to_user_id") do
+        nil ->
+          nil
+
+        user_id_str ->
+          case Integer.parse(user_id_str) do
+            {user_id, ""} -> user_id
+            _ -> nil
+          end
+      end
+
+    # Default to showing all bot transactions (includes_user_id = bot's user id)
+    # unless specific from/to filters are provided
+    includes_user_id =
+      if from_user_id || to_user_id do
+        nil
+      else
+        current_bot.user.id
+      end
+
+    opts = [limit: limit, offset: offset]
+    opts = if from_user_id, do: Keyword.put(opts, :from_user_id, from_user_id), else: opts
+    opts = if to_user_id, do: Keyword.put(opts, :to_user_id, to_user_id), else: opts
+
+    opts =
+      if includes_user_id, do: Keyword.put(opts, :includes_user_id, includes_user_id), else: opts
+
+    case Bank.search_transactions(opts) do
+      {:ok, %{transactions: transactions, total_count: total_count}} ->
+        formatted_transactions =
+          Enum.map(transactions, fn transaction ->
+            %{
+              id: transaction.id,
+              from: %{
+                id: transaction.from_id,
+                username: transaction.from_username
+              },
+              to: %{
+                id: transaction.to_id,
+                username: transaction.to_username
+              },
+              amount: transaction.amount,
+              time: transaction.time,
+              label: transaction.label
+            }
+          end)
+
+        total_pages = ceil(total_count / limit)
+
+        json(conn, %{
+          transactions: formatted_transactions,
+          pagination: %{
+            page: page,
+            limit: limit,
+            total: total_count,
+            total_pages: total_pages
+          }
+        })
+
+      {:error, reason} ->
+        {status, message} = error_to_status_and_message(reason)
+
+        conn
+        |> put_status(status)
+        |> json(%{error: message})
+    end
   end
 end
