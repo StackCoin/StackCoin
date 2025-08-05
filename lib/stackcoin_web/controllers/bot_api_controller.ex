@@ -32,6 +32,9 @@ defmodule StackCoinWeb.BotApiController do
       :not_request_responder ->
         {:forbidden, "not_request_responder"}
 
+      :not_involved_in_request ->
+        {:forbidden, "not_involved_in_request"}
+
       :request_not_pending ->
         {:bad_request, "request_not_pending"}
 
@@ -259,12 +262,6 @@ defmodule StackCoinWeb.BotApiController do
         |> put_status(:bad_request)
         |> json(%{error: "Invalid request ID"})
     end
-  end
-
-  def accept_request(conn, _params) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: "Missing required parameter: request_id"})
   end
 
   def deny_request(conn, %{"request_id" => request_id_str}) do

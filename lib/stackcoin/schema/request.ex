@@ -11,6 +11,7 @@ defmodule StackCoin.Schema.Request do
 
     belongs_to(:requester, StackCoin.Schema.User, foreign_key: :requester_id)
     belongs_to(:responder, StackCoin.Schema.User, foreign_key: :responder_id)
+    belongs_to(:denied_by, StackCoin.Schema.User, foreign_key: :denied_by_id)
     belongs_to(:transaction, StackCoin.Schema.Transaction, foreign_key: :transaction_id)
 
     timestamps(type: :utc_datetime)
@@ -26,6 +27,7 @@ defmodule StackCoin.Schema.Request do
       :requested_at,
       :resolved_at,
       :transaction_id,
+      :denied_by_id,
       :label
     ])
     |> validate_required([:requester_id, :responder_id, :status, :amount, :requested_at])

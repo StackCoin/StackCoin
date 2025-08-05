@@ -129,21 +129,23 @@ defmodule StackCoin.Core.Request do
 
   @doc """
   Denies a payment request.
+  Can be called by either the responder or the requester (to cancel their own request).
   """
-  def deny_request(request_id, responder_id) do
+  def deny_request(request_id, user_id) do
     with {:ok, request} <- get_request_by_id(request_id),
-         :ok <- validate_request_responder(request, responder_id),
+         :ok <- validate_request_participant(request, user_id),
          :ok <- validate_request_pending(request) do
       request_attrs = %{
         status: "denied",
-        resolved_at: NaiveDateTime.utc_now()
+        resolved_at: NaiveDateTime.utc_now(),
+        denied_by_id: user_id
       }
 
       case request
            |> Schema.Request.changeset(request_attrs)
            |> Repo.update() do
         {:ok, updated_request} ->
-          {:ok, Repo.preload(updated_request, [:requester, :responder])}
+          {:ok, Repo.preload(updated_request, [:requester, :responder, :denied_by])}
 
         {:error, changeset} ->
           {:error, changeset}
@@ -158,6 +160,14 @@ defmodule StackCoin.Core.Request do
       :ok
     else
       {:error, :not_request_responder}
+    end
+  end
+
+  defp validate_request_participant(request, user_id) do
+    if request.responder_id == user_id or request.requester_id == user_id do
+      :ok
+    else
+      {:error, :not_involved_in_request}
     end
   end
 
