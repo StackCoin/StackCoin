@@ -5,12 +5,29 @@ defmodule StackCoin.Bot.Discord do
   alias Nostrum.Struct.Interaction
   alias Nostrum.Constants.InteractionCallbackType
 
-  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions, Graph, Bot}
+  alias StackCoin.Bot.Discord.{
+    Balance,
+    Admin,
+    Dole,
+    Send,
+    Leaderboard,
+    Transactions,
+    Graph,
+    Bot,
+    Request
+  }
 
   def handle_event(
-        {:INTERACTION_CREATE, %Interaction{data: %{name: name}} = interaction, _ws_state}
+        {:INTERACTION_CREATE, %Interaction{type: 2, data: %{name: name}} = interaction, _ws_state}
       ) do
     handle_slash_command(name, interaction)
+  end
+
+  def handle_event(
+        {:INTERACTION_CREATE, %Interaction{type: 3, data: %{custom_id: custom_id}} = interaction,
+         _ws_state}
+      ) do
+    handle_message_component(custom_id, interaction)
   end
 
   def handle_event(_), do: :ok
@@ -52,6 +69,21 @@ defmodule StackCoin.Bot.Discord do
       type: InteractionCallbackType.channel_message_with_source(),
       data: %{
         content: "Unknown command: #{command_name}"
+      }
+    }
+
+    Api.Interaction.create_response(interaction, response)
+  end
+
+  defp handle_message_component("request_" <> _rest, interaction) do
+    Request.handle_request_interaction(interaction)
+  end
+
+  defp handle_message_component(custom_id, interaction) do
+    response = %{
+      type: InteractionCallbackType.channel_message_with_source(),
+      data: %{
+        content: "Unknown component interaction: #{custom_id}"
       }
     }
 

@@ -152,6 +152,36 @@ defmodule StackCoin.Core.Bot do
     Repo.all(query)
   end
 
+  @doc """
+  Gets bot owner information for a given user ID.
+  Returns the bot user record and owner display name (with Discord mention if available).
+  """
+  def get_bot_owner_info(user_id) do
+    query =
+      from(bu in Schema.BotUser,
+        join: owner in Schema.User,
+        on: bu.owner_id == owner.id,
+        left_join: du in Schema.DiscordUser,
+        on: owner.id == du.id,
+        where: bu.user_id == ^user_id and bu.active == true,
+        select: {bu, owner, du}
+      )
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :not_bot_user}
+
+      {bot_user, owner, discord_user} ->
+        owner_display =
+          case discord_user do
+            nil -> owner.username
+            du -> "<@#{du.snowflake}>"
+          end
+
+        {:ok, {bot_user, owner_display}}
+    end
+  end
+
   defp get_bot_by_id_and_owner(bot_id, owner_id) do
     case Repo.get_by(Schema.BotUser, id: bot_id, owner_id: owner_id, active: true) do
       nil -> {:error, :bot_not_found}

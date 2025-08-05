@@ -8,6 +8,8 @@ defmodule StackCoin.Core.Bank do
   alias StackCoin.Core.{User, Bot}
   import Ecto.Query
 
+  @max_limit 100
+
   @doc """
   Creates a transaction between two users.
   Updates both user balances and creates a transaction record.
@@ -118,16 +120,16 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
-  Searches transactions with various filters.
+  Searches transactions with various filters and pagination.
   Options:
   - :from_user_id - filter by sender
   - :to_user_id - filter by recipient
   - :includes_user_id - filter by either sender or recipient
-  - :limit - number of results to return
+  - :limit - number of results to return (max #{@max_limit})
   - :offset - number of results to skip
   """
   def search_transactions(opts \\ []) do
-    limit = Keyword.get(opts, :limit, 10)
+    limit = min(Keyword.get(opts, :limit, 10), @max_limit)
     offset = Keyword.get(opts, :offset, 0)
     from_user_id = Keyword.get(opts, :from_user_id)
     to_user_id = Keyword.get(opts, :to_user_id)
@@ -137,9 +139,25 @@ defmodule StackCoin.Core.Bank do
     if includes_user_id && (from_user_id || to_user_id) do
       {:error, :conflicting_filters}
     else
+      # Get total count for pagination metadata
+      count_query = build_transaction_count_query(from_user_id, to_user_id, includes_user_id)
+      total_count = Repo.aggregate(count_query, :count, :id)
+
+      # Get paginated results
       query = build_transaction_query(from_user_id, to_user_id, includes_user_id, limit, offset)
-      {:ok, Repo.all(query)}
+      transactions = Repo.all(query)
+
+      {:ok, %{transactions: transactions, total_count: total_count}}
     end
+  end
+
+  defp build_transaction_count_query(from_user_id, to_user_id, includes_user_id) do
+    query = from(t in Schema.Transaction)
+
+    query
+    |> apply_from_filter(from_user_id)
+    |> apply_to_filter(to_user_id)
+    |> apply_includes_filter(includes_user_id)
   end
 
   defp build_transaction_query(from_user_id, to_user_id, includes_user_id, limit, offset) do
@@ -154,7 +172,9 @@ defmodule StackCoin.Core.Bank do
         offset: ^offset,
         select: %{
           id: t.id,
+          from_id: t.from_id,
           from_username: from_user.username,
+          to_id: t.to_id,
           to_username: to_user.username,
           amount: t.amount,
           time: t.time,
