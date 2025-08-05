@@ -21,17 +21,25 @@ defmodule StackCoin.Repo.Migrations.CreateBotUsers do
       add(:requester_id, references(:user, on_delete: :delete_all), null: false)
       add(:responder_id, references(:user, on_delete: :delete_all), null: false)
       add(:status, :string, null: false)
-      add(:amount, :integer, null: false, check: %{name: "amount_must_be_positive", expr: "amount > 0"})
+
+      add(:amount, :integer,
+        null: false,
+        check: %{name: "amount_must_be_positive", expr: "amount > 0"}
+      )
+
       add(:requested_at, :naive_datetime, null: false)
       add(:transaction_id, references(:transaction, on_delete: :nilify_all))
       add(:resolved_at, :naive_datetime)
+      add(:denied_by_id, references(:user, on_delete: :nilify_all), null: true)
       add(:label, :string)
 
       timestamps(type: :utc_datetime)
     end
+
     create(index(:request, [:requester_id]))
     create(index(:request, [:responder_id]))
     create(index(:request, [:status]))
     create(index(:request, [:requested_at]))
+    create(index(:request, [:denied_by_id]))
   end
 end

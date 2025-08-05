@@ -79,43 +79,43 @@ defmodule StackCoin.Repo.Migrations.InitialTables do
       add(:label, :text, null: false)
     end
 
-    # execute(
-    #   """
-    #   INSERT INTO "user"
-    #     (
-    #       id,
-    #       inserted_at,
-    #       updated_at,
-    #       username,
-    #       balance,
-    #       last_given_dole,
-    #       admin,
-    #       banned
-    #     )
-    #   VALUES
-    #     (
-    #       1,
-    #       datetime('now'),
-    #       datetime('now'),
-    #       'StackCoin Reserve System',
-    #       0,
-    #       null,
-    #       0,
-    #       0
-    #     );
-    #   """,
-    #   """
-    #   DELETE FROM "user" WHERE id = 1;
-    #   """
-    # )
+    execute(
+      """
+      INSERT INTO "user"
+        (
+          id,
+          inserted_at,
+          updated_at,
+          username,
+          balance,
+          last_given_dole,
+          admin,
+          banned
+        )
+      VALUES
+        (
+          1,
+          datetime('now'),
+          datetime('now'),
+          'StackCoin Reserve System',
+          0,
+          null,
+          0,
+          0
+        );
+      """,
+      """
+      DELETE FROM "user" WHERE id = 1;
+      """
+    )
 
-    # execute(
-    #   """
-    #   INSERT INTO "internal_user" (id, identifier) VALUES (1, 'StackCoin Reserve System');
-    #   """,
-    #   """
-    #   DELETE FROM "internal_user" WHERE id = 1;
-    #   """
-    # )
+    execute(
+      """
+      INSERT INTO "internal_user" (id, identifier) VALUES (1, 'StackCoin Reserve System');
+      """,
+      """
+      DELETE FROM "internal_user" WHERE id = 1;
+      """
+    )
   end
 end

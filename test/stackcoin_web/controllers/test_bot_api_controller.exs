@@ -1,10 +1,10 @@
 defmodule StackCoinWebTest.BotApiController do
   use StackCoinWeb.ConnCase
+  import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Core.{User, Bot, Bank, Reserve, Request}
 
   setup do
-    # Create reserve user (ID 1)
     {:ok, _reserve} = User.create_user_account("1", "Reserve", balance: 1000)
 
     # Create owner user
@@ -792,15 +792,6 @@ defmodule StackCoinWebTest.BotApiController do
 
       assert json_response(conn, 422) == %{"error" => "insufficient_balance"}
     end
-
-    test "returns 400 for missing parameters", %{conn: conn, bot_token: bot_token} do
-      conn =
-        conn
-        |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/bot/requests/accept")
-
-      assert json_response(conn, 400) == %{"error" => "Missing required parameter: request_id"}
-    end
   end
 
   describe "POST /api/bot/requests/:request_id/deny" do
@@ -851,6 +842,7 @@ defmodule StackCoinWebTest.BotApiController do
       assert updated_request.status == "denied"
       assert updated_request.resolved_at != nil
       assert updated_request.transaction_id == nil
+      assert updated_request.denied_by_id == bot.user.id
     end
 
     test "returns 400 for invalid request_id", %{conn: conn, bot_token: bot_token} do
@@ -871,21 +863,21 @@ defmodule StackCoinWebTest.BotApiController do
       assert json_response(conn, 404) == %{"error" => "request_not_found"}
     end
 
-    test "returns 403 for request not belonging to bot (not responder)", %{
+    test "returns 403 for request not belonging to bot (neither requester nor responder)", %{
       conn: conn,
       bot_token: bot_token,
-      bot: bot,
+      owner: owner,
       recipient: recipient
     } do
-      # Create a request where bot requests from recipient (bot is requester, not responder)
-      {:ok, request} = Request.create_request(bot.user.id, recipient.id, 35, "Wrong responder")
+      # Create a request between two other users (bot is neither requester nor responder)
+      {:ok, request} = Request.create_request(owner.id, recipient.id, 35, "Not involved")
 
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
         |> post(~p"/api/bot/requests/#{request.id}/deny")
 
-      assert json_response(conn, 403) == %{"error" => "not_request_responder"}
+      assert json_response(conn, 403) == %{"error" => "not_involved_in_request"}
     end
 
     test "returns 400 for request not in pending status", %{
@@ -906,13 +898,56 @@ defmodule StackCoinWebTest.BotApiController do
       assert json_response(conn, 400) == %{"error" => "request_not_pending"}
     end
 
-    test "returns 400 for missing parameters", %{conn: conn, bot_token: bot_token} do
+    test "allows requester to deny their own request", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a request where bot requests from recipient (bot is requester)
+      {:ok, request} = Request.create_request(bot.user.id, recipient.id, 45, "Self deny test")
+
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/bot/requests/deny")
+        |> post(~p"/api/bot/requests/#{request.id}/deny")
 
-      assert json_response(conn, 400) == %{"error" => "Missing required parameter: request_id"}
+      response = json_response(conn, 200)
+      assert response["success"] == true
+      assert response["request_id"] == request.id
+      assert response["status"] == "denied"
+      assert is_binary(response["resolved_at"])
+
+      # Verify request was updated in database
+      {:ok, updated_request} = Request.get_request_by_id(request.id)
+      assert updated_request.status == "denied"
+      assert updated_request.resolved_at != nil
+      assert updated_request.transaction_id == nil
+      assert updated_request.denied_by_id == bot.user.id
+    end
+
+    test "stores correct denied_by_id when responder denies request", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a request where recipient requests from bot (bot is responder)
+      {:ok, request} =
+        Request.create_request(recipient.id, bot.user.id, 30, "Responder deny test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> post(~p"/api/bot/requests/#{request.id}/deny")
+
+      response = json_response(conn, 200)
+      assert response["success"] == true
+
+      # Verify the bot (responder) is stored as the one who denied it
+      {:ok, updated_request} = Request.get_request_by_id(request.id)
+      assert updated_request.status == "denied"
+      assert updated_request.denied_by_id == bot.user.id
     end
   end
 end
