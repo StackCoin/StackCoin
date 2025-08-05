@@ -16,7 +16,7 @@ defmodule StackCoin.Bot.Discord.Graph do
   def definition do
     %{
       name: "graph",
-      description: "View your StackCoin balance over time or another user's balance over time",
+      description: "View StackCoin balances over time",
       options: [
         %{
           type: ApplicationCommandOptionType.user(),
