@@ -285,7 +285,9 @@ defmodule StackCoin.Core.User do
   defp apply_username_filter(query, nil), do: query
 
   defp apply_username_filter(query, username) do
-    from(u in query, where: ilike(u.username, ^"%#{username}%"))
+    from(u in query,
+      where: like(fragment("LOWER(?)", u.username), ^"%#{String.downcase(username)}%")
+    )
   end
 
   defp apply_banned_filter(query, nil), do: query
