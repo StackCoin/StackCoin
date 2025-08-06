@@ -199,6 +199,7 @@ defmodule StackCoinWeb.BotApiController do
       end
 
     status = Map.get(params, "status")
+    discord_id = Map.get(params, "discord_id")
 
     # Parse pagination parameters
     page =
@@ -229,6 +230,7 @@ defmodule StackCoinWeb.BotApiController do
 
     opts = [role: role, limit: limit, offset: offset]
     opts = if status, do: Keyword.put(opts, :status, status), else: opts
+    opts = if discord_id, do: Keyword.put(opts, :discord_id, discord_id), else: opts
 
     {:ok, %{requests: requests, total_count: total_count}} =
       Request.get_requests_for_user(current_bot.user.id, opts)
@@ -387,6 +389,10 @@ defmodule StackCoinWeb.BotApiController do
           end
       end
 
+    from_discord_id = Map.get(params, "from_discord_id")
+    to_discord_id = Map.get(params, "to_discord_id")
+    includes_discord_id = Map.get(params, "includes_discord_id")
+
     # Default to showing all bot transactions (includes_user_id = bot's user id)
     # unless specific from/to filters are provided
     includes_user_id =
@@ -399,6 +405,16 @@ defmodule StackCoinWeb.BotApiController do
     opts = [limit: limit, offset: offset]
     opts = if from_user_id, do: Keyword.put(opts, :from_user_id, from_user_id), else: opts
     opts = if to_user_id, do: Keyword.put(opts, :to_user_id, to_user_id), else: opts
+
+    opts =
+      if from_discord_id, do: Keyword.put(opts, :from_discord_id, from_discord_id), else: opts
+
+    opts = if to_discord_id, do: Keyword.put(opts, :to_discord_id, to_discord_id), else: opts
+
+    opts =
+      if includes_discord_id,
+        do: Keyword.put(opts, :includes_discord_id, includes_discord_id),
+        else: opts
 
     opts =
       if includes_user_id, do: Keyword.put(opts, :includes_user_id, includes_user_id), else: opts
