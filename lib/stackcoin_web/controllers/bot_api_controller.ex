@@ -474,6 +474,7 @@ defmodule StackCoinWeb.BotApiController do
 
     # Parse filter parameters
     username = Map.get(params, "username")
+    discord_id = Map.get(params, "discord_id")
 
     banned =
       case Map.get(params, "banned") do
@@ -491,6 +492,7 @@ defmodule StackCoinWeb.BotApiController do
 
     opts = [limit: limit, offset: offset]
     opts = if username, do: Keyword.put(opts, :username, username), else: opts
+    opts = if discord_id, do: Keyword.put(opts, :discord_id, discord_id), else: opts
     opts = if banned != nil, do: Keyword.put(opts, :banned, banned), else: opts
     opts = if admin != nil, do: Keyword.put(opts, :admin, admin), else: opts
 
