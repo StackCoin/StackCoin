@@ -223,6 +223,83 @@ defmodule StackCoin.Core.User do
     end
   end
 
+  @max_limit 100
+
+  @doc """
+  Searches users with various filters and pagination.
+  Options:
+  - :username - filter by username (partial match)
+  - :banned - filter by banned status (true/false)
+  - :admin - filter by admin status (true/false)
+  - :limit - number of results to return (max #{@max_limit})
+  - :offset - number of results to skip
+  """
+  def search_users(opts \\ []) do
+    limit = min(Keyword.get(opts, :limit, 10), @max_limit)
+    offset = Keyword.get(opts, :offset, 0)
+    username = Keyword.get(opts, :username)
+    banned = Keyword.get(opts, :banned)
+    admin = Keyword.get(opts, :admin)
+
+    # Get total count for pagination metadata
+    count_query = build_user_count_query(username, banned, admin)
+    total_count = Repo.aggregate(count_query, :count, :id)
+
+    # Get paginated results
+    query = build_user_query(username, banned, admin, limit, offset)
+    users = Repo.all(query)
+
+    {:ok, %{users: users, total_count: total_count}}
+  end
+
+  defp build_user_count_query(username, banned, admin) do
+    query = from(u in Schema.User)
+
+    query
+    |> apply_username_filter(username)
+    |> apply_banned_filter(banned)
+    |> apply_admin_filter(admin)
+  end
+
+  defp build_user_query(username, banned, admin, limit, offset) do
+    query =
+      from(u in Schema.User,
+        order_by: [desc: u.balance, asc: u.username],
+        limit: ^limit,
+        offset: ^offset,
+        select: %{
+          id: u.id,
+          username: u.username,
+          balance: u.balance,
+          admin: u.admin,
+          banned: u.banned
+        }
+      )
+
+    query
+    |> apply_username_filter(username)
+    |> apply_banned_filter(banned)
+    |> apply_admin_filter(admin)
+  end
+
+  defp apply_username_filter(query, nil), do: query
+
+  defp apply_username_filter(query, username) do
+    from(u in query, where: ilike(u.username, ^"%#{username}%"))
+  end
+
+  defp apply_banned_filter(query, nil), do: query
+
+  defp apply_banned_filter(query, banned) do
+    from(u in query, where: u.banned == ^banned)
+  end
+
+  defp apply_admin_filter(query, nil), do: query
+
+  defp apply_admin_filter(query, admin) do
+    from(u in query, where: u.admin == ^admin)
+  end
+
   defp ensure_admin_user_exists(user_snowflake) do
     case get_user_by_discord_id(user_snowflake) do
       {:ok, _user} ->

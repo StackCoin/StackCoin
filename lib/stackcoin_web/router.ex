@@ -34,6 +34,7 @@ defmodule StackCoinWeb.Router do
     post("/requests/:request_id/deny", BotApiController, :deny_request)
 
     get("/transactions", BotApiController, :get_transactions)
+    get("/users", BotApiController, :get_users)
   end
 
   # Enable LiveDashboard in development

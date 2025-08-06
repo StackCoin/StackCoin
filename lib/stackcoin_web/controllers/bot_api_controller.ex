@@ -443,4 +443,80 @@ defmodule StackCoinWeb.BotApiController do
         |> json(%{error: message})
     end
   end
+
+  def get_users(conn, params) do
+    # Parse pagination parameters
+    page =
+      case Map.get(params, "page") do
+        nil ->
+          1
+
+        page_str ->
+          case Integer.parse(page_str) do
+            {page_num, ""} when page_num > 0 -> page_num
+            _ -> 1
+          end
+      end
+
+    limit =
+      case Map.get(params, "limit") do
+        nil ->
+          20
+
+        limit_str ->
+          case Integer.parse(limit_str) do
+            {limit_num, ""} when limit_num > 0 -> limit_num
+            _ -> 20
+          end
+      end
+
+    offset = (page - 1) * limit
+
+    # Parse filter parameters
+    username = Map.get(params, "username")
+
+    banned =
+      case Map.get(params, "banned") do
+        "true" -> true
+        "false" -> false
+        _ -> nil
+      end
+
+    admin =
+      case Map.get(params, "admin") do
+        "true" -> true
+        "false" -> false
+        _ -> nil
+      end
+
+    opts = [limit: limit, offset: offset]
+    opts = if username, do: Keyword.put(opts, :username, username), else: opts
+    opts = if banned != nil, do: Keyword.put(opts, :banned, banned), else: opts
+    opts = if admin != nil, do: Keyword.put(opts, :admin, admin), else: opts
+
+    {:ok, %{users: users, total_count: total_count}} = User.search_users(opts)
+
+    formatted_users =
+      Enum.map(users, fn user ->
+        %{
+          id: user.id,
+          username: user.username,
+          balance: user.balance,
+          admin: user.admin,
+          banned: user.banned
+        }
+      end)
+
+    total_pages = ceil(total_count / limit)
+
+    json(conn, %{
+      users: formatted_users,
+      pagination: %{
+        page: page,
+        limit: limit,
+        total: total_count,
+        total_pages: total_pages
+      }
+    })
+  end
 end
