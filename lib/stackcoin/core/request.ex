@@ -56,12 +56,14 @@ defmodule StackCoin.Core.Request do
   Options:
   - :role - :requester (requests made by user) or :responder (requests to user)
   - :status - filter by status ("pending", "accepted", "denied", "expired")
+  - :discord_id - filter by Discord ID of the other party (requester or responder)
   - :limit - number of results to return (max #{@max_limit})
   - :offset - number of results to skip
   """
   def get_requests_for_user(user_id, opts \\ []) do
     role = Keyword.get(opts, :role, :requester)
     status = Keyword.get(opts, :status)
+    discord_id = Keyword.get(opts, :discord_id)
     limit = min(Keyword.get(opts, :limit, 20), @max_limit)
     offset = Keyword.get(opts, :offset, 0)
 
@@ -95,12 +97,38 @@ defmodule StackCoin.Core.Request do
           from(r in base_query, where: false)
       end
 
+    # Apply Discord ID filter if provided
+    discord_filtered_query =
+      case discord_id do
+        nil ->
+          filtered_query
+
+        discord_id ->
+          case role do
+            :requester ->
+              # Filter by responder's Discord ID
+              from(r in filtered_query,
+                join: du in Schema.DiscordUser,
+                on: du.id == r.responder_id,
+                where: du.snowflake == ^to_string(discord_id)
+              )
+
+            :responder ->
+              # Filter by requester's Discord ID
+              from(r in filtered_query,
+                join: du in Schema.DiscordUser,
+                on: du.id == r.requester_id,
+                where: du.snowflake == ^to_string(discord_id)
+              )
+          end
+      end
+
     # Get total count for pagination metadata
-    total_count = Repo.aggregate(filtered_query, :count, :id)
+    total_count = Repo.aggregate(discord_filtered_query, :count, :id)
 
     # Apply pagination
     paginated_query =
-      from(r in filtered_query,
+      from(r in discord_filtered_query,
         limit: ^limit,
         offset: ^offset
       )

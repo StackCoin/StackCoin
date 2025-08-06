@@ -125,6 +125,9 @@ defmodule StackCoin.Core.Bank do
   - :from_user_id - filter by sender
   - :to_user_id - filter by recipient
   - :includes_user_id - filter by either sender or recipient
+  - :from_discord_id - filter by sender's Discord ID
+  - :to_discord_id - filter by recipient's Discord ID
+  - :includes_discord_id - filter by either sender or recipient Discord ID
   - :limit - number of results to return (max #{@max_limit})
   - :offset - number of results to skip
   """
@@ -134,33 +137,75 @@ defmodule StackCoin.Core.Bank do
     from_user_id = Keyword.get(opts, :from_user_id)
     to_user_id = Keyword.get(opts, :to_user_id)
     includes_user_id = Keyword.get(opts, :includes_user_id)
+    from_discord_id = Keyword.get(opts, :from_discord_id)
+    to_discord_id = Keyword.get(opts, :to_discord_id)
+    includes_discord_id = Keyword.get(opts, :includes_discord_id)
 
     # Validate that includes_user_id is not used with from/to filters
     if includes_user_id && (from_user_id || to_user_id) do
       {:error, :conflicting_filters}
     else
       # Get total count for pagination metadata
-      count_query = build_transaction_count_query(from_user_id, to_user_id, includes_user_id)
+      count_query =
+        build_transaction_count_query(
+          from_user_id,
+          to_user_id,
+          includes_user_id,
+          from_discord_id,
+          to_discord_id,
+          includes_discord_id
+        )
+
       total_count = Repo.aggregate(count_query, :count, :id)
 
       # Get paginated results
-      query = build_transaction_query(from_user_id, to_user_id, includes_user_id, limit, offset)
+      query =
+        build_transaction_query(
+          from_user_id,
+          to_user_id,
+          includes_user_id,
+          from_discord_id,
+          to_discord_id,
+          includes_discord_id,
+          limit,
+          offset
+        )
+
       transactions = Repo.all(query)
 
       {:ok, %{transactions: transactions, total_count: total_count}}
     end
   end
 
-  defp build_transaction_count_query(from_user_id, to_user_id, includes_user_id) do
+  defp build_transaction_count_query(
+         from_user_id,
+         to_user_id,
+         includes_user_id,
+         from_discord_id,
+         to_discord_id,
+         includes_discord_id
+       ) do
     query = from(t in Schema.Transaction)
 
     query
     |> apply_from_filter(from_user_id)
     |> apply_to_filter(to_user_id)
     |> apply_includes_filter(includes_user_id)
+    |> apply_from_discord_filter(from_discord_id)
+    |> apply_to_discord_filter(to_discord_id)
+    |> apply_includes_discord_filter(includes_discord_id)
   end
 
-  defp build_transaction_query(from_user_id, to_user_id, includes_user_id, limit, offset) do
+  defp build_transaction_query(
+         from_user_id,
+         to_user_id,
+         includes_user_id,
+         from_discord_id,
+         to_discord_id,
+         includes_discord_id,
+         limit,
+         offset
+       ) do
     query =
       from(t in Schema.Transaction,
         join: from_user in Schema.User,
@@ -186,6 +231,9 @@ defmodule StackCoin.Core.Bank do
     |> apply_from_filter(from_user_id)
     |> apply_to_filter(to_user_id)
     |> apply_includes_filter(includes_user_id)
+    |> apply_from_discord_filter(from_discord_id)
+    |> apply_to_discord_filter(to_discord_id)
+    |> apply_includes_discord_filter(includes_discord_id)
   end
 
   defp apply_from_filter(query, nil), do: query
@@ -204,6 +252,40 @@ defmodule StackCoin.Core.Bank do
 
   defp apply_includes_filter(query, includes_user_id) do
     from(t in query, where: t.from_id == ^includes_user_id or t.to_id == ^includes_user_id)
+  end
+
+  defp apply_from_discord_filter(query, nil), do: query
+
+  defp apply_from_discord_filter(query, from_discord_id) do
+    from(t in query,
+      join: du in Schema.DiscordUser,
+      on: du.id == t.from_id,
+      where: du.snowflake == ^to_string(from_discord_id)
+    )
+  end
+
+  defp apply_to_discord_filter(query, nil), do: query
+
+  defp apply_to_discord_filter(query, to_discord_id) do
+    from(t in query,
+      join: du in Schema.DiscordUser,
+      on: du.id == t.to_id,
+      where: du.snowflake == ^to_string(to_discord_id)
+    )
+  end
+
+  defp apply_includes_discord_filter(query, nil), do: query
+
+  defp apply_includes_discord_filter(query, includes_discord_id) do
+    from(t in query,
+      join: from_du in Schema.DiscordUser,
+      on: from_du.id == t.from_id,
+      join: to_du in Schema.DiscordUser,
+      on: to_du.id == t.to_id,
+      where:
+        from_du.snowflake == ^to_string(includes_discord_id) or
+          to_du.snowflake == ^to_string(includes_discord_id)
+    )
   end
 
   defp validate_transfer_amount(amount) when amount <= 0, do: {:error, :invalid_amount}
