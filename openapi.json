@@ -836,11 +836,43 @@
   },
   "openapi": "3.0.0",
   "paths": {
-    "/api/bot/requests": {
+    "/api/balance": {
       "get": {
         "callbacks": {},
-        "description": "Retrieves requests involving the bot, with optional filtering and pagination.",
-        "operationId": "StackCoinWeb.BotApiController.get_requests",
+        "description": "Returns the balance and username of the authenticated user.",
+        "operationId": "StackCoinWeb.BalanceController.self_balance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            },
+            "description": "Balance response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get authenticated user's balance",
+        "tags": []
+      }
+    },
+    "/api/requests": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves requests involving the authenticated user, with optional filtering and pagination.",
+        "operationId": "StackCoinWeb.RequestController.index",
         "parameters": [
           {
             "description": "Role filter (requester or responder)",
@@ -915,15 +947,15 @@
             "description": "Requests response"
           }
         },
-        "summary": "Get requests for the bot",
+        "summary": "Get requests for the authenticated user",
         "tags": []
       }
     },
-    "/api/bot/requests/{request_id}/accept": {
+    "/api/requests/{request_id}/accept": {
       "post": {
         "callbacks": {},
         "description": "Accepts a pending STK request, creating a transaction.",
-        "operationId": "StackCoinWeb.BotApiController.accept_request",
+        "operationId": "StackCoinWeb.RequestController.accept",
         "parameters": [
           {
             "description": "Request ID",
@@ -984,11 +1016,11 @@
         "tags": []
       }
     },
-    "/api/bot/requests/{request_id}/deny": {
+    "/api/requests/{request_id}/deny": {
       "post": {
         "callbacks": {},
         "description": "Denies a pending STK request without creating a transaction.",
-        "operationId": "StackCoinWeb.BotApiController.deny_request",
+        "operationId": "StackCoinWeb.RequestController.deny",
         "parameters": [
           {
             "description": "Request ID",
@@ -1049,43 +1081,11 @@
         "tags": []
       }
     },
-    "/api/bot/self/balance": {
+    "/api/transactions": {
       "get": {
         "callbacks": {},
-        "description": "Returns the balance and username of the bot's own user.",
-        "operationId": "StackCoinWeb.BotApiController.balance",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BalanceResponse"
-                }
-              }
-            },
-            "description": "Balance response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          }
-        },
-        "summary": "Get bot's own balance",
-        "tags": []
-      }
-    },
-    "/api/bot/transactions": {
-      "get": {
-        "callbacks": {},
-        "description": "Retrieves transactions involving the bot, with optional filtering and pagination.",
-        "operationId": "StackCoinWeb.BotApiController.get_transactions",
+        "description": "Retrieves transactions involving the authenticated user, with optional filtering and pagination.",
+        "operationId": "StackCoinWeb.TransactionController.index",
         "parameters": [
           {
             "description": "Page number",
@@ -1194,232 +1194,15 @@
             "description": "Error response"
           }
         },
-        "summary": "Get transactions for the bot",
+        "summary": "Get transactions for the authenticated user",
         "tags": []
       }
     },
-    "/api/bot/user/{user_id}/balance": {
-      "get": {
-        "callbacks": {},
-        "description": "Returns the balance and username of a specific user.",
-        "operationId": "StackCoinWeb.BotApiController.user_balance",
-        "parameters": [
-          {
-            "description": "User ID",
-            "example": 123,
-            "in": "path",
-            "name": "user_id",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BalanceResponse"
-                }
-              }
-            },
-            "description": "Balance response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          }
-        },
-        "summary": "Get user balance by ID",
-        "tags": []
-      }
-    },
-    "/api/bot/user/{user_id}/request": {
-      "post": {
-        "callbacks": {},
-        "description": "Creates a request for STK from a specified user.",
-        "operationId": "StackCoinWeb.BotApiController.create_request",
-        "parameters": [
-          {
-            "description": "Responder user ID",
-            "example": 456,
-            "in": "path",
-            "name": "user_id",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateRequestParams"
-              }
-            }
-          },
-          "description": "Create request params",
-          "required": false
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateRequestResponse"
-                }
-              }
-            },
-            "description": "Create request response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          }
-        },
-        "summary": "Create a STK request",
-        "tags": []
-      }
-    },
-    "/api/bot/user/{user_id}/send": {
-      "post": {
-        "callbacks": {},
-        "description": "Transfers STK from the bot to a specified user.",
-        "operationId": "StackCoinWeb.BotApiController.send_stk",
-        "parameters": [
-          {
-            "description": "Recipient user ID",
-            "example": 123,
-            "in": "path",
-            "name": "user_id",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendStkParams"
-              }
-            }
-          },
-          "description": "Send STK params",
-          "required": false
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SendStkResponse"
-                }
-              }
-            },
-            "description": "Send STK response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          }
-        },
-        "summary": "Send STK to a user",
-        "tags": []
-      }
-    },
-    "/api/bot/users": {
+    "/api/users": {
       "get": {
         "callbacks": {},
         "description": "Retrieves users with optional filtering and pagination.",
-        "operationId": "StackCoinWeb.BotApiController.get_users",
+        "operationId": "StackCoinWeb.UserController.index",
         "parameters": [
           {
             "description": "Page number",
@@ -1509,9 +1292,230 @@
         "summary": "Get users",
         "tags": []
       }
+    },
+    "/api/users/{user_id}/balance": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns the balance and username of a specific user.",
+        "operationId": "StackCoinWeb.BalanceController.user_balance",
+        "parameters": [
+          {
+            "description": "User ID",
+            "example": 123,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            },
+            "description": "Balance response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get user balance by ID",
+        "tags": []
+      }
+    },
+    "/api/users/{user_id}/request": {
+      "post": {
+        "callbacks": {},
+        "description": "Creates a request for STK from a specified user.",
+        "operationId": "StackCoinWeb.RequestController.create",
+        "parameters": [
+          {
+            "description": "Responder user ID",
+            "example": 456,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequestParams"
+              }
+            }
+          },
+          "description": "Create request params",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRequestResponse"
+                }
+              }
+            },
+            "description": "Create request response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Create a STK request",
+        "tags": []
+      }
+    },
+    "/api/users/{user_id}/send": {
+      "post": {
+        "callbacks": {},
+        "description": "Transfers STK from the authenticated user to a specified user.",
+        "operationId": "StackCoinWeb.TransferController.send_stk",
+        "parameters": [
+          {
+            "description": "Recipient user ID",
+            "example": 123,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendStkParams"
+              }
+            }
+          },
+          "description": "Send STK params",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStkResponse"
+                }
+              }
+            },
+            "description": "Send STK response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Send STK to a user",
+        "tags": []
+      }
     }
   },
-  "security": [],
+  "security": [
+    {
+      "authorization": []
+    }
+  ],
   "servers": [
     {
       "url": "http://localhost:4000",

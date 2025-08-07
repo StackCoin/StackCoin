@@ -28,27 +28,35 @@ defmodule StackCoinWeb.Router do
     get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, @swagger_ui_config)
   end
 
-  # Bot API routes
   scope "/api" do
     pipe_through(:api)
 
-    scope "/bot" do
-      pipe_through(StackCoinWeb.Plugs.BotAuth)
-
-      get("/self/balance", StackCoinWeb.BotApiController, :balance)
-      get("/user/:user_id/balance", StackCoinWeb.BotApiController, :user_balance)
-      post("/user/:user_id/send", StackCoinWeb.BotApiController, :send_stk)
-
-      post("/user/:user_id/request", StackCoinWeb.BotApiController, :create_request)
-      get("/requests", StackCoinWeb.BotApiController, :get_requests)
-      post("/requests/:request_id/accept", StackCoinWeb.BotApiController, :accept_request)
-      post("/requests/:request_id/deny", StackCoinWeb.BotApiController, :deny_request)
-
-      get("/transactions", StackCoinWeb.BotApiController, :get_transactions)
-      get("/users", StackCoinWeb.BotApiController, :get_users)
-    end
-
     get("/openapi", OpenApiSpex.Plug.RenderSpec, :show)
+  end
+
+  # API routes
+  scope "/api" do
+    pipe_through(:api)
+    pipe_through(StackCoinWeb.Plugs.BotAuth)
+
+    # Balance operations
+    get("/balance", StackCoinWeb.BalanceController, :self_balance)
+    get("/users/:user_id/balance", StackCoinWeb.BalanceController, :user_balance)
+
+    # Transfer operations
+    post("/users/:user_id/send", StackCoinWeb.TransferController, :send_stk)
+
+    # Request operations
+    post("/users/:user_id/request", StackCoinWeb.RequestController, :create)
+    get("/requests", StackCoinWeb.RequestController, :index)
+    post("/requests/:request_id/accept", StackCoinWeb.RequestController, :accept)
+    post("/requests/:request_id/deny", StackCoinWeb.RequestController, :deny)
+
+    # Transaction operations
+    get("/transactions", StackCoinWeb.TransactionController, :index)
+
+    # User operations
+    get("/users", StackCoinWeb.UserController, :index)
   end
 
   # Enable LiveDashboard in development
