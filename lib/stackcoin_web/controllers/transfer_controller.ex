@@ -6,6 +6,7 @@ defmodule StackCoinWeb.TransferController do
   alias StackCoinWeb.ApiHelpers
 
   operation :send_stk,
+    operation_id: "stackcoin_send_stk",
     summary: "Send STK to a user",
     description: "Transfers STK from the authenticated user to a specified user.",
     parameters: [

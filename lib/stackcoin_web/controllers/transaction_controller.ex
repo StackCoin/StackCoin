@@ -6,6 +6,7 @@ defmodule StackCoinWeb.TransactionController do
   alias StackCoinWeb.ApiHelpers
 
   operation :index,
+    operation_id: "stackcoin_transactions",
     summary: "Get transactions for the authenticated user",
     description:
       "Retrieves transactions involving the authenticated user, with optional filtering and pagination.",

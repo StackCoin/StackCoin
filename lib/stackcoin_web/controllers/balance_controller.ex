@@ -6,6 +6,7 @@ defmodule StackCoinWeb.BalanceController do
   alias StackCoinWeb.ApiHelpers
 
   operation :self_balance,
+    operation_id: "stackcoin_self_balance",
     summary: "Get authenticated user's balance",
     description: "Returns the balance and username of the authenticated user.",
     responses: [
@@ -20,6 +21,7 @@ defmodule StackCoinWeb.BalanceController do
   end
 
   operation :user_balance,
+    operation_id: "stackcoin_user_balance",
     summary: "Get user balance by ID",
     description: "Returns the balance and username of a specific user.",
     parameters: [

@@ -2,7 +2,8 @@ defmodule StackCoinWeb.Router do
   use StackCoinWeb, :router
 
   @swagger_ui_config [
-    path: "/api/openapi"
+    path: "/api/openapi",
+    display_operation_id: true
   ]
 
   pipeline :browser do
