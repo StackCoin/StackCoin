@@ -104,7 +104,7 @@ defmodule StackCoinWebTest.BotApiController do
       assert json_response(conn, 401) == %{"error" => "Missing or invalid Authorization header"}
     end
 
-    test "successfully sends tokens", %{
+    test "successfully sends STK", %{
       conn: conn,
       bot_token: bot_token,
       bot: bot,
@@ -131,7 +131,7 @@ defmodule StackCoinWebTest.BotApiController do
       assert updated_recipient.balance == 150
     end
 
-    test "successfully sends tokens with label", %{
+    test "successfully sends STK with label", %{
       conn: conn,
       bot_token: bot_token,
       recipient: recipient

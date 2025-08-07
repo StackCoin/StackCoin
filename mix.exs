@@ -53,7 +53,8 @@ defmodule StackCoin.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:plug_cowboy, "~> 2.7"}
+      {:plug_cowboy, "~> 2.7"},
+      {:open_api_spex, "~> 3.22"}
     ]
   end
 

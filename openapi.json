@@ -1,0 +1,1522 @@
+{
+  "components": {
+    "responses": {},
+    "schemas": {
+      "BalanceResponse": {
+        "description": "Response schema for user balance",
+        "example": {
+          "balance": 1000,
+          "username": "johndoe"
+        },
+        "properties": {
+          "balance": {
+            "description": "User's STK balance",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "username": {
+            "description": "Username",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "balance",
+          "username"
+        ],
+        "title": "BalanceResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.BalanceResponse",
+        "x-validate": null
+      },
+      "CreateRequestParams": {
+        "description": "Parameters for creating a STK request",
+        "example": {
+          "amount": 200,
+          "label": "Payment request"
+        },
+        "properties": {
+          "amount": {
+            "description": "Amount of STK to request",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "description": "Optional request label",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "title": "CreateRequestParams",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.CreateRequestParams",
+        "x-validate": null
+      },
+      "CreateRequestResponse": {
+        "description": "Response schema for creating a request",
+        "example": {
+          "amount": 200,
+          "request_id": 789,
+          "requested_at": "2019-09-12T12:34:55Z",
+          "requester": {
+            "id": 123,
+            "username": "johndoe"
+          },
+          "responder": {
+            "id": 456,
+            "username": "janedoe"
+          },
+          "status": "pending",
+          "success": true
+        },
+        "properties": {
+          "amount": {
+            "description": "Requested amount",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "request_id": {
+            "description": "Created request ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requested_at": {
+            "description": "Request timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requester": {
+            "properties": {
+              "id": {
+                "description": "Requester user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "Requester username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "responder": {
+            "properties": {
+              "id": {
+                "description": "Responder user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "Responder username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "description": "Request status",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "success": {
+            "description": "Whether the operation succeeded",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "success",
+          "request_id",
+          "amount",
+          "status",
+          "requested_at",
+          "requester",
+          "responder"
+        ],
+        "title": "CreateRequestResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.CreateRequestResponse",
+        "x-validate": null
+      },
+      "ErrorResponse": {
+        "description": "Error response schema",
+        "example": {
+          "error": "User not found"
+        },
+        "properties": {
+          "error": {
+            "description": "Error message",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.ErrorResponse",
+        "x-validate": null
+      },
+      "Request": {
+        "description": "A STK request",
+        "example": {
+          "amount": 200,
+          "id": 789,
+          "label": "Payment request",
+          "requested_at": "2019-09-12T12:34:55Z",
+          "requester": {
+            "id": 123,
+            "username": "johndoe"
+          },
+          "resolved_at": null,
+          "responder": {
+            "id": 456,
+            "username": "janedoe"
+          },
+          "status": "pending",
+          "transaction_id": null
+        },
+        "properties": {
+          "amount": {
+            "description": "Requested amount",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "Request ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "description": "Request label",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requested_at": {
+            "description": "Request timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requester": {
+            "properties": {
+              "id": {
+                "description": "Requester user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "Requester username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "resolved_at": {
+            "description": "Resolution timestamp",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "responder": {
+            "properties": {
+              "id": {
+                "description": "Responder user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "Responder username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "description": "Request status",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "transaction_id": {
+            "description": "Associated transaction ID",
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "status",
+          "requested_at",
+          "requester",
+          "responder"
+        ],
+        "title": "Request",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.Request",
+        "x-validate": null
+      },
+      "RequestActionResponse": {
+        "description": "Response schema for request actions (accept/deny)",
+        "example": {
+          "request_id": 789,
+          "resolved_at": "2025-09-12T13:34:55Z",
+          "status": "accepted",
+          "success": true,
+          "transaction_id": 456
+        },
+        "properties": {
+          "request_id": {
+            "description": "Request ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "resolved_at": {
+            "description": "Resolution timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "description": "New request status",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "success": {
+            "description": "Whether the operation succeeded",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "transaction_id": {
+            "description": "Associated transaction ID",
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "success",
+          "request_id",
+          "status",
+          "resolved_at"
+        ],
+        "title": "RequestActionResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestActionResponse",
+        "x-validate": null
+      },
+      "RequestsResponse": {
+        "description": "Response schema for multiple requests",
+        "example": {
+          "pagination": {
+            "limit": 20,
+            "page": 1,
+            "total": 1,
+            "total_pages": 1
+          },
+          "requests": [
+            {
+              "amount": 200,
+              "id": 789,
+              "label": "Payment request",
+              "requested_at": "2019-09-12T12:34:55Z",
+              "requester": {
+                "id": 123,
+                "username": "johndoe"
+              },
+              "resolved_at": null,
+              "responder": {
+                "id": 456,
+                "username": "janedoe"
+              },
+              "status": "pending",
+              "transaction_id": null
+            }
+          ]
+        },
+        "properties": {
+          "pagination": {
+            "properties": {
+              "limit": {
+                "description": "Items per page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "page": {
+                "description": "Current page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total": {
+                "description": "Total items",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total_pages": {
+                "description": "Total pages",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requests": {
+            "description": "The requests list",
+            "items": {
+              "$ref": "#/components/schemas/Request"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "RequestsResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestsResponse",
+        "x-validate": null
+      },
+      "SendStkParams": {
+        "description": "Parameters for sending STK",
+        "example": {
+          "amount": 100,
+          "label": "Payment for services"
+        },
+        "properties": {
+          "amount": {
+            "description": "Amount of STK to send",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "description": "Optional transaction label",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "title": "SendStkParams",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.SendStkParams",
+        "x-validate": null
+      },
+      "SendStkResponse": {
+        "description": "Response schema for sending STK",
+        "example": {
+          "amount": 100,
+          "from_new_balance": 900,
+          "success": true,
+          "to_new_balance": 600,
+          "transaction_id": 456
+        },
+        "properties": {
+          "amount": {
+            "description": "Amount sent",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "from_new_balance": {
+            "description": "Sender's new balance",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "success": {
+            "description": "Whether the operation succeeded",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "to_new_balance": {
+            "description": "Recipient's new balance",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "transaction_id": {
+            "description": "Created transaction ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "success",
+          "transaction_id",
+          "amount",
+          "from_new_balance",
+          "to_new_balance"
+        ],
+        "title": "SendStkResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.SendStkResponse",
+        "x-validate": null
+      },
+      "Transaction": {
+        "description": "A STK transaction",
+        "example": {
+          "amount": 100,
+          "from": {
+            "id": 123,
+            "username": "johndoe"
+          },
+          "id": 456,
+          "label": "Payment for services",
+          "time": "2019-09-12T12:34:55Z",
+          "to": {
+            "id": 789,
+            "username": "janedoe"
+          }
+        },
+        "properties": {
+          "amount": {
+            "description": "Transaction amount",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "from": {
+            "properties": {
+              "id": {
+                "description": "From user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "From username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "Transaction ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "description": "Transaction label",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "time": {
+            "description": "Transaction timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "to": {
+            "properties": {
+              "id": {
+                "description": "To user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "To username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "amount",
+          "time"
+        ],
+        "title": "Transaction",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.Transaction",
+        "x-validate": null
+      },
+      "TransactionsResponse": {
+        "description": "Response schema for multiple transactions",
+        "example": {
+          "pagination": {
+            "limit": 20,
+            "page": 1,
+            "total": 1,
+            "total_pages": 1
+          },
+          "transactions": [
+            {
+              "amount": 100,
+              "from": {
+                "id": 123,
+                "username": "johndoe"
+              },
+              "id": 456,
+              "label": "Payment for services",
+              "time": "2019-09-12T12:34:55Z",
+              "to": {
+                "id": 789,
+                "username": "janedoe"
+              }
+            }
+          ]
+        },
+        "properties": {
+          "pagination": {
+            "properties": {
+              "limit": {
+                "description": "Items per page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "page": {
+                "description": "Current page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total": {
+                "description": "Total items",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total_pages": {
+                "description": "Total pages",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "transactions": {
+            "description": "The transactions list",
+            "items": {
+              "$ref": "#/components/schemas/Transaction"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "TransactionsResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.TransactionsResponse",
+        "x-validate": null
+      },
+      "User": {
+        "description": "A StackCoin user",
+        "example": {
+          "admin": false,
+          "balance": 1000,
+          "banned": false,
+          "id": 123,
+          "inserted_at": "2019-09-12T12:34:55Z",
+          "updated_at": "2025-09-13T10:11:12Z",
+          "username": "johndoe"
+        },
+        "properties": {
+          "admin": {
+            "description": "Whether user is an admin",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "balance": {
+            "description": "User's STK balance",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "banned": {
+            "description": "Whether user is banned",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "User ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "description": "Creation timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "description": "Update timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "username": {
+            "description": "Username",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "username",
+          "balance",
+          "admin",
+          "banned"
+        ],
+        "title": "User",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.User",
+        "x-validate": null
+      },
+      "UsersResponse": {
+        "description": "Response schema for multiple users",
+        "example": {
+          "pagination": {
+            "limit": 20,
+            "page": 1,
+            "total": 2,
+            "total_pages": 1
+          },
+          "users": [
+            {
+              "admin": false,
+              "balance": 1000,
+              "banned": false,
+              "id": 123,
+              "username": "johndoe"
+            },
+            {
+              "admin": true,
+              "balance": 500,
+              "banned": false,
+              "id": 456,
+              "username": "janedoe"
+            }
+          ]
+        },
+        "properties": {
+          "pagination": {
+            "properties": {
+              "limit": {
+                "description": "Items per page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "page": {
+                "description": "Current page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total": {
+                "description": "Total items",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total_pages": {
+                "description": "Total pages",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "users": {
+            "description": "The users list",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "UsersResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.UsersResponse",
+        "x-validate": null
+      }
+    },
+    "securitySchemes": {
+      "authorization": {
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "StackCoin API",
+    "version": "0.1"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/bot/requests": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves requests involving the bot, with optional filtering and pagination.",
+        "operationId": "StackCoinWeb.BotApiController.get_requests",
+        "parameters": [
+          {
+            "description": "Role filter (requester or responder)",
+            "example": "requester",
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Status filter",
+            "example": "pending",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Discord ID filter",
+            "example": "123456789",
+            "in": "query",
+            "name": "discord_id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Page number",
+            "example": 1,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Items per page",
+            "example": 20,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestsResponse"
+                }
+              }
+            },
+            "description": "Requests response"
+          }
+        },
+        "summary": "Get requests for the bot",
+        "tags": []
+      }
+    },
+    "/api/bot/requests/{request_id}/accept": {
+      "post": {
+        "callbacks": {},
+        "description": "Accepts a pending STK request, creating a transaction.",
+        "operationId": "StackCoinWeb.BotApiController.accept_request",
+        "parameters": [
+          {
+            "description": "Request ID",
+            "example": 789,
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestActionResponse"
+                }
+              }
+            },
+            "description": "Request action response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Accept a STK request",
+        "tags": []
+      }
+    },
+    "/api/bot/requests/{request_id}/deny": {
+      "post": {
+        "callbacks": {},
+        "description": "Denies a pending STK request without creating a transaction.",
+        "operationId": "StackCoinWeb.BotApiController.deny_request",
+        "parameters": [
+          {
+            "description": "Request ID",
+            "example": 789,
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestActionResponse"
+                }
+              }
+            },
+            "description": "Request action response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Deny a STK request",
+        "tags": []
+      }
+    },
+    "/api/bot/self/balance": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns the balance and username of the bot's own user.",
+        "operationId": "StackCoinWeb.BotApiController.balance",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            },
+            "description": "Balance response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get bot's own balance",
+        "tags": []
+      }
+    },
+    "/api/bot/transactions": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves transactions involving the bot, with optional filtering and pagination.",
+        "operationId": "StackCoinWeb.BotApiController.get_transactions",
+        "parameters": [
+          {
+            "description": "Page number",
+            "example": 1,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Items per page",
+            "example": 20,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by sender user ID",
+            "example": 123,
+            "in": "query",
+            "name": "from_user_id",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by recipient user ID",
+            "example": 456,
+            "in": "query",
+            "name": "to_user_id",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by sender Discord ID",
+            "example": "123456789",
+            "in": "query",
+            "name": "from_discord_id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by recipient Discord ID",
+            "example": "987654321",
+            "in": "query",
+            "name": "to_discord_id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by Discord ID (sender or recipient)",
+            "example": "123456789",
+            "in": "query",
+            "name": "includes_discord_id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionsResponse"
+                }
+              }
+            },
+            "description": "Transactions response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get transactions for the bot",
+        "tags": []
+      }
+    },
+    "/api/bot/user/{user_id}/balance": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns the balance and username of a specific user.",
+        "operationId": "StackCoinWeb.BotApiController.user_balance",
+        "parameters": [
+          {
+            "description": "User ID",
+            "example": 123,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceResponse"
+                }
+              }
+            },
+            "description": "Balance response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get user balance by ID",
+        "tags": []
+      }
+    },
+    "/api/bot/user/{user_id}/request": {
+      "post": {
+        "callbacks": {},
+        "description": "Creates a request for STK from a specified user.",
+        "operationId": "StackCoinWeb.BotApiController.create_request",
+        "parameters": [
+          {
+            "description": "Responder user ID",
+            "example": 456,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequestParams"
+              }
+            }
+          },
+          "description": "Create request params",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRequestResponse"
+                }
+              }
+            },
+            "description": "Create request response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Create a STK request",
+        "tags": []
+      }
+    },
+    "/api/bot/user/{user_id}/send": {
+      "post": {
+        "callbacks": {},
+        "description": "Transfers STK from the bot to a specified user.",
+        "operationId": "StackCoinWeb.BotApiController.send_stk",
+        "parameters": [
+          {
+            "description": "Recipient user ID",
+            "example": 123,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendStkParams"
+              }
+            }
+          },
+          "description": "Send STK params",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStkResponse"
+                }
+              }
+            },
+            "description": "Send STK response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Send STK to a user",
+        "tags": []
+      }
+    },
+    "/api/bot/users": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves users with optional filtering and pagination.",
+        "operationId": "StackCoinWeb.BotApiController.get_users",
+        "parameters": [
+          {
+            "description": "Page number",
+            "example": 1,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Items per page",
+            "example": 20,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by username",
+            "example": "johndoe",
+            "in": "query",
+            "name": "username",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by Discord ID",
+            "example": "123456789",
+            "in": "query",
+            "name": "discord_id",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by banned status",
+            "example": false,
+            "in": "query",
+            "name": "banned",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by admin status",
+            "example": true,
+            "in": "query",
+            "name": "admin",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsersResponse"
+                }
+              }
+            },
+            "description": "Users response"
+          }
+        },
+        "summary": "Get users",
+        "tags": []
+      }
+    }
+  },
+  "security": [],
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "variables": {}
+    }
+  ],
+  "tags": []
+}
