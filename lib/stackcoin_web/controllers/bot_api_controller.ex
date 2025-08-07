@@ -1,5 +1,6 @@
 defmodule StackCoinWeb.BotApiController do
   use StackCoinWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias StackCoin.Core.{Bank, User, Request}
 
@@ -62,11 +63,31 @@ defmodule StackCoinWeb.BotApiController do
     end
   end
 
+  operation :balance,
+    summary: "Get bot's own balance",
+    description: "Returns the balance and username of the bot's own user.",
+    responses: [
+      ok: {"Balance response", "application/json", StackCoinWeb.Schemas.BalanceResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
+
   def balance(conn, _params) do
     current_bot = conn.assigns.current_bot
     bot_user = current_bot.user
     json(conn, %{balance: bot_user.balance, username: bot_user.username})
   end
+
+  operation :user_balance,
+    summary: "Get user balance by ID",
+    description: "Returns the balance and username of a specific user.",
+    parameters: [
+      user_id: [in: :path, description: "User ID", type: :integer, example: 123]
+    ],
+    responses: [
+      ok: {"Balance response", "application/json", StackCoinWeb.Schemas.BalanceResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      bad_request: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
 
   def user_balance(conn, %{"user_id" => user_id_str}) do
     case Integer.parse(user_id_str) do
@@ -88,7 +109,23 @@ defmodule StackCoinWeb.BotApiController do
     end
   end
 
-  def send_tokens(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
+  operation :send_stk,
+    summary: "Send STK to a user",
+    description: "Transfers STK from the bot to a specified user.",
+    parameters: [
+      user_id: [in: :path, description: "Recipient user ID", type: :integer, example: 123]
+    ],
+    request_body: {"Send STK params", "application/json", StackCoinWeb.Schemas.SendStkParams},
+    responses: [
+      ok: {"Send STK response", "application/json", StackCoinWeb.Schemas.SendStkResponse},
+      bad_request: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      forbidden: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      unprocessable_entity:
+        {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
+
+  def send_stk(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
 
@@ -127,11 +164,28 @@ defmodule StackCoinWeb.BotApiController do
     end
   end
 
-  def send_tokens(conn, _params) do
+  def send_stk(conn, _params) do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "Missing required parameters: amount"})
   end
+
+  operation :create_request,
+    summary: "Create a STK request",
+    description: "Creates a request for STK from a specified user.",
+    parameters: [
+      user_id: [in: :path, description: "Responder user ID", type: :integer, example: 456]
+    ],
+    request_body:
+      {"Create request params", "application/json", StackCoinWeb.Schemas.CreateRequestParams},
+    responses: [
+      ok:
+        {"Create request response", "application/json",
+         StackCoinWeb.Schemas.CreateRequestResponse},
+      bad_request: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      forbidden: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
 
   def create_request(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
@@ -185,6 +239,30 @@ defmodule StackCoinWeb.BotApiController do
     |> put_status(:bad_request)
     |> json(%{error: "Missing required parameters: user_id, amount"})
   end
+
+  operation :get_requests,
+    summary: "Get requests for the bot",
+    description: "Retrieves requests involving the bot, with optional filtering and pagination.",
+    parameters: [
+      role: [
+        in: :query,
+        description: "Role filter (requester or responder)",
+        type: :string,
+        example: "requester"
+      ],
+      status: [in: :query, description: "Status filter", type: :string, example: "pending"],
+      discord_id: [
+        in: :query,
+        description: "Discord ID filter",
+        type: :string,
+        example: "123456789"
+      ],
+      page: [in: :query, description: "Page number", type: :integer, example: 1],
+      limit: [in: :query, description: "Items per page", type: :integer, example: 20]
+    ],
+    responses: [
+      ok: {"Requests response", "application/json", StackCoinWeb.Schemas.RequestsResponse}
+    ]
 
   def get_requests(conn, params) do
     current_bot = conn.assigns.current_bot
@@ -269,6 +347,21 @@ defmodule StackCoinWeb.BotApiController do
     })
   end
 
+  operation :accept_request,
+    summary: "Accept a STK request",
+    description: "Accepts a pending STK request, creating a transaction.",
+    parameters: [
+      request_id: [in: :path, description: "Request ID", type: :integer, example: 789]
+    ],
+    responses: [
+      ok:
+        {"Request action response", "application/json",
+         StackCoinWeb.Schemas.RequestActionResponse},
+      bad_request: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      forbidden: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
+
   def accept_request(conn, %{"request_id" => request_id_str}) do
     current_bot = conn.assigns.current_bot
 
@@ -298,6 +391,21 @@ defmodule StackCoinWeb.BotApiController do
         |> json(%{error: "Invalid request ID"})
     end
   end
+
+  operation :deny_request,
+    summary: "Deny a STK request",
+    description: "Denies a pending STK request without creating a transaction.",
+    parameters: [
+      request_id: [in: :path, description: "Request ID", type: :integer, example: 789]
+    ],
+    responses: [
+      ok:
+        {"Request action response", "application/json",
+         StackCoinWeb.Schemas.RequestActionResponse},
+      bad_request: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse},
+      forbidden: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
 
   def deny_request(conn, %{"request_id" => request_id_str}) do
     current_bot = conn.assigns.current_bot
@@ -333,6 +441,50 @@ defmodule StackCoinWeb.BotApiController do
     |> put_status(:bad_request)
     |> json(%{error: "Missing required parameter: request_id"})
   end
+
+  operation :get_transactions,
+    summary: "Get transactions for the bot",
+    description:
+      "Retrieves transactions involving the bot, with optional filtering and pagination.",
+    parameters: [
+      page: [in: :query, description: "Page number", type: :integer, example: 1],
+      limit: [in: :query, description: "Items per page", type: :integer, example: 20],
+      from_user_id: [
+        in: :query,
+        description: "Filter by sender user ID",
+        type: :integer,
+        example: 123
+      ],
+      to_user_id: [
+        in: :query,
+        description: "Filter by recipient user ID",
+        type: :integer,
+        example: 456
+      ],
+      from_discord_id: [
+        in: :query,
+        description: "Filter by sender Discord ID",
+        type: :string,
+        example: "123456789"
+      ],
+      to_discord_id: [
+        in: :query,
+        description: "Filter by recipient Discord ID",
+        type: :string,
+        example: "987654321"
+      ],
+      includes_discord_id: [
+        in: :query,
+        description: "Filter by Discord ID (sender or recipient)",
+        type: :string,
+        example: "123456789"
+      ]
+    ],
+    responses: [
+      ok:
+        {"Transactions response", "application/json", StackCoinWeb.Schemas.TransactionsResponse},
+      bad_request: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
 
   def get_transactions(conn, params) do
     current_bot = conn.assigns.current_bot
@@ -459,6 +611,26 @@ defmodule StackCoinWeb.BotApiController do
         |> json(%{error: message})
     end
   end
+
+  operation :get_users,
+    summary: "Get users",
+    description: "Retrieves users with optional filtering and pagination.",
+    parameters: [
+      page: [in: :query, description: "Page number", type: :integer, example: 1],
+      limit: [in: :query, description: "Items per page", type: :integer, example: 20],
+      username: [in: :query, description: "Filter by username", type: :string, example: "johndoe"],
+      discord_id: [
+        in: :query,
+        description: "Filter by Discord ID",
+        type: :string,
+        example: "123456789"
+      ],
+      banned: [in: :query, description: "Filter by banned status", type: :boolean, example: false],
+      admin: [in: :query, description: "Filter by admin status", type: :boolean, example: true]
+    ],
+    responses: [
+      ok: {"Users response", "application/json", StackCoinWeb.Schemas.UsersResponse}
+    ]
 
   def get_users(conn, params) do
     # Parse pagination parameters

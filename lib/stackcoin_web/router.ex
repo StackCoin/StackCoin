@@ -1,6 +1,10 @@
 defmodule StackCoinWeb.Router do
   use StackCoinWeb, :router
 
+  @swagger_ui_config [
+    path: "/api/openapi"
+  ]
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -12,29 +16,39 @@ defmodule StackCoinWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+
+    plug(OpenApiSpex.Plug.PutApiSpec, module: StackCoinWeb.ApiSpec)
   end
 
-  scope "/", StackCoinWeb do
+  scope "/" do
     pipe_through(:browser)
 
-    get("/", PageController, :home)
+    get("/", StackCoinWeb.PageController, :home)
+
+    get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, @swagger_ui_config)
   end
 
   # Bot API routes
-  scope "/api/bot", StackCoinWeb do
-    pipe_through([:api, StackCoinWeb.Plugs.BotAuth])
+  scope "/api" do
+    pipe_through(:api)
 
-    get("/self/balance", BotApiController, :balance)
-    get("/user/:user_id/balance", BotApiController, :user_balance)
-    post("/user/:user_id/send", BotApiController, :send_tokens)
+    scope "/bot" do
+      pipe_through(StackCoinWeb.Plugs.BotAuth)
 
-    post("/user/:user_id/request", BotApiController, :create_request)
-    get("/requests", BotApiController, :get_requests)
-    post("/requests/:request_id/accept", BotApiController, :accept_request)
-    post("/requests/:request_id/deny", BotApiController, :deny_request)
+      get("/self/balance", StackCoinWeb.BotApiController, :balance)
+      get("/user/:user_id/balance", StackCoinWeb.BotApiController, :user_balance)
+      post("/user/:user_id/send", StackCoinWeb.BotApiController, :send_stk)
 
-    get("/transactions", BotApiController, :get_transactions)
-    get("/users", BotApiController, :get_users)
+      post("/user/:user_id/request", StackCoinWeb.BotApiController, :create_request)
+      get("/requests", StackCoinWeb.BotApiController, :get_requests)
+      post("/requests/:request_id/accept", StackCoinWeb.BotApiController, :accept_request)
+      post("/requests/:request_id/deny", StackCoinWeb.BotApiController, :deny_request)
+
+      get("/transactions", StackCoinWeb.BotApiController, :get_transactions)
+      get("/users", StackCoinWeb.BotApiController, :get_users)
+    end
+
+    get("/openapi", OpenApiSpex.Plug.RenderSpec, :show)
   end
 
   # Enable LiveDashboard in development

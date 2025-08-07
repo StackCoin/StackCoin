@@ -305,7 +305,7 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
-  Bot transfer - allows a bot to send tokens from its own balance.
+  Bot transfer - allows a bot to send STK from its own balance.
   """
   def bot_transfer(bot_token, to_user_id, amount, label \\ nil) do
     with {:ok, bot} <- Bot.get_bot_by_token(bot_token),
