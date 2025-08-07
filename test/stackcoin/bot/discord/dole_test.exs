@@ -4,7 +4,7 @@ defmodule StackCoinTest.Bot.Discord.Dole do
   import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.{Admin, Dole}
-  alias StackCoin.Core.{Bank, Reserve, User}
+  alias StackCoin.Core.{Reserve, User}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(StackCoin.Repo)
