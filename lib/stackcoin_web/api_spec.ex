@@ -16,6 +16,7 @@ defmodule StackCoinWeb.ApiSpec do
       components: %Components{
         securitySchemes: %{"authorization" => %SecurityScheme{type: "http", scheme: "bearer"}}
       },
+      security: [%{"authorization" => []}],
       paths: Paths.from_router(Router)
     }
     |> OpenApiSpex.resolve_schema_modules()
