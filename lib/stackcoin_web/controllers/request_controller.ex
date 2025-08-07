@@ -6,6 +6,7 @@ defmodule StackCoinWeb.RequestController do
   alias StackCoinWeb.ApiHelpers
 
   operation :create,
+    operation_id: "stackcoin_create_request",
     summary: "Create a STK request",
     description: "Creates a request for STK from a specified user.",
     parameters: [
@@ -69,6 +70,7 @@ defmodule StackCoinWeb.RequestController do
   end
 
   operation :index,
+    operation_id: "stackcoin_requests",
     summary: "Get requests for the authenticated user",
     description:
       "Retrieves requests involving the authenticated user, with optional filtering and pagination.",
@@ -153,6 +155,7 @@ defmodule StackCoinWeb.RequestController do
   end
 
   operation :accept,
+    operation_id: "stackcoin_accept_request",
     summary: "Accept a STK request",
     description: "Accepts a pending STK request, creating a transaction.",
     parameters: [
@@ -194,6 +197,7 @@ defmodule StackCoinWeb.RequestController do
   end
 
   operation :deny,
+    operation_id: "stackcoin_deny_request",
     summary: "Deny a STK request",
     description: "Denies a pending STK request without creating a transaction.",
     parameters: [

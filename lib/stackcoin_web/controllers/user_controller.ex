@@ -6,6 +6,7 @@ defmodule StackCoinWeb.UserController do
   alias StackCoinWeb.ApiHelpers
 
   operation :index,
+    operation_id: "stackcoin_users",
     summary: "Get users",
     description: "Retrieves users with optional filtering and pagination.",
     parameters: [
