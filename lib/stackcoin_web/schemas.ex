@@ -252,6 +252,62 @@ defmodule StackCoinWeb.Schemas do
     })
   end
 
+  defmodule RequestResponse do
+    OpenApiSpex.schema(%{
+      title: "RequestResponse",
+      description: "Response schema for single request",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Request ID"},
+        amount: %Schema{type: :integer, description: "Requested amount"},
+        status: %Schema{type: :string, description: "Request status"},
+        requested_at: %Schema{
+          type: :string,
+          description: "Request timestamp",
+          format: :"date-time"
+        },
+        resolved_at: %Schema{
+          type: :string,
+          description: "Resolution timestamp",
+          format: :"date-time",
+          nullable: true
+        },
+        label: %Schema{type: :string, description: "Request label", nullable: true},
+        requester: %Schema{
+          type: :object,
+          properties: %{
+            id: %Schema{type: :integer, description: "Requester user ID"},
+            username: %Schema{type: :string, description: "Requester username"}
+          }
+        },
+        responder: %Schema{
+          type: :object,
+          properties: %{
+            id: %Schema{type: :integer, description: "Responder user ID"},
+            username: %Schema{type: :string, description: "Responder username"}
+          }
+        },
+        transaction_id: %Schema{
+          type: :integer,
+          description: "Associated transaction ID",
+          nullable: true
+        }
+      },
+      required: [:id, :amount, :status, :requested_at, :requester, :responder],
+      example: %{
+        "id" => 789,
+        "amount" => 200,
+        "status" => "pending",
+        "requested_at" => "2019-09-12T12:34:55Z",
+        "resolved_at" => nil,
+        "label" => "Payment request",
+        "requester" => %{"id" => 123, "username" => "johndoe"},
+        "responder" => %{"id" => 456, "username" => "janedoe"},
+        "transaction_id" => nil
+      }
+    })
+  end
+
   defmodule RequestsResponse do
     OpenApiSpex.schema(%{
       title: "RequestsResponse",

@@ -5,6 +5,23 @@ defmodule StackCoinWeb.RequestController do
   alias StackCoin.Core.Request
   alias StackCoinWeb.ApiHelpers
 
+  operation :show,
+    operation_id: "stackcoin_request",
+    summary: "Get request by ID",
+    description: "Retrieves a single request by its ID.",
+    parameters: [
+      request_id: [
+        in: :path,
+        description: "Request ID",
+        type: :integer,
+        example: 789
+      ]
+    ],
+    responses: [
+      ok: {"Request response", "application/json", StackCoinWeb.Schemas.RequestResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
+
   operation :create,
     operation_id: "stackcoin_create_request",
     summary: "Create a STK request",
@@ -241,5 +258,43 @@ defmodule StackCoinWeb.RequestController do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "Missing required parameter: request_id"})
+  end
+
+  def show(conn, %{"request_id" => request_id_str}) do
+    case ApiHelpers.parse_user_id(request_id_str) do
+      {:ok, request_id} ->
+        case Request.get_request_by_id(request_id) do
+          {:ok, request} ->
+            formatted_request = %{
+              id: request.id,
+              amount: request.amount,
+              status: request.status,
+              requested_at: request.requested_at,
+              resolved_at: request.resolved_at,
+              label: request.label,
+              requester: %{
+                id: request.requester.id,
+                username: request.requester.username
+              },
+              responder: %{
+                id: request.responder.id,
+                username: request.responder.username
+              },
+              transaction_id: if(request.transaction, do: request.transaction.id, else: nil)
+            }
+
+            json(conn, formatted_request)
+
+          {:error, :request_not_found} ->
+            conn
+            |> put_status(:not_found)
+            |> json(%{error: "Request not found"})
+        end
+
+      {:error, :invalid_user_id} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid request ID"})
+    end
   end
 end
