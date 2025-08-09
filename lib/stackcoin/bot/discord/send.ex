@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Send do
   Discord send command implementation.
   """
 
-  alias StackCoin.Core.{Bank, User}
+  alias StackCoin.Core.{Bank, User, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -38,8 +38,8 @@ defmodule StackCoin.Bot.Discord.Send do
   Handles the send command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, from_user} <- User.get_user_by_discord_id(interaction.user.id),
          {:ok, {to_user_id, amount}} <- parse_command_options(interaction),
          {:ok, to_user} <- get_recipient_user(to_user_id),

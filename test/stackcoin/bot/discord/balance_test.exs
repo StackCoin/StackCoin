@@ -4,7 +4,7 @@ defmodule StackCoinTest.Bot.Discord.Balance do
   import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.{Admin, Balance}
-  alias StackCoin.Core.User
+  alias StackCoin.Core.{User, DiscordGuild}
 
   setup do
     # Ensure clean database state for each test
@@ -59,7 +59,7 @@ defmodule StackCoinTest.Bot.Discord.Balance do
     end
 
     # Verify guild was created
-    {:ok, guild} = User.get_guild_by_discord_id(guild_id)
+    {:ok, guild} = DiscordGuild.get_guild_by_discord_id(guild_id)
     assert guild.designated_channel_snowflake == to_string(designated_channel_id)
 
     # Create a regular user for balance testing

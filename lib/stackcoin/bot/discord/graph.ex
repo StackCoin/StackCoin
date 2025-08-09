@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Graph do
   Discord graph command implementation.
   """
 
-  alias StackCoin.Core.{Bank, User}
+  alias StackCoin.Core.{Bank, User, DiscordGuild}
   alias StackCoin.Graph
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
@@ -32,8 +32,8 @@ defmodule StackCoin.Bot.Discord.Graph do
   Handles the graph command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, {target_user, is_self}} <- get_target_user(interaction) do
       with {:ok, history} <- Bank.get_user_balance_history(target_user.id) do
         try do
