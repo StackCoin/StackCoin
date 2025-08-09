@@ -19,6 +19,9 @@ defmodule StackCoinWebTest.UserControllerTest do
     {:ok, _pump} = Reserve.pump_reserve(owner.id, 200, "Test funding")
     {:ok, _transaction} = Bank.transfer_between_users(1, bot.user.id, 150, "Bot funding")
 
+    # Get the bot user again, with the updated balance
+    {:ok, bot} = Bot.get_bot_by_name("TestBot")
+
     %{
       owner: owner,
       bot: bot,
@@ -261,6 +264,360 @@ defmodule StackCoinWebTest.UserControllerTest do
           assert user1["balance"] >= user2["balance"]
         end)
       end
+    end
+  end
+
+  describe "GET /api/user/:user_id" do
+    test "returns 401 if Authorization header is missing", %{conn: conn, owner: owner} do
+      conn = get(conn, ~p"/api/user/#{owner.id}")
+      assert json_response(conn, 401) == %{"error" => "Missing or invalid Authorization header"}
+    end
+
+    test "returns 401 if Authorization header is invalid", %{conn: conn, owner: owner} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer invalid_token")
+        |> get(~p"/api/user/#{owner.id}")
+
+      assert json_response(conn, 401) == %{"error" => "Invalid bot token"}
+    end
+
+    test "returns user when found", %{
+      conn: conn,
+      bot_token: bot_token,
+      owner: owner
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/#{owner.id}")
+
+      response = json_response(conn, 200)
+      assert is_map(response)
+
+      assert response["id"] == owner.id
+      assert response["username"] == owner.username
+      assert response["balance"] == owner.balance
+      assert response["admin"] == owner.admin
+      assert response["banned"] == owner.banned
+      assert is_binary(response["inserted_at"])
+      assert is_binary(response["updated_at"])
+    end
+
+    test "returns 404 when user not found", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/99999")
+
+      response = json_response(conn, 404)
+      assert response == %{"error" => "User not found"}
+    end
+
+    test "returns 400 for invalid user_id", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/invalid_id")
+
+      response = json_response(conn, 400)
+      assert response == %{"error" => "Invalid user ID"}
+    end
+
+    test "returns correct user structure", %{
+      conn: conn,
+      bot_token: bot_token,
+      recipient: recipient
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/#{recipient.id}")
+
+      response = json_response(conn, 200)
+
+      # Verify all expected fields are present
+      assert Map.has_key?(response, "id")
+      assert Map.has_key?(response, "username")
+      assert Map.has_key?(response, "balance")
+      assert Map.has_key?(response, "admin")
+      assert Map.has_key?(response, "banned")
+      assert Map.has_key?(response, "inserted_at")
+      assert Map.has_key?(response, "updated_at")
+
+      # Verify field types
+      assert is_integer(response["id"])
+      assert is_binary(response["username"])
+      assert is_integer(response["balance"])
+      assert is_boolean(response["admin"])
+      assert is_boolean(response["banned"])
+      assert is_binary(response["inserted_at"])
+      assert is_binary(response["updated_at"])
+    end
+
+    test "returns user with different admin/banned states", %{
+      conn: conn,
+      bot_token: bot_token,
+      recipient: recipient
+    } do
+      # Make recipient an admin and ban them
+      {:ok, _updated_user} =
+        recipient
+        |> StackCoin.Schema.User.changeset(%{admin: true, banned: true})
+        |> StackCoin.Repo.update()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/#{recipient.id}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == recipient.id
+      assert response["admin"] == true
+      assert response["banned"] == true
+      assert response["username"] == recipient.username
+    end
+
+    test "returns user with zero balance", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      # Create a user with zero balance
+      {:ok, zero_balance_user} =
+        User.create_user_account("555555555", "ZeroBalanceUser", balance: 0)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/#{zero_balance_user.id}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == zero_balance_user.id
+      assert response["username"] == "ZeroBalanceUser"
+      assert response["balance"] == 0
+      assert response["admin"] == false
+      assert response["banned"] == false
+    end
+
+    test "returns user with high balance", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      # Create a user with high balance
+      {:ok, rich_user} = User.create_user_account("666666666", "RichUser", balance: 999_999)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/#{rich_user.id}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == rich_user.id
+      assert response["username"] == "RichUser"
+      assert response["balance"] == 999_999
+      assert response["admin"] == false
+      assert response["banned"] == false
+    end
+  end
+
+  describe "GET /api/user/me" do
+    test "returns 401 if Authorization header is missing", %{conn: conn} do
+      conn = get(conn, ~p"/api/user/me")
+      assert json_response(conn, 401) == %{"error" => "Missing or invalid Authorization header"}
+    end
+
+    test "returns 401 if Authorization header is invalid", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer invalid_token")
+        |> get(~p"/api/user/me")
+
+      assert json_response(conn, 401) == %{"error" => "Invalid bot token"}
+    end
+
+    test "returns authenticated bot user profile", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/me")
+
+      response = json_response(conn, 200)
+      assert is_map(response)
+
+      assert response["id"] == bot.user.id
+      assert response["username"] == bot.user.username
+      assert response["balance"] == bot.user.balance
+      assert response["admin"] == bot.user.admin
+      assert response["banned"] == bot.user.banned
+      assert is_binary(response["inserted_at"])
+      assert is_binary(response["updated_at"])
+    end
+
+    test "returns correct user structure for authenticated bot", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/me")
+
+      response = json_response(conn, 200)
+
+      # Verify all expected fields are present
+      assert Map.has_key?(response, "id")
+      assert Map.has_key?(response, "username")
+      assert Map.has_key?(response, "balance")
+      assert Map.has_key?(response, "admin")
+      assert Map.has_key?(response, "banned")
+      assert Map.has_key?(response, "inserted_at")
+      assert Map.has_key?(response, "updated_at")
+
+      # Verify field types
+      assert is_integer(response["id"])
+      assert is_binary(response["username"])
+      assert is_integer(response["balance"])
+      assert is_boolean(response["admin"])
+      assert is_boolean(response["banned"])
+      assert is_binary(response["inserted_at"])
+      assert is_binary(response["updated_at"])
+    end
+
+    test "returns current balance from setup", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/me")
+
+      response = json_response(conn, 200)
+
+      # Bot should have 150 balance from setup (received from reserve)
+      assert response["balance"] == bot.user.balance
+      assert response["username"] == "TestBot"
+      assert response["admin"] == false
+      assert response["banned"] == false
+    end
+
+    test "reflects balance changes after transactions", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Get initial balance
+      conn_initial =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/me")
+
+      initial_response = json_response(conn_initial, 200)
+      initial_balance = initial_response["balance"]
+
+      # Make a transaction
+      {:ok, _transaction} =
+        Bank.transfer_between_users(bot.user.id, recipient.id, 25, "Test spend")
+
+      # Check balance after transaction
+      conn_after =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/me")
+
+      after_response = json_response(conn_after, 200)
+
+      # Balance should be reduced by 25
+      assert after_response["balance"] == initial_balance - 25
+      assert after_response["id"] == bot.user.id
+      assert after_response["username"] == "TestBot"
+    end
+
+    test "works with different bot tokens", %{conn: conn, owner: owner} do
+      # Create another bot
+      {:ok, another_bot} = Bot.create_bot_user("123456789", "AnotherBot")
+
+      # Give the new bot some balance
+      {:ok, _transaction} =
+        Bank.transfer_between_users(owner.id, another_bot.user.id, 100, "Fund new bot")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{another_bot.token}")
+        |> get(~p"/api/user/me")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == another_bot.user.id
+      assert response["username"] == "AnotherBot"
+      assert response["balance"] == 100
+      assert response["admin"] == false
+      assert response["banned"] == false
+    end
+
+    test "returns updated user state after admin/banned changes", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot
+    } do
+      # Make bot an admin
+      {:ok, _updated_user} =
+        bot.user
+        |> StackCoin.Schema.User.changeset(%{admin: true})
+        |> StackCoin.Repo.update()
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/me")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == bot.user.id
+      assert response["admin"] == true
+      assert response["banned"] == false
+    end
+
+    test "provides replacement for balance controller self_balance", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot
+    } do
+      # Test that /user/me provides same info as /balance but with more details
+      conn_me =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/user/me")
+
+      me_response = json_response(conn_me, 200)
+
+      # Should have balance and username like the old balance endpoint
+      assert Map.has_key?(me_response, "balance")
+      assert Map.has_key?(me_response, "username")
+      assert me_response["balance"] == bot.user.balance
+      assert me_response["username"] == bot.user.username
+
+      # But also have additional user profile information
+      assert Map.has_key?(me_response, "id")
+      assert Map.has_key?(me_response, "admin")
+      assert Map.has_key?(me_response, "banned")
+      assert Map.has_key?(me_response, "inserted_at")
+      assert Map.has_key?(me_response, "updated_at")
     end
   end
 end

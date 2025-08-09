@@ -5,6 +5,31 @@ defmodule StackCoinWeb.UserController do
   alias StackCoin.Core.User
   alias StackCoinWeb.ApiHelpers
 
+  operation :me,
+    operation_id: "stackcoin_user_me",
+    summary: "Get authenticated user's profile",
+    description: "Returns the full profile of the authenticated bot user.",
+    responses: [
+      ok: {"User response", "application/json", StackCoinWeb.Schemas.UserResponse}
+    ]
+
+  operation :show,
+    operation_id: "stackcoin_user",
+    summary: "Get user by ID",
+    description: "Retrieves a single user by their ID.",
+    parameters: [
+      user_id: [
+        in: :path,
+        description: "User ID",
+        type: :integer,
+        example: 123
+      ]
+    ],
+    responses: [
+      ok: {"User response", "application/json", StackCoinWeb.Schemas.UserResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
+
   operation :index,
     operation_id: "stackcoin_users",
     summary: "Get users",
@@ -78,5 +103,52 @@ defmodule StackCoinWeb.UserController do
         total_pages: total_pages
       }
     })
+  end
+
+  def me(conn, _params) do
+    current_bot = conn.assigns.current_bot
+    bot_user = current_bot.user
+
+    formatted_user = %{
+      id: bot_user.id,
+      username: bot_user.username,
+      balance: bot_user.balance,
+      admin: bot_user.admin,
+      banned: bot_user.banned,
+      inserted_at: bot_user.inserted_at,
+      updated_at: bot_user.updated_at
+    }
+
+    json(conn, formatted_user)
+  end
+
+  def show(conn, %{"user_id" => user_id_str}) do
+    case ApiHelpers.parse_user_id(user_id_str) do
+      {:ok, user_id} ->
+        case User.get_user_by_id(user_id) do
+          {:ok, user} ->
+            formatted_user = %{
+              id: user.id,
+              username: user.username,
+              balance: user.balance,
+              admin: user.admin,
+              banned: user.banned,
+              inserted_at: user.inserted_at,
+              updated_at: user.updated_at
+            }
+
+            json(conn, formatted_user)
+
+          {:error, :user_not_found} ->
+            conn
+            |> put_status(:not_found)
+            |> json(%{error: "User not found"})
+        end
+
+      {:error, :invalid_user_id} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid user ID"})
+    end
   end
 end

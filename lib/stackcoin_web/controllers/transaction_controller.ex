@@ -5,6 +5,23 @@ defmodule StackCoinWeb.TransactionController do
   alias StackCoin.Core.Bank
   alias StackCoinWeb.ApiHelpers
 
+  operation :show,
+    operation_id: "stackcoin_transaction",
+    summary: "Get transaction by ID",
+    description: "Retrieves a single transaction by its ID.",
+    parameters: [
+      transaction_id: [
+        in: :path,
+        description: "Transaction ID",
+        type: :integer,
+        example: 456
+      ]
+    ],
+    responses: [
+      ok: {"Transaction response", "application/json", StackCoinWeb.Schemas.TransactionResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
+
   operation :index,
     operation_id: "stackcoin_transactions",
     summary: "Get transactions for the authenticated user",
@@ -145,6 +162,41 @@ defmodule StackCoinWeb.TransactionController do
 
       {:error, reason} ->
         ApiHelpers.send_error_response(conn, reason)
+    end
+  end
+
+  def show(conn, %{"transaction_id" => transaction_id_str}) do
+    case ApiHelpers.parse_user_id(transaction_id_str) do
+      {:ok, transaction_id} ->
+        case Bank.get_transaction_by_id(transaction_id) do
+          {:ok, transaction} ->
+            formatted_transaction = %{
+              id: transaction.id,
+              from: %{
+                id: transaction.from_id,
+                username: transaction.from_username
+              },
+              to: %{
+                id: transaction.to_id,
+                username: transaction.to_username
+              },
+              amount: transaction.amount,
+              time: transaction.time,
+              label: transaction.label
+            }
+
+            json(conn, formatted_transaction)
+
+          {:error, :transaction_not_found} ->
+            conn
+            |> put_status(:not_found)
+            |> json(%{error: "Transaction not found"})
+        end
+
+      {:error, :invalid_user_id} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid transaction ID"})
     end
   end
 end
