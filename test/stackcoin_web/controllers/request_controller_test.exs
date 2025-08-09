@@ -699,4 +699,210 @@ defmodule StackCoinWebTest.RequestControllerTest do
       assert json_response(conn, 400) == %{"error" => "Invalid request ID"}
     end
   end
+
+  describe "GET /api/request/:request_id" do
+    test "returns 401 if Authorization header is missing", %{conn: conn} do
+      conn = get(conn, ~p"/api/request/1")
+      assert json_response(conn, 401) == %{"error" => "Missing or invalid Authorization header"}
+    end
+
+    test "returns 401 if Authorization header is invalid", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer invalid_token")
+        |> get(~p"/api/request/1")
+
+      assert json_response(conn, 401) == %{"error" => "Invalid bot token"}
+    end
+
+    test "returns request when found", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a test request
+      {:ok, request} = Request.create_request(recipient.id, bot.user.id, 100, "Test request")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/#{request.id}")
+
+      response = json_response(conn, 200)
+      assert is_map(response)
+
+      assert response["id"] == request.id
+      assert response["amount"] == 100
+      assert response["status"] == "pending"
+      assert response["label"] == "Test request"
+      assert is_binary(response["requested_at"])
+      assert is_nil(response["resolved_at"])
+      assert is_nil(response["transaction_id"])
+
+      # Check requester and responder details
+      assert response["requester"]["id"] == recipient.id
+      assert response["requester"]["username"] == recipient.username
+      assert response["responder"]["id"] == bot.user.id
+      assert response["responder"]["username"] == bot.user.username
+    end
+
+    test "returns 404 when request not found", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/99999")
+
+      response = json_response(conn, 404)
+      assert response == %{"error" => "Request not found"}
+    end
+
+    test "returns 400 for invalid request_id", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/invalid_id")
+
+      response = json_response(conn, 400)
+      assert response == %{"error" => "Invalid request ID"}
+    end
+
+    test "returns correct request structure", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a test request
+      {:ok, request} = Request.create_request(bot.user.id, recipient.id, 75, "Structure test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/#{request.id}")
+
+      response = json_response(conn, 200)
+
+      # Verify all expected fields are present
+      assert Map.has_key?(response, "id")
+      assert Map.has_key?(response, "amount")
+      assert Map.has_key?(response, "status")
+      assert Map.has_key?(response, "requested_at")
+      assert Map.has_key?(response, "resolved_at")
+      assert Map.has_key?(response, "label")
+      assert Map.has_key?(response, "requester")
+      assert Map.has_key?(response, "responder")
+      assert Map.has_key?(response, "transaction_id")
+
+      # Verify field types
+      assert is_integer(response["id"])
+      assert is_integer(response["amount"])
+      assert is_binary(response["status"])
+      assert is_binary(response["requested_at"])
+      assert is_nil(response["resolved_at"])
+      assert is_binary(response["label"])
+      assert is_map(response["requester"])
+      assert is_map(response["responder"])
+      assert is_nil(response["transaction_id"])
+
+      # Verify nested user objects
+      assert Map.has_key?(response["requester"], "id")
+      assert Map.has_key?(response["requester"], "username")
+      assert Map.has_key?(response["responder"], "id")
+      assert Map.has_key?(response["responder"], "username")
+    end
+
+    test "returns accepted request with transaction_id", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create and accept a request
+      {:ok, request} = Request.create_request(recipient.id, bot.user.id, 50, "Accepted test")
+      {:ok, accepted_request} = Request.accept_request(request.id, bot.user.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/#{request.id}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == request.id
+      assert response["status"] == "accepted"
+      assert is_binary(response["resolved_at"])
+      assert is_integer(response["transaction_id"])
+      assert response["transaction_id"] == accepted_request.transaction.id
+    end
+
+    test "returns denied request with resolved_at", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create and deny a request
+      {:ok, request} = Request.create_request(recipient.id, bot.user.id, 25, "Denied test")
+      {:ok, _denied_request} = Request.deny_request(request.id, bot.user.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/#{request.id}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == request.id
+      assert response["status"] == "denied"
+      assert is_binary(response["resolved_at"])
+      assert is_nil(response["transaction_id"])
+    end
+
+    test "returns request with null label", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a request without a label
+      {:ok, request} = Request.create_request(recipient.id, bot.user.id, 30, nil)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/#{request.id}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == request.id
+      assert is_nil(response["label"])
+    end
+
+    test "handles different request statuses correctly", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Test pending request
+      {:ok, pending_request} = Request.create_request(recipient.id, bot.user.id, 40, "Pending")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/request/#{pending_request.id}")
+
+      response = json_response(conn, 200)
+      assert response["status"] == "pending"
+      assert is_nil(response["resolved_at"])
+      assert is_nil(response["transaction_id"])
+    end
+  end
 end

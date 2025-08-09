@@ -50,6 +50,7 @@ defmodule StackCoinWeb.Router do
     # Request operations
     post("/users/:user_id/request", StackCoinWeb.RequestController, :create)
     get("/requests", StackCoinWeb.RequestController, :index)
+    get("/request/:request_id", StackCoinWeb.RequestController, :show)
     post("/requests/:request_id/accept", StackCoinWeb.RequestController, :accept)
     post("/requests/:request_id/deny", StackCoinWeb.RequestController, :deny)
 
