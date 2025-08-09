@@ -204,4 +204,244 @@ defmodule StackCoinWebTest.TransactionControllerTest do
       assert is_list(response["transactions"])
     end
   end
+
+  describe "GET /api/transaction/:transaction_id" do
+    test "returns 401 if Authorization header is missing", %{conn: conn} do
+      conn = get(conn, ~p"/api/transaction/1")
+      assert json_response(conn, 401) == %{"error" => "Missing or invalid Authorization header"}
+    end
+
+    test "returns 401 if Authorization header is invalid", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer invalid_token")
+        |> get(~p"/api/transaction/1")
+
+      assert json_response(conn, 401) == %{"error" => "Invalid bot token"}
+    end
+
+    test "returns transaction when found", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a test transaction
+      {:ok, transaction} =
+        Bank.transfer_between_users(bot.user.id, recipient.id, 75, "Test transaction")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transaction/#{transaction.id}")
+
+      response = json_response(conn, 200)
+      assert is_map(response)
+
+      assert response["id"] == transaction.id
+      assert response["amount"] == 75
+      assert response["label"] == "Test transaction"
+      assert is_binary(response["time"])
+
+      # Check from and to user details
+      assert response["from"]["id"] == bot.user.id
+      assert response["from"]["username"] == bot.user.username
+      assert response["to"]["id"] == recipient.id
+      assert response["to"]["username"] == recipient.username
+    end
+
+    test "returns 404 when transaction not found", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transaction/99999")
+
+      response = json_response(conn, 404)
+      assert response == %{"error" => "Transaction not found"}
+    end
+
+    test "returns 400 for invalid transaction_id", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transaction/invalid_id")
+
+      response = json_response(conn, 400)
+      assert response == %{"error" => "Invalid transaction ID"}
+    end
+
+    test "returns correct transaction structure", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a test transaction
+      {:ok, transaction} =
+        Bank.transfer_between_users(recipient.id, bot.user.id, 50, "Structure test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transaction/#{transaction.id}")
+
+      response = json_response(conn, 200)
+
+      # Verify all expected fields are present
+      assert Map.has_key?(response, "id")
+      assert Map.has_key?(response, "from")
+      assert Map.has_key?(response, "to")
+      assert Map.has_key?(response, "amount")
+      assert Map.has_key?(response, "time")
+      assert Map.has_key?(response, "label")
+
+      # Verify field types
+      assert is_integer(response["id"])
+      assert is_map(response["from"])
+      assert is_map(response["to"])
+      assert is_integer(response["amount"])
+      assert is_binary(response["time"])
+      assert is_binary(response["label"])
+
+      # Verify nested user objects
+      assert Map.has_key?(response["from"], "id")
+      assert Map.has_key?(response["from"], "username")
+      assert Map.has_key?(response["to"], "id")
+      assert Map.has_key?(response["to"], "username")
+
+      # Verify correct user details
+      assert response["from"]["id"] == recipient.id
+      assert response["from"]["username"] == recipient.username
+      assert response["to"]["id"] == bot.user.id
+      assert response["to"]["username"] == bot.user.username
+    end
+
+    test "returns transaction with null label", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a transaction without a label
+      {:ok, transaction} = Bank.transfer_between_users(bot.user.id, recipient.id, 30, nil)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transaction/#{transaction.id}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == transaction.id
+      assert is_nil(response["label"])
+      assert response["amount"] == 30
+    end
+
+    test "handles different transaction amounts correctly", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Test different amounts
+      amounts = [1, 2, 3]
+
+      Enum.each(amounts, fn amount ->
+        {:ok, transaction} =
+          Bank.transfer_between_users(bot.user.id, recipient.id, amount, "Amount test #{amount}")
+
+        conn =
+          conn
+          |> put_req_header("authorization", "Bearer #{bot_token}")
+          |> get(~p"/api/transaction/#{transaction.id}")
+
+        response = json_response(conn, 200)
+
+        assert response["id"] == transaction.id
+        assert response["amount"] == amount
+        assert response["label"] == "Amount test #{amount}"
+      end)
+    end
+
+    test "returns transaction with different user combinations", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient,
+      owner: owner
+    } do
+      # Test different from/to combinations
+      test_cases = [
+        {bot.user.id, recipient.id, "Bot to Recipient"},
+        {recipient.id, bot.user.id, "Recipient to Bot"},
+        {owner.id, recipient.id, "Owner to Recipient"}
+      ]
+
+      Enum.each(test_cases, fn {from_id, to_id, label} ->
+        {:ok, transaction} = Bank.transfer_between_users(from_id, to_id, 25, label)
+
+        conn =
+          conn
+          |> put_req_header("authorization", "Bearer #{bot_token}")
+          |> get(~p"/api/transaction/#{transaction.id}")
+
+        response = json_response(conn, 200)
+
+        assert response["id"] == transaction.id
+        assert response["from"]["id"] == from_id
+        assert response["to"]["id"] == to_id
+        assert response["label"] == label
+        assert response["amount"] == 25
+      end)
+    end
+
+    test "returns transaction created from setup", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot
+    } do
+      # The setup creates a transaction from reserve (id=1) to bot
+      # Let's find this transaction and test it
+      conn_list =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transactions?to_user_id=#{bot.user.id}")
+
+      list_response = json_response(conn_list, 200)
+      setup_transaction = List.first(list_response["transactions"])
+
+      if setup_transaction do
+        conn =
+          conn
+          |> put_req_header("authorization", "Bearer #{bot_token}")
+          |> get(~p"/api/transaction/#{setup_transaction["id"]}")
+
+        response = json_response(conn, 200)
+
+        assert response["id"] == setup_transaction["id"]
+        assert response["to"]["id"] == bot.user.id
+        assert response["amount"] == 150
+        assert response["label"] == "Bot funding"
+      end
+    end
+
+    test "handles large transaction IDs", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transaction/999999999")
+
+      response = json_response(conn, 404)
+      assert response == %{"error" => "Transaction not found"}
+    end
+  end
 end

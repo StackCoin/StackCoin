@@ -39,20 +39,28 @@ defmodule StackCoinWeb.Schemas do
       description: "Response schema for single user",
       type: :object,
       properties: %{
-        data: User
+        id: %Schema{type: :integer, description: "User ID"},
+        username: %Schema{type: :string, description: "Username"},
+        balance: %Schema{type: :integer, description: "User's STK balance"},
+        admin: %Schema{type: :boolean, description: "Whether user is an admin"},
+        banned: %Schema{type: :boolean, description: "Whether user is banned"},
+        inserted_at: %Schema{
+          type: :string,
+          description: "Creation timestamp",
+          format: :"date-time"
+        },
+        updated_at: %Schema{type: :string, description: "Update timestamp", format: :"date-time"}
       },
+      required: [:username, :balance, :admin, :banned],
       example: %{
-        "data" => %{
-          "id" => 123,
-          "username" => "johndoe",
-          "balance" => 1000,
-          "admin" => false,
-          "banned" => false,
-          "inserted_at" => "2019-09-12T12:34:55Z",
-          "updated_at" => "2025-09-13T10:11:12Z"
-        }
-      },
-      "x-struct": __MODULE__
+        "id" => 123,
+        "username" => "johndoe",
+        "balance" => 1000,
+        "admin" => false,
+        "banned" => false,
+        "inserted_at" => "2019-09-12T12:34:55Z",
+        "updated_at" => "2025-09-13T10:11:12Z"
+      }
     })
   end
 
@@ -100,27 +108,47 @@ defmodule StackCoinWeb.Schemas do
     })
   end
 
-  defmodule BalanceResponse do
-    OpenApiSpex.schema(%{
-      title: "BalanceResponse",
-      description: "Response schema for user balance",
-      type: :object,
-      properties: %{
-        balance: %Schema{type: :integer, description: "User's STK balance"},
-        username: %Schema{type: :string, description: "Username"}
-      },
-      required: [:balance, :username],
-      example: %{
-        "balance" => 1000,
-        "username" => "johndoe"
-      }
-    })
-  end
-
   defmodule Transaction do
     OpenApiSpex.schema(%{
       title: "Transaction",
       description: "A STK transaction",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Transaction ID"},
+        from: %Schema{
+          type: :object,
+          properties: %{
+            id: %Schema{type: :integer, description: "From user ID"},
+            username: %Schema{type: :string, description: "From username"}
+          }
+        },
+        to: %Schema{
+          type: :object,
+          properties: %{
+            id: %Schema{type: :integer, description: "To user ID"},
+            username: %Schema{type: :string, description: "To username"}
+          }
+        },
+        amount: %Schema{type: :integer, description: "Transaction amount"},
+        time: %Schema{type: :string, description: "Transaction timestamp", format: :"date-time"},
+        label: %Schema{type: :string, description: "Transaction label", nullable: true}
+      },
+      required: [:id, :from, :to, :amount, :time],
+      example: %{
+        "id" => 456,
+        "from" => %{"id" => 123, "username" => "johndoe"},
+        "to" => %{"id" => 789, "username" => "janedoe"},
+        "amount" => 100,
+        "time" => "2019-09-12T12:34:55Z",
+        "label" => "Payment for services"
+      }
+    })
+  end
+
+  defmodule TransactionResponse do
+    OpenApiSpex.schema(%{
+      title: "TransactionResponse",
+      description: "Response schema for single transaction",
       type: :object,
       properties: %{
         id: %Schema{type: :integer, description: "Transaction ID"},

@@ -43,6 +43,35 @@ defmodule StackCoin.Core.Bank do
   end
 
   @doc """
+  Gets a transaction by ID with user details.
+  """
+  def get_transaction_by_id(transaction_id) do
+    query =
+      from(t in Schema.Transaction,
+        join: from_user in Schema.User,
+        on: t.from_id == from_user.id,
+        join: to_user in Schema.User,
+        on: t.to_id == to_user.id,
+        where: t.id == ^transaction_id,
+        select: %{
+          id: t.id,
+          from_id: t.from_id,
+          from_username: from_user.username,
+          to_id: t.to_id,
+          to_username: to_user.username,
+          amount: t.amount,
+          time: t.time,
+          label: t.label
+        }
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :transaction_not_found}
+      transaction -> {:ok, transaction}
+    end
+  end
+
+  @doc """
   Updates a user's balance directly.
   """
   def update_user_balance(user_id, new_balance) do

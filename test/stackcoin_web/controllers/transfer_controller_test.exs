@@ -27,10 +27,10 @@ defmodule StackCoinWebTest.TransferControllerTest do
     }
   end
 
-  describe "POST /api/users/:user_id/send" do
+  describe "POST /api/user/:user_id/send" do
     test "returns 401 if Authorization header is missing", %{conn: conn, recipient: recipient} do
       conn =
-        post(conn, ~p"/api/users/#{recipient.id}/send", %{
+        post(conn, ~p"/api/user/#{recipient.id}/send", %{
           "amount" => 50
         })
 
@@ -46,7 +46,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => 50
         })
 
@@ -72,7 +72,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => 25,
           "label" => "Test payment"
         })
@@ -90,7 +90,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{})
+        |> post(~p"/api/user/#{recipient.id}/send", %{})
 
       assert json_response(conn, 400) == %{
                "error" => "Missing required parameters: amount"
@@ -101,7 +101,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/invalid/send", %{
+        |> post(~p"/api/user/invalid/send", %{
           "amount" => 50
         })
 
@@ -118,7 +118,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => "invalid"
         })
 
@@ -129,7 +129,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => 0
         })
 
@@ -144,7 +144,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => -10
         })
 
@@ -159,7 +159,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => 200
         })
 
@@ -170,7 +170,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{bot.user.id}/send", %{
+        |> post(~p"/api/user/#{bot.user.id}/send", %{
           "amount" => 50
         })
 
@@ -181,7 +181,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/99999/send", %{
+        |> post(~p"/api/user/99999/send", %{
           "amount" => 50
         })
 
@@ -200,7 +200,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => 50
         })
 
@@ -218,7 +218,7 @@ defmodule StackCoinWebTest.TransferControllerTest do
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
-        |> post(~p"/api/users/#{recipient.id}/send", %{
+        |> post(~p"/api/user/#{recipient.id}/send", %{
           "amount" => 50
         })
 

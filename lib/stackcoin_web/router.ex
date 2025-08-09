@@ -40,15 +40,7 @@ defmodule StackCoinWeb.Router do
     pipe_through(:api)
     pipe_through(StackCoinWeb.Plugs.BotAuth)
 
-    # Balance operations
-    get("/balance", StackCoinWeb.BalanceController, :self_balance)
-    get("/users/:user_id/balance", StackCoinWeb.BalanceController, :user_balance)
-
-    # Transfer operations
-    post("/users/:user_id/send", StackCoinWeb.TransferController, :send_stk)
-
     # Request operations
-    post("/users/:user_id/request", StackCoinWeb.RequestController, :create)
     get("/requests", StackCoinWeb.RequestController, :index)
     get("/request/:request_id", StackCoinWeb.RequestController, :show)
     post("/requests/:request_id/accept", StackCoinWeb.RequestController, :accept)
@@ -56,9 +48,14 @@ defmodule StackCoinWeb.Router do
 
     # Transaction operations
     get("/transactions", StackCoinWeb.TransactionController, :index)
+    get("/transaction/:transaction_id", StackCoinWeb.TransactionController, :show)
 
     # User operations
     get("/users", StackCoinWeb.UserController, :index)
+    get("/user/me", StackCoinWeb.UserController, :me)
+    get("/user/:user_id", StackCoinWeb.UserController, :show)
+    post("/user/:user_id/send", StackCoinWeb.TransferController, :send_stk)
+    post("/user/:user_id/request", StackCoinWeb.RequestController, :create)
 
     # Discord guild operations
     get("/discord/guilds", StackCoinWeb.DiscordGuildController, :index)
