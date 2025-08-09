@@ -300,4 +300,151 @@ defmodule StackCoinWebTest.DiscordGuildControllerTest do
       assert response["pagination"]["limit"] == 100
     end
   end
+
+  describe "GET /api/discord/guild/:snowflake" do
+    test "returns 401 if Authorization header is missing", %{conn: conn, guild1: guild1} do
+      conn = get(conn, ~p"/api/discord/guild/#{guild1.snowflake}")
+      assert json_response(conn, 401) == %{"error" => "Missing or invalid Authorization header"}
+    end
+
+    test "returns 401 if Authorization header is invalid", %{conn: conn, guild1: guild1} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer invalid_token")
+        |> get(~p"/api/discord/guild/#{guild1.snowflake}")
+
+      assert json_response(conn, 401) == %{"error" => "Invalid bot token"}
+    end
+
+    test "returns guild when found", %{
+      conn: conn,
+      bot_token: bot_token,
+      guild1: guild1
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/discord/guild/#{guild1.snowflake}")
+
+      response = json_response(conn, 200)
+      assert is_map(response)
+
+      assert response["id"] == guild1.id
+      assert response["snowflake"] == guild1.snowflake
+      assert response["name"] == guild1.name
+      assert response["designated_channel_snowflake"] == guild1.designated_channel_snowflake
+      assert is_binary(response["last_updated"])
+    end
+
+    test "returns 404 when guild not found", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/discord/guild/999999999999999999")
+
+      response = json_response(conn, 404)
+      assert response == %{"error" => "Guild not found"}
+    end
+
+    test "returns correct guild structure", %{
+      conn: conn,
+      bot_token: bot_token,
+      guild2: guild2
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/discord/guild/#{guild2.snowflake}")
+
+      response = json_response(conn, 200)
+
+      # Verify all expected fields are present
+      assert Map.has_key?(response, "id")
+      assert Map.has_key?(response, "snowflake")
+      assert Map.has_key?(response, "name")
+      assert Map.has_key?(response, "designated_channel_snowflake")
+      assert Map.has_key?(response, "last_updated")
+
+      # Verify field types
+      assert is_integer(response["id"])
+      assert is_binary(response["snowflake"])
+      assert is_binary(response["name"])
+      assert is_binary(response["designated_channel_snowflake"])
+      assert is_binary(response["last_updated"])
+    end
+
+    test "handles different guild snowflakes correctly", %{
+      conn: conn,
+      bot_token: bot_token,
+      guild1: guild1,
+      guild2: guild2,
+      guild3: guild3
+    } do
+      # Test each guild individually
+      guilds = [guild1, guild2, guild3]
+
+      Enum.each(guilds, fn guild ->
+        conn =
+          conn
+          |> put_req_header("authorization", "Bearer #{bot_token}")
+          |> get(~p"/api/discord/guild/#{guild.snowflake}")
+
+        response = json_response(conn, 200)
+
+        assert response["id"] == guild.id
+        assert response["snowflake"] == guild.snowflake
+        assert response["name"] == guild.name
+      end)
+    end
+
+    test "handles invalid snowflake format gracefully", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/discord/guild/invalid_snowflake")
+
+      response = json_response(conn, 404)
+      assert response == %{"error" => "Guild not found"}
+    end
+
+    test "handles empty snowflake gracefully", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get("/api/discord/guild/")
+
+      # This should result in a 404 or route not found
+      assert conn.status in [404, 405]
+    end
+
+    test "returns guild with null designated_channel_snowflake", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      # Create a guild without a designated channel
+      {:ok, {guild_no_channel, :created}} =
+        DiscordGuild.register_guild("777777777777777777", "No Channel Guild", nil)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/discord/guild/#{guild_no_channel.snowflake}")
+
+      response = json_response(conn, 200)
+
+      assert response["id"] == guild_no_channel.id
+      assert response["snowflake"] == guild_no_channel.snowflake
+      assert response["name"] == guild_no_channel.name
+      assert is_nil(response["designated_channel_snowflake"])
+    end
+  end
 end
