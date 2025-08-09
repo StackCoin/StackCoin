@@ -1,6 +1,6 @@
 defmodule StackCoinTest.Support.DiscordUtils do
   import Mock
-  alias StackCoin.Core.{User, Bank}
+  alias StackCoin.Core.{User, Bank, DiscordGuild}
   alias Nostrum.Constants.InteractionType
 
   def setup_admin_user(admin_user_id) do
@@ -39,7 +39,7 @@ defmodule StackCoinTest.Support.DiscordUtils do
        ]}
     ]) do
       {:ok, {_guild, :created}} =
-        User.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
+        DiscordGuild.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
     end
 
     {sender, recipient}
@@ -62,7 +62,7 @@ defmodule StackCoinTest.Support.DiscordUtils do
        ]}
     ]) do
       {:ok, {guild, :created}} =
-        User.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
+        DiscordGuild.admin_register_guild(admin_user_id, guild_id, "Test Guild", channel_id)
 
       guild
     end

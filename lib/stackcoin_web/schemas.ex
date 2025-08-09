@@ -424,6 +424,81 @@ defmodule StackCoinWeb.Schemas do
     })
   end
 
+  defmodule DiscordGuild do
+    OpenApiSpex.schema(%{
+      title: "DiscordGuild",
+      description: "A Discord guild",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Guild ID"},
+        snowflake: %Schema{type: :string, description: "Discord guild snowflake ID"},
+        name: %Schema{type: :string, description: "Guild name"},
+        designated_channel_snowflake: %Schema{
+          type: :string,
+          description: "Designated channel snowflake ID",
+          nullable: true
+        },
+        last_updated: %Schema{
+          type: :string,
+          description: "Last updated timestamp",
+          format: :"date-time"
+        }
+      },
+      required: [:id, :snowflake, :name, :last_updated],
+      example: %{
+        "id" => 123,
+        "snowflake" => "123456789012345678",
+        "name" => "My Discord Server",
+        "designated_channel_snowflake" => "987654321098765432",
+        "last_updated" => "2019-09-12T12:34:55Z"
+      }
+    })
+  end
+
+  defmodule DiscordGuildsResponse do
+    OpenApiSpex.schema(%{
+      title: "DiscordGuildsResponse",
+      description: "Response schema for multiple Discord guilds",
+      type: :object,
+      properties: %{
+        guilds: %Schema{description: "The guilds list", type: :array, items: DiscordGuild},
+        pagination: %Schema{
+          type: :object,
+          properties: %{
+            page: %Schema{type: :integer, description: "Current page"},
+            limit: %Schema{type: :integer, description: "Items per page"},
+            total: %Schema{type: :integer, description: "Total items"},
+            total_pages: %Schema{type: :integer, description: "Total pages"}
+          }
+        }
+      },
+      example: %{
+        "guilds" => [
+          %{
+            "id" => 123,
+            "snowflake" => "123456789012345678",
+            "name" => "My Discord Server",
+            "designated_channel_snowflake" => "987654321098765432",
+            "last_updated" => "2019-09-12T12:34:55Z"
+          },
+          %{
+            "id" => 456,
+            "snowflake" => "876543210987654321",
+            "name" => "Another Server",
+            "designated_channel_snowflake" => nil,
+            "last_updated" => "2019-09-13T10:11:12Z"
+          }
+        ],
+        "pagination" => %{
+          "page" => 1,
+          "limit" => 20,
+          "total" => 2,
+          "total_pages" => 1
+        }
+      }
+    })
+  end
+
   defmodule ErrorResponse do
     OpenApiSpex.schema(%{
       title: "ErrorResponse",

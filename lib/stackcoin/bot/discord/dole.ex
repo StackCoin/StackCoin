@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Dole do
   Discord dole command implementation.
   """
 
-  alias StackCoin.Core.{Reserve, User}
+  alias StackCoin.Core.{Reserve, User, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -22,8 +22,8 @@ defmodule StackCoin.Bot.Discord.Dole do
   Handles the dole command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, user} <- get_or_create_user(interaction.user),
          {:ok, transaction} <- Reserve.transfer_dole_to_user(user.id) do
       send_success_response(interaction, user, transaction)

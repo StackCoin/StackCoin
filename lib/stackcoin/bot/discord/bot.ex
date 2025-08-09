@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Bot do
   Discord bot management command implementation for all users.
   """
 
-  alias StackCoin.Core.{Bot, User}
+  alias StackCoin.Core.{Bot, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.{ApplicationCommandOptionType, InteractionCallbackType}
@@ -69,8 +69,8 @@ defmodule StackCoin.Bot.Discord.Bot do
   Handles the bot command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, subcommand} <- get_subcommand(interaction) do
       handle_subcommand(subcommand, interaction)
     else

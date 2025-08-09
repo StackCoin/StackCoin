@@ -162,6 +162,133 @@
         "x-struct": "Elixir.StackCoinWeb.Schemas.CreateRequestResponse",
         "x-validate": null
       },
+      "DiscordGuild": {
+        "description": "A Discord guild",
+        "example": {
+          "designated_channel_snowflake": "987654321098765432",
+          "id": 123,
+          "last_updated": "2019-09-12T12:34:55Z",
+          "name": "My Discord Server",
+          "snowflake": "123456789012345678"
+        },
+        "properties": {
+          "designated_channel_snowflake": {
+            "description": "Designated channel snowflake ID",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "Guild ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_updated": {
+            "description": "Last updated timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "description": "Guild name",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "snowflake": {
+            "description": "Discord guild snowflake ID",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "snowflake",
+          "name",
+          "last_updated"
+        ],
+        "title": "DiscordGuild",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.DiscordGuild",
+        "x-validate": null
+      },
+      "DiscordGuildsResponse": {
+        "description": "Response schema for multiple Discord guilds",
+        "example": {
+          "guilds": [
+            {
+              "designated_channel_snowflake": "987654321098765432",
+              "id": 123,
+              "last_updated": "2019-09-12T12:34:55Z",
+              "name": "My Discord Server",
+              "snowflake": "123456789012345678"
+            },
+            {
+              "designated_channel_snowflake": null,
+              "id": 456,
+              "last_updated": "2019-09-13T10:11:12Z",
+              "name": "Another Server",
+              "snowflake": "876543210987654321"
+            }
+          ],
+          "pagination": {
+            "limit": 20,
+            "page": 1,
+            "total": 2,
+            "total_pages": 1
+          }
+        },
+        "properties": {
+          "guilds": {
+            "description": "The guilds list",
+            "items": {
+              "$ref": "#/components/schemas/DiscordGuild"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "pagination": {
+            "properties": {
+              "limit": {
+                "description": "Items per page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "page": {
+                "description": "Current page",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total": {
+                "description": "Total items",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "total_pages": {
+                "description": "Total pages",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "title": "DiscordGuildsResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.DiscordGuildsResponse",
+        "x-validate": null
+      },
       "ErrorResponse": {
         "description": "Error response schema",
         "example": {
@@ -840,7 +967,7 @@
       "get": {
         "callbacks": {},
         "description": "Returns the balance and username of the authenticated user.",
-        "operationId": "StackCoinWeb.BalanceController.self_balance",
+        "operationId": "stackcoin_self_balance",
         "parameters": [],
         "responses": {
           "200": {
@@ -868,11 +995,82 @@
         "tags": []
       }
     },
+    "/api/discord/guilds": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves Discord guilds with optional filtering and pagination.",
+        "operationId": "stackcoin_discord_guilds",
+        "parameters": [
+          {
+            "description": "Page number",
+            "example": 1,
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Items per page",
+            "example": 20,
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by guild name",
+            "example": "My Server",
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
+            "description": "Filter by Discord snowflake ID",
+            "example": "123456789012345678",
+            "in": "query",
+            "name": "snowflake",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordGuildsResponse"
+                }
+              }
+            },
+            "description": "Discord guilds response"
+          }
+        },
+        "summary": "Get Discord guilds",
+        "tags": []
+      }
+    },
     "/api/requests": {
       "get": {
         "callbacks": {},
         "description": "Retrieves requests involving the authenticated user, with optional filtering and pagination.",
-        "operationId": "StackCoinWeb.RequestController.index",
+        "operationId": "stackcoin_requests",
         "parameters": [
           {
             "description": "Role filter (requester or responder)",
@@ -955,7 +1153,7 @@
       "post": {
         "callbacks": {},
         "description": "Accepts a pending STK request, creating a transaction.",
-        "operationId": "StackCoinWeb.RequestController.accept",
+        "operationId": "stackcoin_accept_request",
         "parameters": [
           {
             "description": "Request ID",
@@ -1020,7 +1218,7 @@
       "post": {
         "callbacks": {},
         "description": "Denies a pending STK request without creating a transaction.",
-        "operationId": "StackCoinWeb.RequestController.deny",
+        "operationId": "stackcoin_deny_request",
         "parameters": [
           {
             "description": "Request ID",
@@ -1085,7 +1283,7 @@
       "get": {
         "callbacks": {},
         "description": "Retrieves transactions involving the authenticated user, with optional filtering and pagination.",
-        "operationId": "StackCoinWeb.TransactionController.index",
+        "operationId": "stackcoin_transactions",
         "parameters": [
           {
             "description": "Page number",
@@ -1202,7 +1400,7 @@
       "get": {
         "callbacks": {},
         "description": "Retrieves users with optional filtering and pagination.",
-        "operationId": "StackCoinWeb.UserController.index",
+        "operationId": "stackcoin_users",
         "parameters": [
           {
             "description": "Page number",
@@ -1297,7 +1495,7 @@
       "get": {
         "callbacks": {},
         "description": "Returns the balance and username of a specific user.",
-        "operationId": "StackCoinWeb.BalanceController.user_balance",
+        "operationId": "stackcoin_user_balance",
         "parameters": [
           {
             "description": "User ID",
@@ -1352,7 +1550,7 @@
       "post": {
         "callbacks": {},
         "description": "Creates a request for STK from a specified user.",
-        "operationId": "StackCoinWeb.RequestController.create",
+        "operationId": "stackcoin_create_request",
         "parameters": [
           {
             "description": "Responder user ID",
@@ -1428,7 +1626,7 @@
       "post": {
         "callbacks": {},
         "description": "Transfers STK from the authenticated user to a specified user.",
-        "operationId": "StackCoinWeb.TransferController.send_stk",
+        "operationId": "stackcoin_send_stk",
         "parameters": [
           {
             "description": "Recipient user ID",

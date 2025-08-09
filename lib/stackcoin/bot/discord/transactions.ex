@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Transactions do
   Discord transactions command implementation.
   """
 
-  alias StackCoin.Core.{Bank, User}
+  alias StackCoin.Core.{Bank, User, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -52,8 +52,8 @@ defmodule StackCoin.Bot.Discord.Transactions do
   Handles the transactions command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, search_opts} <- parse_search_options(interaction),
          {:ok, transactions} <- Bank.search_transactions(search_opts) do
       send_transactions_response(interaction, transactions, search_opts)

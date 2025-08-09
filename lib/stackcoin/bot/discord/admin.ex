@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Admin do
   Discord admin command implementation.
   """
 
-  alias StackCoin.Core.{User, Reserve}
+  alias StackCoin.Core.{User, Reserve, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Api.Guild
@@ -133,7 +133,12 @@ defmodule StackCoin.Bot.Discord.Admin do
   defp register_channel(guild_id, channel_id, interaction) do
     case Guild.get(guild_id) do
       {:ok, guild_info} ->
-        case User.admin_register_guild(interaction.user.id, guild_id, guild_info.name, channel_id) do
+        case DiscordGuild.admin_register_guild(
+               interaction.user.id,
+               guild_id,
+               guild_info.name,
+               channel_id
+             ) do
           {:ok, {_guild, action}} ->
             send_register_success_response(interaction, action)
 

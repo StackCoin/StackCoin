@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Balance do
   Discord balance command implementation.
   """
 
-  alias StackCoin.Core.{User, Bot}
+  alias StackCoin.Core.{User, Bot, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -51,8 +51,8 @@ defmodule StackCoin.Bot.Discord.Balance do
   end
 
   defp handle_command(interaction) do
-    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, {target, target_type, is_self}} <- get_target(interaction) do
       send_balance_response(interaction, target, target_type, is_self)
     else

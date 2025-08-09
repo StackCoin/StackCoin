@@ -58,6 +58,9 @@ defmodule StackCoinWeb.Router do
 
     # User operations
     get("/users", StackCoinWeb.UserController, :index)
+
+    # Discord guild operations
+    get("/discord/guilds", StackCoinWeb.DiscordGuildController, :index)
   end
 
   # Enable LiveDashboard in development

@@ -114,8 +114,11 @@ defmodule StackCoinWeb.ApiHelpers do
 
         limit_str ->
           case Integer.parse(limit_str) do
-            {limit_num, ""} when limit_num > 0 -> limit_num
-            _ -> default_limit
+            {limit_num, ""} when limit_num > 0 ->
+              min(limit_num, 100)
+
+            _ ->
+              default_limit
           end
       end
 

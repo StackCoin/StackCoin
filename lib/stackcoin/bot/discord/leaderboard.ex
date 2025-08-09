@@ -3,7 +3,7 @@ defmodule StackCoin.Bot.Discord.Leaderboard do
   Discord leaderboard command implementation.
   """
 
-  alias StackCoin.Core.{Bank, User}
+  alias StackCoin.Core.{Bank, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
@@ -22,8 +22,8 @@ defmodule StackCoin.Bot.Discord.Leaderboard do
   Handles the leaderboard command interaction.
   """
   def handle(interaction) do
-    with {:ok, guild} <- User.get_guild_by_discord_id(interaction.guild_id),
-         {:ok, _channel_check} <- User.validate_channel(guild, interaction.channel_id),
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, top_users} <- Bank.get_top_users(5) do
       send_leaderboard_response(interaction, top_users)
     else
