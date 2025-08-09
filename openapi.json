@@ -2,35 +2,6 @@
   "components": {
     "responses": {},
     "schemas": {
-      "BalanceResponse": {
-        "description": "Response schema for user balance",
-        "example": {
-          "balance": 1000,
-          "username": "johndoe"
-        },
-        "properties": {
-          "balance": {
-            "description": "User's STK balance",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
-          },
-          "username": {
-            "description": "Username",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
-          }
-        },
-        "required": [
-          "balance",
-          "username"
-        ],
-        "title": "BalanceResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.BalanceResponse",
-        "x-validate": null
-      },
       "CreateRequestParams": {
         "description": "Parameters for creating a STK request",
         "example": {
@@ -214,6 +185,60 @@
         "title": "DiscordGuild",
         "type": "object",
         "x-struct": "Elixir.StackCoinWeb.Schemas.DiscordGuild",
+        "x-validate": null
+      },
+      "DiscordGuildResponse": {
+        "description": "Response schema for single Discord guild",
+        "example": {
+          "designated_channel_snowflake": "987654321098765432",
+          "id": 123,
+          "last_updated": "2019-09-12T12:34:55Z",
+          "name": "My Discord Server",
+          "snowflake": "123456789012345678"
+        },
+        "properties": {
+          "designated_channel_snowflake": {
+            "description": "Designated channel snowflake ID",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "Guild ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "last_updated": {
+            "description": "Last updated timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "name": {
+            "description": "Guild name",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "snowflake": {
+            "description": "Discord guild snowflake ID",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "snowflake",
+          "name",
+          "last_updated"
+        ],
+        "title": "DiscordGuildResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.DiscordGuildResponse",
         "x-validate": null
       },
       "DiscordGuildsResponse": {
@@ -483,6 +508,125 @@
         "x-struct": "Elixir.StackCoinWeb.Schemas.RequestActionResponse",
         "x-validate": null
       },
+      "RequestResponse": {
+        "description": "Response schema for single request",
+        "example": {
+          "amount": 200,
+          "id": 789,
+          "label": "Payment request",
+          "requested_at": "2019-09-12T12:34:55Z",
+          "requester": {
+            "id": 123,
+            "username": "johndoe"
+          },
+          "resolved_at": null,
+          "responder": {
+            "id": 456,
+            "username": "janedoe"
+          },
+          "status": "pending",
+          "transaction_id": null
+        },
+        "properties": {
+          "amount": {
+            "description": "Requested amount",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "Request ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "description": "Request label",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requested_at": {
+            "description": "Request timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requester": {
+            "properties": {
+              "id": {
+                "description": "Requester user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "Requester username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "resolved_at": {
+            "description": "Resolution timestamp",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "responder": {
+            "properties": {
+              "id": {
+                "description": "Responder user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "Responder username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "description": "Request status",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "transaction_id": {
+            "description": "Associated transaction ID",
+            "nullable": true,
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "status",
+          "requested_at",
+          "requester",
+          "responder"
+        ],
+        "title": "RequestResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestResponse",
+        "x-validate": null
+      },
       "RequestsResponse": {
         "description": "Response schema for multiple requests",
         "example": {
@@ -735,6 +879,100 @@
         "x-struct": "Elixir.StackCoinWeb.Schemas.Transaction",
         "x-validate": null
       },
+      "TransactionResponse": {
+        "description": "Response schema for single transaction",
+        "example": {
+          "amount": 100,
+          "from": {
+            "id": 123,
+            "username": "johndoe"
+          },
+          "id": 456,
+          "label": "Payment for services",
+          "time": "2019-09-12T12:34:55Z",
+          "to": {
+            "id": 789,
+            "username": "janedoe"
+          }
+        },
+        "properties": {
+          "amount": {
+            "description": "Transaction amount",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "from": {
+            "properties": {
+              "id": {
+                "description": "From user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "From username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "Transaction ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "description": "Transaction label",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "time": {
+            "description": "Transaction timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "to": {
+            "properties": {
+              "id": {
+                "description": "To user ID",
+                "type": "integer",
+                "x-struct": null,
+                "x-validate": null
+              },
+              "username": {
+                "description": "To username",
+                "type": "string",
+                "x-struct": null,
+                "x-validate": null
+              }
+            },
+            "type": "object",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "amount",
+          "time"
+        ],
+        "title": "TransactionResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.TransactionResponse",
+        "x-validate": null
+      },
       "TransactionsResponse": {
         "description": "Response schema for multiple transactions",
         "example": {
@@ -876,6 +1114,74 @@
         "x-struct": "Elixir.StackCoinWeb.Schemas.User",
         "x-validate": null
       },
+      "UserResponse": {
+        "description": "Response schema for single user",
+        "example": {
+          "admin": false,
+          "balance": 1000,
+          "banned": false,
+          "id": 123,
+          "inserted_at": "2019-09-12T12:34:55Z",
+          "updated_at": "2025-09-13T10:11:12Z",
+          "username": "johndoe"
+        },
+        "properties": {
+          "admin": {
+            "description": "Whether user is an admin",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "balance": {
+            "description": "User's STK balance",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "banned": {
+            "description": "Whether user is banned",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "id": {
+            "description": "User ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "description": "Creation timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "updated_at": {
+            "description": "Update timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "username": {
+            "description": "Username",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "username",
+          "balance",
+          "admin",
+          "banned"
+        ],
+        "title": "UserResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.UserResponse",
+        "x-validate": null
+      },
       "UsersResponse": {
         "description": "Response schema for multiple users",
         "example": {
@@ -963,22 +1269,35 @@
   },
   "openapi": "3.0.0",
   "paths": {
-    "/api/balance": {
+    "/api/discord/guild/{snowflake}": {
       "get": {
         "callbacks": {},
-        "description": "Returns the balance and username of the authenticated user.",
-        "operationId": "stackcoin_self_balance",
-        "parameters": [],
+        "description": "Retrieves a single Discord guild by its snowflake ID.",
+        "operationId": "stackcoin_discord_guild",
+        "parameters": [
+          {
+            "description": "Discord guild snowflake ID",
+            "example": "123456789012345678",
+            "in": "path",
+            "name": "snowflake",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BalanceResponse"
+                  "$ref": "#/components/schemas/DiscordGuildResponse"
                 }
               }
             },
-            "description": "Balance response"
+            "description": "Discord guild response"
           },
           "404": {
             "content": {
@@ -991,7 +1310,7 @@
             "description": "Error response"
           }
         },
-        "summary": "Get authenticated user's balance",
+        "summary": "Get Discord guild by snowflake",
         "tags": []
       }
     },
@@ -1063,6 +1382,51 @@
           }
         },
         "summary": "Get Discord guilds",
+        "tags": []
+      }
+    },
+    "/api/request/{request_id}": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves a single request by its ID.",
+        "operationId": "stackcoin_request",
+        "parameters": [
+          {
+            "description": "Request ID",
+            "example": 789,
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponse"
+                }
+              }
+            },
+            "description": "Request response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get request by ID",
         "tags": []
       }
     },
@@ -1279,6 +1643,51 @@
         "tags": []
       }
     },
+    "/api/transaction/{transaction_id}": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves a single transaction by its ID.",
+        "operationId": "stackcoin_transaction",
+        "parameters": [
+          {
+            "description": "Transaction ID",
+            "example": 456,
+            "in": "path",
+            "name": "transaction_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            },
+            "description": "Transaction response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get transaction by ID",
+        "tags": []
+      }
+    },
     "/api/transactions": {
       "get": {
         "callbacks": {},
@@ -1396,6 +1805,235 @@
         "tags": []
       }
     },
+    "/api/user/me": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns the full profile of the authenticated bot user.",
+        "operationId": "stackcoin_user_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "User response"
+          }
+        },
+        "summary": "Get authenticated user's profile",
+        "tags": []
+      }
+    },
+    "/api/user/{user_id}": {
+      "get": {
+        "callbacks": {},
+        "description": "Retrieves a single user by their ID.",
+        "operationId": "stackcoin_user",
+        "parameters": [
+          {
+            "description": "User ID",
+            "example": 123,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "User response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Get user by ID",
+        "tags": []
+      }
+    },
+    "/api/user/{user_id}/request": {
+      "post": {
+        "callbacks": {},
+        "description": "Creates a request for STK from a specified user.",
+        "operationId": "stackcoin_create_request",
+        "parameters": [
+          {
+            "description": "Responder user ID",
+            "example": 456,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequestParams"
+              }
+            }
+          },
+          "description": "Create request params",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateRequestResponse"
+                }
+              }
+            },
+            "description": "Create request response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Create a STK request",
+        "tags": []
+      }
+    },
+    "/api/user/{user_id}/send": {
+      "post": {
+        "callbacks": {},
+        "description": "Transfers STK from the authenticated user to a specified user.",
+        "operationId": "stackcoin_send_stk",
+        "parameters": [
+          {
+            "description": "Recipient user ID",
+            "example": 123,
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendStkParams"
+              }
+            }
+          },
+          "description": "Send STK params",
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendStkResponse"
+                }
+              }
+            },
+            "description": "Send STK response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
+          }
+        },
+        "summary": "Send STK to a user",
+        "tags": []
+      }
+    },
     "/api/users": {
       "get": {
         "callbacks": {},
@@ -1488,223 +2126,6 @@
           }
         },
         "summary": "Get users",
-        "tags": []
-      }
-    },
-    "/api/users/{user_id}/balance": {
-      "get": {
-        "callbacks": {},
-        "description": "Returns the balance and username of a specific user.",
-        "operationId": "stackcoin_user_balance",
-        "parameters": [
-          {
-            "description": "User ID",
-            "example": 123,
-            "in": "path",
-            "name": "user_id",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BalanceResponse"
-                }
-              }
-            },
-            "description": "Balance response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          }
-        },
-        "summary": "Get user balance by ID",
-        "tags": []
-      }
-    },
-    "/api/users/{user_id}/request": {
-      "post": {
-        "callbacks": {},
-        "description": "Creates a request for STK from a specified user.",
-        "operationId": "stackcoin_create_request",
-        "parameters": [
-          {
-            "description": "Responder user ID",
-            "example": 456,
-            "in": "path",
-            "name": "user_id",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateRequestParams"
-              }
-            }
-          },
-          "description": "Create request params",
-          "required": false
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateRequestResponse"
-                }
-              }
-            },
-            "description": "Create request response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          }
-        },
-        "summary": "Create a STK request",
-        "tags": []
-      }
-    },
-    "/api/users/{user_id}/send": {
-      "post": {
-        "callbacks": {},
-        "description": "Transfers STK from the authenticated user to a specified user.",
-        "operationId": "stackcoin_send_stk",
-        "parameters": [
-          {
-            "description": "Recipient user ID",
-            "example": 123,
-            "in": "path",
-            "name": "user_id",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendStkParams"
-              }
-            }
-          },
-          "description": "Send STK params",
-          "required": false
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SendStkResponse"
-                }
-              }
-            },
-            "description": "Send STK response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description": "Error response"
-          }
-        },
-        "summary": "Send STK to a user",
         "tags": []
       }
     }
