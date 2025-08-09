@@ -1,6 +1,11 @@
 defmodule StackCoinWeb.Router do
   use StackCoinWeb, :router
 
+  @swagger_ui_config [
+    path: "/api/openapi",
+    display_operation_id: true
+  ]
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -12,18 +17,52 @@ defmodule StackCoinWeb.Router do
 
   pipeline :api do
     plug(:accepts, ["json"])
+
+    plug(OpenApiSpex.Plug.PutApiSpec, module: StackCoinWeb.ApiSpec)
   end
 
-  scope "/", StackCoinWeb do
+  scope "/" do
     pipe_through(:browser)
 
-    get("/", PageController, :home)
+    get("/", StackCoinWeb.PageController, :home)
+
+    get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, @swagger_ui_config)
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", StackCoinWeb do
-  #   pipe_through :api
-  # end
+  scope "/api" do
+    pipe_through(:api)
+
+    get("/openapi", OpenApiSpex.Plug.RenderSpec, :show)
+  end
+
+  # API routes
+  scope "/api" do
+    pipe_through(:api)
+    pipe_through(StackCoinWeb.Plugs.BotAuth)
+
+    # Balance operations
+    get("/balance", StackCoinWeb.BalanceController, :self_balance)
+    get("/users/:user_id/balance", StackCoinWeb.BalanceController, :user_balance)
+
+    # Transfer operations
+    post("/users/:user_id/send", StackCoinWeb.TransferController, :send_stk)
+
+    # Request operations
+    post("/users/:user_id/request", StackCoinWeb.RequestController, :create)
+    get("/requests", StackCoinWeb.RequestController, :index)
+    post("/requests/:request_id/accept", StackCoinWeb.RequestController, :accept)
+    post("/requests/:request_id/deny", StackCoinWeb.RequestController, :deny)
+
+    # Transaction operations
+    get("/transactions", StackCoinWeb.TransactionController, :index)
+
+    # User operations
+    get("/users", StackCoinWeb.UserController, :index)
+
+    # Discord guild operations
+    get("/discord/guilds", StackCoinWeb.DiscordGuildController, :index)
+    get("/discord/guild/:snowflake", StackCoinWeb.DiscordGuildController, :show)
+  end
 
   # Enable LiveDashboard in development
   if Application.compile_env(:stackcoin, :dev_routes) do

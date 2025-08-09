@@ -4,7 +4,7 @@ defmodule StackCoinTest.Bot.Discord.Send do
   import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.Send
-  alias StackCoin.Core.Bank
+  alias StackCoin.Core.{Bank, User}
 
   setup do
     # Ensure clean database state for each test
@@ -62,8 +62,8 @@ defmodule StackCoinTest.Bot.Discord.Send do
     end
 
     # Verify balances using Bank functions
-    {:ok, updated_sender} = Bank.get_user_by_discord_id(sender_id)
-    {:ok, updated_recipient} = Bank.get_user_by_discord_id(recipient_id)
+    {:ok, updated_sender} = User.get_user_by_discord_id(sender_id)
+    {:ok, updated_recipient} = User.get_user_by_discord_id(recipient_id)
 
     # 100 - 50
     assert updated_sender.balance == 50
@@ -118,8 +118,8 @@ defmodule StackCoinTest.Bot.Discord.Send do
     end
 
     # Verify balances unchanged using Bank functions
-    {:ok, updated_sender} = Bank.get_user_by_discord_id(sender_id)
-    {:ok, updated_recipient} = Bank.get_user_by_discord_id(recipient_id)
+    {:ok, updated_sender} = User.get_user_by_discord_id(sender_id)
+    {:ok, updated_recipient} = User.get_user_by_discord_id(recipient_id)
 
     # unchanged
     assert updated_sender.balance == 100
@@ -136,7 +136,7 @@ defmodule StackCoinTest.Bot.Discord.Send do
     amount = 50
 
     setup_admin_user(admin_user_id)
-    {:ok, sender} = Bank.create_user_account(sender_id, "SenderUser")
+    {:ok, sender} = User.create_user_account(sender_id, "SenderUser")
 
     # Set up guild
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
@@ -170,7 +170,7 @@ defmodule StackCoinTest.Bot.Discord.Send do
     end
 
     # Verify sender balance unchanged using Bank functions
-    {:ok, updated_sender} = Bank.get_user_by_discord_id(sender_id)
+    {:ok, updated_sender} = User.get_user_by_discord_id(sender_id)
     # unchanged
     assert updated_sender.balance == 100
   end
@@ -223,8 +223,8 @@ defmodule StackCoinTest.Bot.Discord.Send do
     end
 
     # Verify balances unchanged using Bank functions
-    {:ok, updated_sender} = Bank.get_user_by_discord_id(sender_id)
-    {:ok, updated_recipient} = Bank.get_user_by_discord_id(recipient_id)
+    {:ok, updated_sender} = User.get_user_by_discord_id(sender_id)
+    {:ok, updated_recipient} = User.get_user_by_discord_id(recipient_id)
 
     # unchanged
     assert updated_sender.balance == 100
@@ -241,7 +241,7 @@ defmodule StackCoinTest.Bot.Discord.Send do
     amount = 50
 
     setup_admin_user(admin_user_id)
-    {:ok, _recipient} = Bank.create_user_account(recipient_id, "RecipientUser")
+    {:ok, _recipient} = User.create_user_account(recipient_id, "RecipientUser")
 
     # Set up guild
     setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
@@ -272,7 +272,7 @@ defmodule StackCoinTest.Bot.Discord.Send do
     end
 
     # Verify recipient balance unchanged using Bank functions
-    {:ok, updated_recipient} = Bank.get_user_by_discord_id(recipient_id)
+    {:ok, updated_recipient} = User.get_user_by_discord_id(recipient_id)
     # unchanged
     assert updated_recipient.balance == 0
   end
