@@ -5,6 +5,24 @@ defmodule StackCoinWeb.DiscordGuildController do
   alias StackCoin.Core.DiscordGuild
   alias StackCoinWeb.ApiHelpers
 
+  operation :show,
+    operation_id: "stackcoin_discord_guild",
+    summary: "Get Discord guild by snowflake",
+    description: "Retrieves a single Discord guild by its snowflake ID.",
+    parameters: [
+      snowflake: [
+        in: :path,
+        description: "Discord guild snowflake ID",
+        type: :string,
+        example: "123456789012345678"
+      ]
+    ],
+    responses: [
+      ok:
+        {"Discord guild response", "application/json", StackCoinWeb.Schemas.DiscordGuildResponse},
+      not_found: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
+    ]
+
   operation :index,
     operation_id: "stackcoin_discord_guilds",
     summary: "Get Discord guilds",
@@ -61,5 +79,25 @@ defmodule StackCoinWeb.DiscordGuildController do
         total_pages: total_pages
       }
     })
+  end
+
+  def show(conn, %{"snowflake" => snowflake}) do
+    case DiscordGuild.get_guild_by_discord_id(snowflake) do
+      {:ok, guild} ->
+        formatted_guild = %{
+          id: guild.id,
+          snowflake: guild.snowflake,
+          name: guild.name,
+          designated_channel_snowflake: guild.designated_channel_snowflake,
+          last_updated: guild.last_updated
+        }
+
+        json(conn, formatted_guild)
+
+      {:error, :guild_not_registered} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Guild not found"})
+    end
   end
 end

@@ -455,6 +455,37 @@ defmodule StackCoinWeb.Schemas do
     })
   end
 
+  defmodule DiscordGuildResponse do
+    OpenApiSpex.schema(%{
+      title: "DiscordGuildResponse",
+      description: "Response schema for single Discord guild",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Guild ID"},
+        snowflake: %Schema{type: :string, description: "Discord guild snowflake ID"},
+        name: %Schema{type: :string, description: "Guild name"},
+        designated_channel_snowflake: %Schema{
+          type: :string,
+          description: "Designated channel snowflake ID",
+          nullable: true
+        },
+        last_updated: %Schema{
+          type: :string,
+          description: "Last updated timestamp",
+          format: :"date-time"
+        }
+      },
+      required: [:id, :snowflake, :name, :last_updated],
+      example: %{
+        "id" => 123,
+        "snowflake" => "123456789012345678",
+        "name" => "My Discord Server",
+        "designated_channel_snowflake" => "987654321098765432",
+        "last_updated" => "2019-09-12T12:34:55Z"
+      }
+    })
+  end
+
   defmodule DiscordGuildsResponse do
     OpenApiSpex.schema(%{
       title: "DiscordGuildsResponse",

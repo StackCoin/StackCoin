@@ -61,6 +61,7 @@ defmodule StackCoinWeb.Router do
 
     # Discord guild operations
     get("/discord/guilds", StackCoinWeb.DiscordGuildController, :index)
+    get("/discord/guild/:snowflake", StackCoinWeb.DiscordGuildController, :show)
   end
 
   # Enable LiveDashboard in development
