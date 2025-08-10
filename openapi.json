@@ -1473,6 +1473,18 @@
             }
           },
           {
+            "description": "Time filter - requests created after this duration ago. Formats: 30s, 5m, 2h, 3d, 1w",
+            "example": "1d",
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "x-struct": null,
+              "x-validate": null
+            }
+          },
+          {
             "description": "Page number",
             "example": 1,
             "in": "query",
@@ -1507,6 +1519,16 @@
               }
             },
             "description": "Requests response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Error response"
           }
         },
         "summary": "Get requests for the authenticated user",
