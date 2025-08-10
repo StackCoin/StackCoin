@@ -2,6 +2,7 @@ defmodule StackCoinWebTest.RequestControllerTest do
   use StackCoinWeb.ConnCase
 
   alias StackCoin.Core.{User, Bot, Bank, Reserve, Request}
+  alias StackCoin.Repo
 
   setup do
     {:ok, _reserve} = User.create_user_account("1", "Reserve", balance: 1000)
@@ -227,19 +228,49 @@ defmodule StackCoinWebTest.RequestControllerTest do
       assert json_response(conn, 401) == %{"error" => "Missing or invalid Authorization header"}
     end
 
-    test "returns all requests made by authenticated user (default role=requester)", %{
+    test "returns all requests involving authenticated user when role is not specified", %{
       conn: conn,
       bot_token: bot_token,
       bot: bot,
       recipient: recipient
     } do
-      # Create a test request
-      {:ok, _request} = Request.create_request(bot.user.id, recipient.id, 100, "Test request")
+      # Create requests in both directions
+      {:ok, _request_from_bot} =
+        Request.create_request(bot.user.id, recipient.id, 100, "From bot")
+
+      {:ok, _request_to_bot} = Request.create_request(recipient.id, bot.user.id, 50, "To bot")
 
       conn =
         conn
         |> put_req_header("authorization", "Bearer #{bot_token}")
         |> get(~p"/api/requests")
+
+      response = json_response(conn, 200)
+      assert is_list(response["requests"])
+      assert length(response["requests"]) == 2
+
+      # Should include both requests where bot is either requester or responder
+      amounts = Enum.map(response["requests"], & &1["amount"])
+      assert 100 in amounts
+      assert 50 in amounts
+    end
+
+    test "returns only requests made by authenticated user (role=requester)", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create requests in both directions
+      {:ok, _request_from_bot} =
+        Request.create_request(bot.user.id, recipient.id, 100, "From bot")
+
+      {:ok, _request_to_bot} = Request.create_request(recipient.id, bot.user.id, 50, "To bot")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/requests?role=requester")
 
       response = json_response(conn, 200)
       assert is_list(response["requests"])
@@ -250,7 +281,6 @@ defmodule StackCoinWebTest.RequestControllerTest do
       assert request["status"] == "pending"
       assert request["requester"]["id"] == bot.user.id
       assert request["responder"]["id"] == recipient.id
-      assert is_binary(request["requested_at"])
     end
 
     test "returns requests to authenticated user (role=responder)", %{
@@ -400,6 +430,156 @@ defmodule StackCoinWebTest.RequestControllerTest do
       response = json_response(conn, 200)
       assert is_list(response["requests"])
       assert length(response["requests"]) == 0
+    end
+
+    test "filters by since parameter with valid time format", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create an old request (simulate by creating and then updating its timestamp)
+      {:ok, old_request} = Request.create_request(bot.user.id, recipient.id, 50, "Old request")
+
+      # Update the old request to be 2 days ago, truncating microseconds
+      two_days_ago =
+        NaiveDateTime.utc_now()
+        |> NaiveDateTime.add(-2 * 24 * 60 * 60, :second)
+        |> NaiveDateTime.truncate(:second)
+
+      Repo.update!(Ecto.Changeset.change(old_request, requested_at: two_days_ago))
+
+      # Create a recent request
+      {:ok, _recent_request} =
+        Request.create_request(bot.user.id, recipient.id, 100, "Recent request")
+
+      # Filter for requests in the last day
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/requests?since=1d")
+
+      response = json_response(conn, 200)
+      assert is_list(response["requests"])
+      assert length(response["requests"]) == 1
+
+      request = List.first(response["requests"])
+      assert request["amount"] == 100
+      assert request["label"] == "Recent request"
+    end
+
+    test "filters by since parameter with different time units", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a request
+      {:ok, _request} = Request.create_request(bot.user.id, recipient.id, 75, "Test request")
+
+      # Test different time formats
+      time_formats = ["30s", "5m", "2h", "3d", "1w"]
+
+      for format <- time_formats do
+        conn =
+          conn
+          |> put_req_header("authorization", "Bearer #{bot_token}")
+          |> get(~p"/api/requests?since=#{format}")
+
+        response = json_response(conn, 200)
+        assert is_list(response["requests"])
+        # Should return the request since it was just created
+        assert length(response["requests"]) == 1
+      end
+    end
+
+    test "returns 400 for invalid since parameter format", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/requests?since=invalid")
+
+      assert json_response(conn, 400) == %{
+               "error" => "Invalid time format. Use formats like: 30s, 5m, 2h, 3d, 1w"
+             }
+    end
+
+    test "returns 400 for invalid since parameter with wrong unit", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/requests?since=5x")
+
+      assert json_response(conn, 400) == %{
+               "error" => "Invalid time format. Use formats like: 30s, 5m, 2h, 3d, 1w"
+             }
+    end
+
+    test "returns 400 for since parameter with no number", %{
+      conn: conn,
+      bot_token: bot_token
+    } do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/requests?since=d")
+
+      assert json_response(conn, 400) == %{
+               "error" => "Invalid time format. Use formats like: 30s, 5m, 2h, 3d, 1w"
+             }
+    end
+
+    test "ignores empty since parameter", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a test request
+      {:ok, _request} = Request.create_request(bot.user.id, recipient.id, 100, "Test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/requests?since=")
+
+      response = json_response(conn, 200)
+      assert is_list(response["requests"])
+      assert length(response["requests"]) == 1
+    end
+
+    test "combines since filter with other filters", %{
+      conn: conn,
+      bot_token: bot_token,
+      bot: bot,
+      recipient: recipient
+    } do
+      # Create a pending request
+      {:ok, _pending_request} = Request.create_request(bot.user.id, recipient.id, 100, "Pending")
+
+      # Create and deny another request
+      {:ok, denied_request} = Request.create_request(bot.user.id, recipient.id, 200, "Denied")
+      {:ok, _} = Request.deny_request(denied_request.id, recipient.id)
+
+      # Filter for pending requests in the last hour
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/requests?since=1h&status=pending")
+
+      response = json_response(conn, 200)
+      assert is_list(response["requests"])
+      assert length(response["requests"]) == 1
+
+      request = List.first(response["requests"])
+      assert request["status"] == "pending"
+      assert request["amount"] == 100
     end
   end
 

@@ -131,4 +131,42 @@ defmodule StackCoinWeb.ApiHelpers do
   """
   def validate_amount(amount) when is_integer(amount), do: {:ok, amount}
   def validate_amount(_), do: {:error, :invalid_amount}
+
+  @doc """
+  Parses a time duration string and returns a NaiveDateTime representing that duration ago.
+  Supports formats like: 30s, 5m, 2h, 3d, 1w
+  Returns {:ok, datetime} or {:error, :invalid_time_format}.
+  """
+  def parse_time_duration(nil), do: {:ok, nil}
+  def parse_time_duration(""), do: {:ok, nil}
+
+  def parse_time_duration(duration_str) when is_binary(duration_str) do
+    case Regex.run(~r/^(\d+)([smhdw])$/, String.downcase(duration_str)) do
+      [_, number_str, unit] ->
+        case Integer.parse(number_str) do
+          {number, ""} when number > 0 ->
+            seconds = convert_to_seconds(number, unit)
+            datetime = NaiveDateTime.add(NaiveDateTime.utc_now(), -seconds, :second)
+            {:ok, datetime}
+
+          _ ->
+            {:error, :invalid_time_format}
+        end
+
+      _ ->
+        {:error, :invalid_time_format}
+    end
+  end
+
+  def parse_time_duration(_), do: {:error, :invalid_time_format}
+
+  defp convert_to_seconds(number, unit) do
+    case unit do
+      "s" -> number
+      "m" -> number * 60
+      "h" -> number * 60 * 60
+      "d" -> number * 60 * 60 * 24
+      "w" -> number * 60 * 60 * 24 * 7
+    end
+  end
 end
