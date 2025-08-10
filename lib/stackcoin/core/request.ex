@@ -57,13 +57,15 @@ defmodule StackCoin.Core.Request do
   - :role - :requester (requests made by user) or :responder (requests to user)
   - :status - filter by status ("pending", "accepted", "denied", "expired")
   - :discord_id - filter by Discord ID of the other party (requester or responder)
+  - :since - filter requests created after this NaiveDateTime
   - :limit - number of results to return (max #{@max_limit})
   - :offset - number of results to skip
   """
   def get_requests_for_user(user_id, opts \\ []) do
-    role = Keyword.get(opts, :role, :requester)
+    role = Keyword.get(opts, :role)
     status = Keyword.get(opts, :status)
     discord_id = Keyword.get(opts, :discord_id)
+    since = Keyword.get(opts, :since)
     limit = min(Keyword.get(opts, :limit, 20), @max_limit)
     offset = Keyword.get(opts, :offset, 0)
 
@@ -79,6 +81,13 @@ defmodule StackCoin.Core.Request do
         :responder ->
           from(r in Schema.Request,
             where: r.responder_id == ^user_id,
+            preload: [:requester, :responder, :transaction],
+            order_by: [desc: r.requested_at]
+          )
+
+        nil ->
+          from(r in Schema.Request,
+            where: r.requester_id == ^user_id or r.responder_id == ^user_id,
             preload: [:requester, :responder, :transaction],
             order_by: [desc: r.requested_at]
           )
@@ -120,15 +129,37 @@ defmodule StackCoin.Core.Request do
                 on: du.id == r.requester_id,
                 where: du.snowflake == ^to_string(discord_id)
               )
+
+            nil ->
+              # Filter by either requester's or responder's Discord ID
+              from(r in filtered_query,
+                join: requester_du in Schema.DiscordUser,
+                on: requester_du.id == r.requester_id,
+                join: responder_du in Schema.DiscordUser,
+                on: responder_du.id == r.responder_id,
+                where:
+                  requester_du.snowflake == ^to_string(discord_id) or
+                    responder_du.snowflake == ^to_string(discord_id)
+              )
           end
       end
 
+    # Apply time filter if provided
+    time_filtered_query =
+      case since do
+        nil ->
+          discord_filtered_query
+
+        %NaiveDateTime{} = since_datetime ->
+          from(r in discord_filtered_query, where: r.requested_at >= ^since_datetime)
+      end
+
     # Get total count for pagination metadata
-    total_count = Repo.aggregate(discord_filtered_query, :count, :id)
+    total_count = Repo.aggregate(time_filtered_query, :count, :id)
 
     # Apply pagination
     paginated_query =
-      from(r in discord_filtered_query,
+      from(r in time_filtered_query,
         limit: ^limit,
         offset: ^offset
       )

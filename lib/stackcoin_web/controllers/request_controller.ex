@@ -105,11 +105,19 @@ defmodule StackCoinWeb.RequestController do
         type: :string,
         example: "123456789"
       ],
+      since: [
+        in: :query,
+        description:
+          "Time filter - requests created after this duration ago. Formats: 30s, 5m, 2h, 3d, 1w",
+        type: :string,
+        example: "1d"
+      ],
       page: [in: :query, description: "Page number", type: :integer, example: 1],
       limit: [in: :query, description: "Items per page", type: :integer, example: 20]
     ],
     responses: [
-      ok: {"Requests response", "application/json", StackCoinWeb.Schemas.RequestsResponse}
+      ok: {"Requests response", "application/json", StackCoinWeb.Schemas.RequestsResponse},
+      bad_request: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
     ]
 
   def index(conn, params) do
@@ -120,55 +128,65 @@ defmodule StackCoinWeb.RequestController do
       case Map.get(params, "role") do
         "requester" -> :requester
         "responder" -> :responder
-        # default to requester (requests made by authenticated user)
-        _ -> :requester
+        _ -> nil
       end
 
     status = Map.get(params, "status")
     discord_id = Map.get(params, "discord_id")
+    since_param = Map.get(params, "since")
 
     # Parse pagination parameters
     %{page: page, limit: limit, offset: offset} = ApiHelpers.parse_pagination_params(params)
 
-    opts = [role: role, limit: limit, offset: offset]
-    opts = if status, do: Keyword.put(opts, :status, status), else: opts
-    opts = if discord_id, do: Keyword.put(opts, :discord_id, discord_id), else: opts
+    # Parse time filter and proceed or return error
+    with {:ok, since_datetime} <- ApiHelpers.parse_time_duration(since_param) do
+      opts = [role: role, limit: limit, offset: offset]
+      opts = if status, do: Keyword.put(opts, :status, status), else: opts
+      opts = if discord_id, do: Keyword.put(opts, :discord_id, discord_id), else: opts
+      opts = if since_datetime, do: Keyword.put(opts, :since, since_datetime), else: opts
 
-    {:ok, %{requests: requests, total_count: total_count}} =
-      Request.get_requests_for_user(current_bot.user.id, opts)
+      {:ok, %{requests: requests, total_count: total_count}} =
+        Request.get_requests_for_user(current_bot.user.id, opts)
 
-    formatted_requests =
-      Enum.map(requests, fn request ->
-        %{
-          id: request.id,
-          amount: request.amount,
-          status: request.status,
-          requested_at: request.requested_at,
-          resolved_at: request.resolved_at,
-          label: request.label,
-          requester: %{
-            id: request.requester.id,
-            username: request.requester.username
-          },
-          responder: %{
-            id: request.responder.id,
-            username: request.responder.username
-          },
-          transaction_id: if(request.transaction, do: request.transaction.id, else: nil)
+      formatted_requests =
+        Enum.map(requests, fn request ->
+          %{
+            id: request.id,
+            amount: request.amount,
+            status: request.status,
+            requested_at: request.requested_at,
+            resolved_at: request.resolved_at,
+            label: request.label,
+            requester: %{
+              id: request.requester.id,
+              username: request.requester.username
+            },
+            responder: %{
+              id: request.responder.id,
+              username: request.responder.username
+            },
+            transaction_id: if(request.transaction, do: request.transaction.id, else: nil)
+          }
+        end)
+
+      total_pages = ceil(total_count / limit)
+
+      json(conn, %{
+        requests: formatted_requests,
+        pagination: %{
+          page: page,
+          limit: limit,
+          total: total_count,
+          total_pages: total_pages
         }
-      end)
-
-    total_pages = ceil(total_count / limit)
-
-    json(conn, %{
-      requests: formatted_requests,
-      pagination: %{
-        page: page,
-        limit: limit,
-        total: total_count,
-        total_pages: total_pages
-      }
-    })
+      })
+    else
+      {:error, :invalid_time_format} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid time format. Use formats like: 30s, 5m, 2h, 3d, 1w"})
+        |> halt()
+    end
   end
 
   operation :accept,
