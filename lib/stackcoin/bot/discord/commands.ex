@@ -6,7 +6,7 @@ defmodule StackCoin.Bot.Discord.Commands do
   alias Nostrum.Api.ApplicationCommand
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
-  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions, Graph}
+  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions, Graph, Bot}
 
   @stackcoin_emoji "<:stackcoin:1401621482026827908>"
   @stackcoin_color 0xFFFD5D
@@ -40,7 +40,8 @@ defmodule StackCoin.Bot.Discord.Commands do
       Send.definition(),
       Leaderboard.definition(),
       Transactions.definition(),
-      Graph.definition()
+      Graph.definition(),
+      Bot.definition()
     ]
   end
 
@@ -207,6 +208,24 @@ defmodule StackCoin.Bot.Discord.Commands do
 
         :conflicting_transaction_filters ->
           "❌ You cannot use 'includes' with 'from' or 'to' filters. Use either 'includes' alone, or 'from'/'to' together."
+
+        :bot_not_found ->
+          "❌ Bot not found or you don't have permission to access it."
+
+        :missing_name ->
+          "❌ Bot name is required."
+
+        :invalid_name ->
+          "❌ Invalid bot name provided."
+
+        :missing_bot_id ->
+          "❌ Bot ID is required."
+
+        :invalid_bot_id ->
+          "❌ Invalid bot ID provided."
+
+        :no_subcommand ->
+          "❌ No subcommand specified."
 
         reason ->
           "❌ An error occurred: #{inspect(reason)}"

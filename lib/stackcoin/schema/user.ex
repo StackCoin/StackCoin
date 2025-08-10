@@ -14,6 +14,8 @@ defmodule StackCoin.Schema.User do
     has_many(:transactions_from, StackCoin.Schema.Transaction, foreign_key: :from_id)
     has_many(:transactions_to, StackCoin.Schema.Transaction, foreign_key: :to_id)
     has_many(:pumps, StackCoin.Schema.Pump, foreign_key: :signee_id)
+    has_many(:requests_made, StackCoin.Schema.Request, foreign_key: :requester_id)
+    has_many(:requests_received, StackCoin.Schema.Request, foreign_key: :responder_id)
 
     timestamps(type: :utc_datetime)
   end
