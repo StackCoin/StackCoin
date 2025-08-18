@@ -130,6 +130,11 @@ defmodule StackCoinWeb.ApiHelpers do
   Returns {:ok, amount} or {:error, :invalid_amount}.
   """
   def validate_amount(amount) when is_integer(amount), do: {:ok, amount}
+
+  def validate_amount(amount) when is_float(amount) do
+    {:ok, trunc(amount)}
+  end
+
   def validate_amount(_), do: {:error, :invalid_amount}
 
   @doc """

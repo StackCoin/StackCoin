@@ -26,6 +26,8 @@ defmodule StackCoinWeb.TransferController do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
 
+    IO.puts("amount: #{amount}")
+
     with {:ok, to_user_id} <- ApiHelpers.parse_user_id(user_id_str),
          {:ok, amount} <- ApiHelpers.validate_amount(amount) do
       case Bank.bot_transfer(current_bot.token, to_user_id, amount, label) do
