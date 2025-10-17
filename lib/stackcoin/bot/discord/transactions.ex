@@ -55,7 +55,7 @@ defmodule StackCoin.Bot.Discord.Transactions do
     with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
          {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, search_opts} <- parse_search_options(interaction),
-         {:ok, transactions} <- Bank.search_transactions(search_opts) do
+         {:ok, %{transactions: transactions}} <- Bank.search_transactions(search_opts) do
       send_transactions_response(interaction, transactions, search_opts)
     else
       {:error, reason} ->
