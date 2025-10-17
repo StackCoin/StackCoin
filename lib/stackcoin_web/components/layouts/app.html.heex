@@ -2,7 +2,12 @@
   <img src={~p"/images/stackcoin.png"} class="w-64" />
 </header>
 
-<main>
-<.flash_group flash={@flash} />
-{@inner_content}
+<main class="flex-1 flex flex-col">
+  <.flash_group flash={@flash} />
+  {@inner_content}
 </main>
+
+<footer class="text-center pb-4 flex items-center justify-center gap-4">
+  <a href="/swaggerui">OpenAPI Documentation</a>
+  <a href="https://github.com/stackcoin/stackcoin">Source Code</a>
+</footer>

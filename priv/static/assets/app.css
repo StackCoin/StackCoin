@@ -1041,6 +1041,10 @@ select {
   max-width: 48rem;
 }
 
+.flex-1 {
+  flex: 1 1 0%;
+}
+
 .flex-none {
   flex: none;
 }
@@ -1067,6 +1071,10 @@ select {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+.flex-col {
+  flex-direction: column;
 }
 
 .items-center {
@@ -1099,6 +1107,10 @@ select {
 
 .gap-6 {
   gap: 1.5rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
 }
 
 .space-y-8 > :not([hidden]) ~ :not([hidden]) {
@@ -1246,6 +1258,11 @@ select {
   padding-bottom: 1rem;
 }
 
+.px-16 {
+  padding-left: 4rem;
+  padding-right: 4rem;
+}
+
 .pb-4 {
   padding-bottom: 1rem;
 }
@@ -1254,12 +1271,25 @@ select {
   padding-right: 1.5rem;
 }
 
+.pt-4 {
+  padding-top: 1rem;
+}
+
 .text-left {
   text-align: left;
 }
 
+.text-center {
+  text-align: center;
+}
+
 .text-right {
   text-align: right;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
 }
 
 .text-lg {
@@ -1272,6 +1302,15 @@ select {
   line-height: 1.25rem;
 }
 
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
 .font-medium {
   font-weight: 500;
 }
@@ -1282,6 +1321,11 @@ select {
 
 .font-semibold {
   font-weight: 600;
+}
+
+.ordinal {
+  --tw-ordinal: ordinal;
+  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
 }
 
 .leading-5 {
@@ -1339,6 +1383,11 @@ select {
 .text-zinc-900 {
   --tw-text-opacity: 1;
   color: rgb(24 24 27 / var(--tw-text-opacity));
+}
+
+.text-gray-500 {
+  --tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--tw-text-opacity));
 }
 
 .opacity-0 {
@@ -1448,7 +1497,13 @@ select {
   scrollbar-gutter: stable;
 }
 
-/* This file is for your main application CSS */
+a {
+  text-decoration: underline;
+}
+
+a:hover {
+  color: rgb(228, 183, 0);
+}
 
 .hover\:cursor-pointer:hover {
   cursor: pointer;

@@ -1,0 +1,28 @@
+<div class="flex flex-col gap-4">
+    <p class="text-center text-2xl font-bold">
+        StackCoin
+    </p>
+
+    <p class="text-center text-xl font-bold">
+        Recent Transactions
+    </p>
+
+    <ul class="flex flex-col gap-4 items-center">
+        <li :for={transaction <- @transactions} class="flex gap-2 items-center justify-center">
+            <p class="font-bold">{transaction.amount} STK</p>
+            <p>{transaction.from_username} → {transaction.to_username}</p>
+            <p class="text-sm text-gray-500">
+              <%= Calendar.strftime(transaction.time, "%I:%M%P, %B %-d") %><%= case transaction.time.day do
+                1 -> "st"
+                2 -> "nd"
+                3 -> "rd"
+                21 -> "st"
+                22 -> "nd"
+                23 -> "rd"
+                31 -> "st"
+                _ -> "th"
+              end %>
+            </p>
+        </li>
+    </ul>
+</div>
