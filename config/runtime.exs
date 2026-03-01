@@ -20,15 +20,7 @@ config :nostrum,
   # This bot is purely interaction-based (slash commands + buttons),
   # which don't require any intents at all — but :guilds is needed
   # so the bot knows which guilds it's in for command registration.
-  gateway_intents: [:guilds],
-  # Disable caches we don't read from. Nostrum defaults to ETS-backed
-  # caches that grow with every guild/user/presence the bot sees.
-  caches: %{
-    presences: Nostrum.Cache.PresenceCache.NoOp,
-    members: Nostrum.Cache.MemberCache.NoOp,
-    users: Nostrum.Cache.UserCache.NoOp,
-    channels: Nostrum.Cache.ChannelCache.NoOp
-  }
+  gateway_intents: [:guilds]
 
 if System.get_env("PHX_SERVER") do
   config :stackcoin, StackCoinWeb.Endpoint, server: true

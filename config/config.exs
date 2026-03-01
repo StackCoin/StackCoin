@@ -35,6 +35,17 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
+# Disable Nostrum caches we don't read from. This is compile-time config
+# because Nostrum validates :caches at compile time.
+# The bot only uses Nostrum.Cache.Me (bot's own user) which is unaffected.
+config :nostrum,
+  caches: %{
+    presences: Nostrum.Cache.PresenceCache.NoOp,
+    members: Nostrum.Cache.MemberCache.NoOp,
+    users: Nostrum.Cache.UserCache.NoOp,
+    channels: Nostrum.Cache.ChannelCache.NoOp
+  }
+
 config :phoenix, :json_library, Jason
 
 import_config "#{config_env()}.exs"
