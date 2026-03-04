@@ -40,6 +40,9 @@ defmodule StackCoinWeb.Router do
     pipe_through(:api)
     pipe_through(StackCoinWeb.Plugs.BotAuth)
 
+    # Event operations
+    get("/events", StackCoinWeb.EventController, :index)
+
     # Request operations
     get("/requests", StackCoinWeb.RequestController, :index)
     get("/request/:request_id", StackCoinWeb.RequestController, :show)
