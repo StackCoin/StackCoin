@@ -23,12 +23,16 @@ defmodule StackCoin.Bot.Discord.Request do
   Returns :ok if successful, :error if the user is not a Discord user or DM fails.
   """
   def send_request_notification(request) do
-    with {:ok, responder_discord} <- get_discord_user(request.responder_id),
-         {:ok, requester_name} <- format_requester_info(request.requester) do
-      send_request_dm(responder_discord.snowflake, request, requester_name)
+    if Application.get_env(:stackcoin, :start_discord, true) do
+      with {:ok, responder_discord} <- get_discord_user(request.responder_id),
+           {:ok, requester_name} <- format_requester_info(request.requester) do
+        send_request_dm(responder_discord.snowflake, request, requester_name)
+      else
+        {:error, :not_discord_user} -> :ok
+        {:error, _reason} -> :error
+      end
     else
-      {:error, :not_discord_user} -> :ok
-      {:error, _reason} -> :error
+      :ok
     end
   end
 

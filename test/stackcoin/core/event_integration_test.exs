@@ -1,9 +1,15 @@
 defmodule StackCoin.Core.EventIntegrationTest do
   use StackCoin.DataCase
 
+  import Mock
+
   alias StackCoin.Core.{User, Bot, Bank, Reserve, Request, Event}
 
-  setup do
+  # Mock Nostrum Discord API calls that fire as side effects when creating requests.
+  setup_with_mocks([
+    {Nostrum.Api.User, [], [create_dm: fn _user_id -> {:ok, %{id: 0}} end]},
+    {Nostrum.Api.Message, [], [create: fn _channel_id, _msg -> {:ok, %{id: 0}} end]}
+  ]) do
     {:ok, _reserve} = User.create_user_account("1", "Reserve", balance: 1000)
     {:ok, owner} = User.create_user_account("123456789", "TestOwner", balance: 500)
     {:ok, bot} = Bot.create_bot_user("123456789", "TestBot")

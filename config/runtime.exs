@@ -10,20 +10,28 @@ config :stackcoin,
   test_guild_id: env!("STACKCOIN_TEST_GUILD_ID", :integer, nil),
   admin_user_id: env!("STACKCOIN_ADMIN_USER_ID", :string, nil)
 
-config :nostrum,
-  id: env!("STACKCOIN_DISCORD_APPLICATION_ID", :integer, nil),
-  token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil),
-  ffmpeg: nil,
-  youtube_dl: nil,
-  streamlink: nil,
-  # Only request the intents we actually need.
-  # This bot is purely interaction-based (slash commands + buttons),
-  # which don't require any intents at all — but :guilds is needed
-  # so the bot knows which guilds it's in for command registration.
-  gateway_intents: [:guilds]
+# Discord bot config — read by application.ex to build Nostrum.Bot options.
+# With Nostrum master, the bot is started explicitly via the supervision tree
+# rather than via :nostrum application config.
+config :stackcoin,
+  discord_application_id: env!("STACKCOIN_DISCORD_APPLICATION_ID", :integer, nil),
+  discord_token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil)
 
 if System.get_env("PHX_SERVER") do
   config :stackcoin, StackCoinWeb.Endpoint, server: true
+end
+
+# Allow PORT env var to override the HTTP port in any environment.
+# This is used by the E2E test harness to run on a non-default port.
+if port = System.get_env("PORT") do
+  config :stackcoin, StackCoinWeb.Endpoint,
+    http: [ip: {127, 0, 0, 1}, port: String.to_integer(port)]
+end
+
+# When running a real HTTP server in test mode (E2E tests), disable the
+# Ecto sandbox pool so the server can handle requests from external clients.
+if config_env() == :test and System.get_env("PHX_SERVER") do
+  config :stackcoin, StackCoin.Repo, pool: DBConnection.ConnectionPool, pool_size: 5
 end
 
 if config_env() == :prod do

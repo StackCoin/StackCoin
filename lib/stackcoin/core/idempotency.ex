@@ -10,6 +10,8 @@ defmodule StackCoin.Core.Idempotency do
   end
 
   def store(bot_id, key, response_code, response_body) do
+    require Logger
+
     %IdempotencyKey{}
     |> IdempotencyKey.changeset(%{
       bot_id: bot_id,
@@ -19,8 +21,12 @@ defmodule StackCoin.Core.Idempotency do
     })
     |> Repo.insert()
     |> case do
-      {:ok, _} -> :ok
-      {:error, _} -> :ok
+      {:ok, _} ->
+        :ok
+
+      {:error, changeset} ->
+        Logger.warning("Idempotency store failed: #{inspect(changeset.errors)}")
+        :ok
     end
   end
 end

@@ -9,6 +9,9 @@ config :stackcoin, StackCoinWeb.Endpoint,
   secret_key_base: "Zjmqe6E4mqa+TD9pMwgyRM1kzC7uR9s/QelqY6fIk7WLRwjypYTCK9TrQnVdAuJd",
   server: false
 
+# Don't start the Discord bot (Nostrum.Bot) in test mode.
+config :stackcoin, start_discord: false
+
 config :logger, level: :warning
 
 config :phoenix, :plug_init_mode, :runtime

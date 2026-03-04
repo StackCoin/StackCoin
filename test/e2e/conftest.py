@@ -1,6 +1,9 @@
 """
 E2E test fixtures that start a real StackCoin server and configure test bots.
 
+Each test gets a freshly seeded database — the server stays running but all
+tables are truncated and re-seeded before every test.
+
 Setup instructions:
   cd test/e2e
   uv venv
@@ -12,15 +15,108 @@ Setup instructions:
 """
 import os
 import signal
+import sqlite3
 import subprocess
 import time
-import tempfile
 
 import httpx
 import pytest
 
 
 STACKCOIN_ROOT = os.path.join(os.path.dirname(__file__), "../..")
+
+# All tables in dependency-safe deletion order (children before parents).
+_ALL_TABLES = [
+    "events",
+    "idempotency_keys",
+    "request",
+    "pump",
+    "transaction",
+    "bot_user",
+    "discord_guild",
+    "discord_user",
+    "internal_user",
+    "user",
+]
+
+SEED_SCRIPT = """
+# Re-create the reserve user exactly as the migration does (user + internal_user).
+StackCoin.Repo.query!("INSERT INTO user (id, inserted_at, updated_at, username, balance, last_given_dole, admin, banned) VALUES (1, datetime('now'), datetime('now'), 'StackCoin Reserve System', 0, null, 0, 0)")
+StackCoin.Repo.query!("INSERT INTO internal_user (id, identifier) VALUES (1, 'StackCoin Reserve System')")
+
+{:ok, owner} = StackCoin.Core.User.create_user_account("100", "E2EOwner", balance: 0)
+{:ok, bot} = StackCoin.Core.Bot.create_bot_user("100", "E2ETestBot")
+{:ok, _pump} = StackCoin.Core.Reserve.pump_reserve(owner.id, 5000, "E2E funding")
+{:ok, _txn} = StackCoin.Core.Bank.transfer_between_users(1, bot.user.id, 1000, "E2E bot funding")
+{:ok, user1} = StackCoin.Core.User.create_user_account("200", "TestUser1", balance: 0)
+{:ok, _txn} = StackCoin.Core.Bank.transfer_between_users(1, user1.id, 500, "User1 funding")
+{:ok, user2} = StackCoin.Core.User.create_user_account("300", "TestUser2", balance: 0)
+{:ok, _txn} = StackCoin.Core.Bank.transfer_between_users(1, user2.id, 500, "User2 funding")
+IO.puts("BOT_TOKEN:" <> bot.token)
+IO.puts("BOT_USER_ID:" <> Integer.to_string(bot.user.id))
+IO.puts("USER1_ID:" <> Integer.to_string(user1.id))
+IO.puts("USER1_DISCORD_ID:200")
+IO.puts("USER2_ID:" <> Integer.to_string(user2.id))
+IO.puts("USER2_DISCORD_ID:300")
+"""
+
+
+def _db_path(port: int) -> str:
+    return os.path.join(STACKCOIN_ROOT, f"data/e2e_test_{port}.db")
+
+
+def _truncate_all_tables(db_file: str):
+    """Delete all rows from all tables and reset autoincrement counters."""
+    conn = sqlite3.connect(db_file, timeout=10)
+    try:
+        conn.execute("PRAGMA busy_timeout = 5000")
+        conn.execute("PRAGMA foreign_keys = OFF")
+        for table in _ALL_TABLES:
+            conn.execute(f'DELETE FROM "{table}"')
+        # Reset autoincrement counters so IDs are deterministic across runs.
+        conn.execute("DELETE FROM sqlite_sequence")
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _run_seed(port: int) -> dict:
+    """Run the Elixir seed script and parse the output into a dict."""
+    result = subprocess.run(
+        ["mix", "run", "-e", SEED_SCRIPT],
+        env={
+            **os.environ,
+            "MIX_ENV": "test",
+            "PHX_SERVER": "true",  # Use regular pool, not Sandbox
+            "STACKCOIN_DATABASE": f"./data/e2e_test_{port}.db",
+        },
+        cwd=STACKCOIN_ROOT,
+        capture_output=True, text=True, timeout=30,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Seed script failed: {result.stderr}")
+
+    values = {}
+    for line in result.stdout.strip().split("\n"):
+        if ":" in line:
+            key, val = line.split(":", 1)
+            key = key.strip()
+            val = val.strip()
+            if key in ("BOT_TOKEN", "BOT_USER_ID", "USER1_ID",
+                       "USER1_DISCORD_ID", "USER2_ID", "USER2_DISCORD_ID"):
+                values[key] = val
+
+    required = ["BOT_TOKEN", "BOT_USER_ID", "USER1_ID", "USER2_ID"]
+    for k in required:
+        if k not in values:
+            raise RuntimeError(f"Seed script did not output {k}. Got: {values}")
+    return values
+
+
+# ---------------------------------------------------------------------------
+# Session-scoped: server lifecycle
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
@@ -36,12 +132,24 @@ def stackcoin_server():
         "PHX_SERVER": "true",
     }
 
-    # Reset the test database
+    # Create a fresh database with schema
     subprocess.run(
-        ["mix", "ecto.reset"],
+        ["mix", "ecto.drop", "--quiet"],
         env=env, cwd=STACKCOIN_ROOT,
         capture_output=True, timeout=30,
     )
+    subprocess.run(
+        ["mix", "ecto.create", "--quiet"],
+        env=env, cwd=STACKCOIN_ROOT,
+        capture_output=True, timeout=30,
+    )
+    result = subprocess.run(
+        ["mix", "ecto.migrate", "--quiet"],
+        env=env, cwd=STACKCOIN_ROOT,
+        capture_output=True, text=True, timeout=30,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"ecto.migrate failed: {result.stderr}")
 
     # Start the server
     proc = subprocess.Popen(
@@ -73,61 +181,28 @@ def stackcoin_server():
         proc.wait(timeout=10)
     except subprocess.TimeoutExpired:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    finally:
+        if proc.stdout:
+            proc.stdout.close()
+        if proc.stderr:
+            proc.stderr.close()
 
 
-@pytest.fixture(scope="session")
+# ---------------------------------------------------------------------------
+# Per-test: fresh database state
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
 def seed_data(stackcoin_server):
-    """Seed the test database with users, a bot, and funded balances.
+    """Truncate all tables and re-seed the database. Returns fresh IDs/tokens.
 
-    Returns a dict of IDs and tokens parsed from the seed script output.
+    This runs before every test that (directly or transitively) depends on it,
+    giving each test a completely clean StackCoin database.
     """
-    seed_script = """
-    {:ok, _reserve} = StackCoin.Core.User.create_user_account("1", "Reserve", balance: 10000)
-    {:ok, owner} = StackCoin.Core.User.create_user_account("100", "E2EOwner", balance: 0)
-    {:ok, bot} = StackCoin.Core.Bot.create_bot_user("100", "E2ETestBot")
-    {:ok, _pump} = StackCoin.Core.Reserve.pump_reserve(owner.id, 5000, "E2E funding")
-    {:ok, _txn} = StackCoin.Core.Bank.transfer_between_users(1, bot.user.id, 1000, "E2E bot funding")
-    {:ok, user1} = StackCoin.Core.User.create_user_account("200", "TestUser1", balance: 0)
-    {:ok, _txn} = StackCoin.Core.Bank.transfer_between_users(1, user1.id, 500, "User1 funding")
-    {:ok, user2} = StackCoin.Core.User.create_user_account("300", "TestUser2", balance: 0)
-    {:ok, _txn} = StackCoin.Core.Bank.transfer_between_users(1, user2.id, 500, "User2 funding")
-    IO.puts("BOT_TOKEN:" <> bot.token)
-    IO.puts("BOT_USER_ID:" <> Integer.to_string(bot.user.id))
-    IO.puts("USER1_ID:" <> Integer.to_string(user1.id))
-    IO.puts("USER1_DISCORD_ID:200")
-    IO.puts("USER2_ID:" <> Integer.to_string(user2.id))
-    IO.puts("USER2_DISCORD_ID:300")
-    """
-
-    result = subprocess.run(
-        ["mix", "run", "-e", seed_script],
-        env={
-            **os.environ,
-            "MIX_ENV": "test",
-            "STACKCOIN_DATABASE": f"./data/e2e_test_{stackcoin_server['port']}.db",
-        },
-        cwd=STACKCOIN_ROOT,
-        capture_output=True, text=True, timeout=30,
-    )
-
-    if result.returncode != 0:
-        raise RuntimeError(f"Seed script failed: {result.stderr}")
-
-    values = {}
-    for line in result.stdout.strip().split("\n"):
-        if ":" in line:
-            key, val = line.split(":", 1)
-            key = key.strip()
-            val = val.strip()
-            if key in ("BOT_TOKEN", "BOT_USER_ID", "USER1_ID", "USER1_DISCORD_ID", "USER2_ID", "USER2_DISCORD_ID"):
-                values[key] = val
-
-    required = ["BOT_TOKEN", "BOT_USER_ID", "USER1_ID", "USER2_ID"]
-    for k in required:
-        if k not in values:
-            raise RuntimeError(f"Seed script did not output {k}. Got: {values}")
-
-    return values
+    port = stackcoin_server["port"]
+    _truncate_all_tables(_db_path(port))
+    return _run_seed(port)
 
 
 @pytest.fixture
@@ -151,6 +226,11 @@ def auth_headers(seed_data):
         "Authorization": f"Bearer {seed_data['BOT_TOKEN']}",
         "Content-Type": "application/json",
     }
+
+
+# ---------------------------------------------------------------------------
+# LuckyPot fixtures
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture

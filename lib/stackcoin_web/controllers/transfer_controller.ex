@@ -35,61 +35,54 @@ defmodule StackCoinWeb.TransferController do
           |> json(Jason.decode!(body))
 
         :miss ->
-          conn = do_send_stk(conn, params)
-
-          if conn.status do
-            Idempotency.store(
-              bot.id,
-              idempotency_key,
-              conn.status,
-              conn.resp_body
-            )
-          end
+          {status, response_body} = execute_send_stk(conn, params)
+          encoded = Jason.encode!(response_body)
+          Idempotency.store(bot.id, idempotency_key, status, encoded)
 
           conn
+          |> put_status(status)
+          |> json(response_body)
       end
     else
-      do_send_stk(conn, params)
+      {status, response_body} = execute_send_stk(conn, params)
+
+      conn
+      |> put_status(status)
+      |> json(response_body)
     end
   end
 
-  defp do_send_stk(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
+  # Returns {status_code, response_map} without sending the response.
+  defp execute_send_stk(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
-
-    IO.puts("amount: #{amount}")
 
     with {:ok, to_user_id} <- ApiHelpers.parse_user_id(user_id_str),
          {:ok, amount} <- ApiHelpers.validate_amount(amount) do
       case Bank.bot_transfer(current_bot.token, to_user_id, amount, label) do
         {:ok, transaction} ->
-          json(conn, %{
-            success: true,
-            transaction_id: transaction.id,
-            amount: transaction.amount,
-            from_new_balance: transaction.from_new_balance,
-            to_new_balance: transaction.to_new_balance
-          })
+          {200,
+           %{
+             success: true,
+             transaction_id: transaction.id,
+             amount: transaction.amount,
+             from_new_balance: transaction.from_new_balance,
+             to_new_balance: transaction.to_new_balance
+           }}
 
         {:error, reason} ->
-          ApiHelpers.send_error_response(conn, reason)
+          ApiHelpers.error_response_tuple(reason)
       end
     else
       {:error, :invalid_user_id} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid user ID"})
+        {400, %{error: "Invalid user ID"}}
 
       {:error, :invalid_amount} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid amount. Must be an integer."})
+        {400, %{error: "Invalid amount. Must be an integer."}}
     end
   end
 
-  defp do_send_stk(conn, _params) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: "Missing required parameters: amount"})
+  defp execute_send_stk(_conn, _params) do
+    {400, %{error: "Missing required parameters: amount"}}
   end
 end

@@ -53,25 +53,25 @@ defmodule StackCoinWeb.RequestController do
           |> json(Jason.decode!(body))
 
         :miss ->
-          conn = do_create(conn, params)
-
-          if conn.status do
-            Idempotency.store(
-              bot.id,
-              idempotency_key,
-              conn.status,
-              conn.resp_body
-            )
-          end
+          {status, response_body} = execute_create(conn, params)
+          encoded = Jason.encode!(response_body)
+          Idempotency.store(bot.id, idempotency_key, status, encoded)
 
           conn
+          |> put_status(status)
+          |> json(response_body)
       end
     else
-      do_create(conn, params)
+      {status, response_body} = execute_create(conn, params)
+
+      conn
+      |> put_status(status)
+      |> json(response_body)
     end
   end
 
-  defp do_create(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
+  # Returns {status_code, response_map} without sending the response.
+  defp execute_create(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
 
@@ -79,42 +79,37 @@ defmodule StackCoinWeb.RequestController do
          {:ok, amount} <- ApiHelpers.validate_amount(amount) do
       case Request.create_request(current_bot.user.id, responder_id, amount, label) do
         {:ok, request} ->
-          json(conn, %{
-            success: true,
-            request_id: request.id,
-            amount: request.amount,
-            status: request.status,
-            requested_at: request.requested_at,
-            requester: %{
-              id: request.requester.id,
-              username: request.requester.username
-            },
-            responder: %{
-              id: request.responder.id,
-              username: request.responder.username
-            }
-          })
+          {200,
+           %{
+             success: true,
+             request_id: request.id,
+             amount: request.amount,
+             status: request.status,
+             requested_at: request.requested_at,
+             requester: %{
+               id: request.requester.id,
+               username: request.requester.username
+             },
+             responder: %{
+               id: request.responder.id,
+               username: request.responder.username
+             }
+           }}
 
         {:error, reason} ->
-          ApiHelpers.send_error_response(conn, reason)
+          ApiHelpers.error_response_tuple(reason)
       end
     else
       {:error, :invalid_user_id} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid user ID"})
+        {400, %{error: "Invalid user ID"}}
 
       {:error, :invalid_amount} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid amount. Must be an integer."})
+        {400, %{error: "Invalid amount. Must be an integer."}}
     end
   end
 
-  defp do_create(conn, _params) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: "Missing required parameters: user_id, amount"})
+  defp execute_create(_conn, _params) do
+    {400, %{error: "Missing required parameters: user_id, amount"}}
   end
 
   operation :index,

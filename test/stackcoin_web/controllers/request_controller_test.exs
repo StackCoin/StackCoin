@@ -1,10 +1,20 @@
 defmodule StackCoinWebTest.RequestControllerTest do
   use StackCoinWeb.ConnCase
 
+  import Mock
+
   alias StackCoin.Core.{User, Bot, Bank, Reserve, Request}
   alias StackCoin.Repo
 
-  setup do
+  # Mock Nostrum Discord API calls that fire as side effects when creating requests.
+  # Request.create_request -> send_request_notification -> Api.User.create_dm + Api.Message.create
+  setup_with_mocks(
+    [
+      {Nostrum.Api.User, [], [create_dm: fn _user_id -> {:ok, %{id: 0}} end]},
+      {Nostrum.Api.Message, [], [create: fn _channel_id, _msg -> {:ok, %{id: 0}} end]}
+    ],
+    %{conn: conn}
+  ) do
     {:ok, _reserve} = User.create_user_account("1", "Reserve", balance: 1000)
 
     # Create owner user
@@ -21,6 +31,7 @@ defmodule StackCoinWebTest.RequestControllerTest do
     {:ok, _transaction} = Bank.transfer_between_users(1, bot.user.id, 150, "Bot funding")
 
     %{
+      conn: conn,
       owner: owner,
       bot: bot,
       recipient: recipient,
