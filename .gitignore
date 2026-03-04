@@ -30,3 +30,6 @@ stackcoin-*.tar
 *.secret*
 
 .DS_Store
+
+# Git worktrees
+/.worktrees/
