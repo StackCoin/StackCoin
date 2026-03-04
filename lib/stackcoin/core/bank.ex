@@ -5,7 +5,7 @@ defmodule StackCoin.Core.Bank do
 
   alias StackCoin.Repo
   alias StackCoin.Schema
-  alias StackCoin.Core.{User, Bot}
+  alias StackCoin.Core.{User, Bot, Event}
   import Ecto.Query
 
   @max_limit 100
@@ -15,21 +15,40 @@ defmodule StackCoin.Core.Bank do
   Updates both user balances and creates a transaction record.
   """
   def transfer_between_users(from_user_id, to_user_id, amount, label \\ nil) do
-    Repo.transaction(fn ->
-      with {:ok, _amount_check} <- validate_transfer_amount(amount),
-           {:ok, _self_check} <- validate_not_self_transfer(from_user_id, to_user_id),
-           {:ok, from_user} <- User.get_user_by_id(from_user_id),
-           {:ok, to_user} <- User.get_user_by_id(to_user_id),
-           {:ok, _from_banned_check} <- User.check_user_banned(from_user),
-           {:ok, _to_banned_check} <- User.check_recipient_banned(to_user),
-           {:ok, _balance_check} <- check_sufficient_balance(from_user, amount),
-           {:ok, transaction} <- create_transaction(from_user, to_user, amount, label) do
-        transaction
-      else
-        {:error, reason} ->
-          Repo.rollback(reason)
-      end
-    end)
+    result =
+      Repo.transaction(fn ->
+        with {:ok, _amount_check} <- validate_transfer_amount(amount),
+             {:ok, _self_check} <- validate_not_self_transfer(from_user_id, to_user_id),
+             {:ok, from_user} <- User.get_user_by_id(from_user_id),
+             {:ok, to_user} <- User.get_user_by_id(to_user_id),
+             {:ok, _from_banned_check} <- User.check_user_banned(from_user),
+             {:ok, _to_banned_check} <- User.check_recipient_banned(to_user),
+             {:ok, _balance_check} <- check_sufficient_balance(from_user, amount),
+             {:ok, transaction} <- create_transaction(from_user, to_user, amount, label) do
+          transaction
+        else
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
+
+    case result do
+      {:ok, transaction} ->
+        for {user_id, role} <- [{from_user_id, "sender"}, {to_user_id, "receiver"}] do
+          Event.create_event("transfer.completed", user_id, %{
+            transaction_id: transaction.id,
+            from_id: from_user_id,
+            to_id: to_user_id,
+            amount: transaction.amount,
+            role: role
+          })
+        end
+
+        {:ok, transaction}
+
+      error ->
+        error
+    end
   end
 
   @doc """

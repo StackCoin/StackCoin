@@ -5,7 +5,7 @@ defmodule StackCoin.Core.Request do
 
   alias StackCoin.Repo
   alias StackCoin.Schema
-  alias StackCoin.Core.{User, Bank}
+  alias StackCoin.Core.{User, Bank, Event}
   import Ecto.Query
 
   @max_limit 100
@@ -31,6 +31,17 @@ defmodule StackCoin.Core.Request do
         {:ok, request} ->
           preloaded_request = Repo.preload(request, [:requester, :responder])
           StackCoin.Bot.Discord.Request.send_request_notification(preloaded_request)
+
+          for user_id <- [requester_id, responder_id] do
+            Event.create_event("request.created", user_id, %{
+              request_id: request.id,
+              requester_id: requester_id,
+              responder_id: responder_id,
+              amount: amount,
+              label: label
+            })
+          end
+
           {:ok, preloaded_request}
 
         {:error, changeset} ->
@@ -176,34 +187,54 @@ defmodule StackCoin.Core.Request do
     with {:ok, request} <- get_request_by_id(request_id),
          :ok <- validate_request_responder(request, responder_id),
          :ok <- validate_request_pending(request) do
-      Repo.transaction(fn ->
-        case Bank.transfer_between_users(
-               responder_id,
-               request.requester_id,
-               request.amount,
-               request.label
-             ) do
-          {:ok, transaction} ->
-            request_attrs = %{
+      result =
+        Repo.transaction(fn ->
+          case Bank.transfer_between_users(
+                 responder_id,
+                 request.requester_id,
+                 request.amount,
+                 request.label
+               ) do
+            {:ok, transaction} ->
+              request_attrs = %{
+                status: "accepted",
+                resolved_at: NaiveDateTime.utc_now(),
+                transaction_id: transaction.id
+              }
+
+              case request
+                   |> Schema.Request.changeset(request_attrs)
+                   |> Repo.update() do
+                {:ok, updated_request} ->
+                  {Repo.preload(updated_request, [:requester, :responder, :transaction],
+                     force: true
+                   ), transaction}
+
+                {:error, changeset} ->
+                  Repo.rollback(changeset)
+              end
+
+            {:error, reason} ->
+              Repo.rollback(reason)
+          end
+        end)
+
+      case result do
+        {:ok, {updated_request, transaction}} ->
+          for user_id <- [request.requester_id, request.responder_id] do
+            Event.create_event("request.accepted", user_id, %{
+              request_id: request.id,
               status: "accepted",
-              resolved_at: NaiveDateTime.utc_now(),
-              transaction_id: transaction.id
-            }
+              transaction_id: transaction.id,
+              amount: request.amount
+            })
+          end
 
-            case request
-                 |> Schema.Request.changeset(request_attrs)
-                 |> Repo.update() do
-              {:ok, updated_request} ->
-                Repo.preload(updated_request, [:requester, :responder, :transaction], force: true)
+          {:ok, updated_request}
 
-              {:error, changeset} ->
-                Repo.rollback(changeset)
-            end
-
-          {:error, reason} ->
-            Repo.rollback(reason)
-        end
-      end)
+        {:error, reason} ->
+          {:error, reason}
+      end
     else
       {:error, reason} -> {:error, reason}
     end
@@ -227,6 +258,13 @@ defmodule StackCoin.Core.Request do
            |> Schema.Request.changeset(request_attrs)
            |> Repo.update() do
         {:ok, updated_request} ->
+          for uid <- [request.requester_id, request.responder_id] do
+            Event.create_event("request.denied", uid, %{
+              request_id: request.id,
+              status: "denied"
+            })
+          end
+
           {:ok, Repo.preload(updated_request, [:requester, :responder, :denied_by])}
 
         {:error, changeset} ->
