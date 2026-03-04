@@ -11,7 +11,7 @@ defmodule StackCoin.Schema.Event do
 
   def changeset(event, attrs) do
     event
-    |> cast(attrs, [:type, :user_id, :data])
+    |> cast(attrs, [:type, :user_id, :data, :inserted_at])
     |> validate_required([:type, :data])
   end
 end
