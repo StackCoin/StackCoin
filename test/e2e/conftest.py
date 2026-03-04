@@ -237,33 +237,33 @@ def auth_headers(seed_data):
 def luckypot_db(tmp_path):
     """Provide a fresh LuckyPot SQLite database for each test.
 
-    Patches luckypot.config.DB_PATH to use a temp file so tests are isolated.
+    Patches settings.db_path to use a temp file so tests are isolated.
     """
-    import luckypot.config as lp_config
+    from luckypot.config import settings
     import luckypot.db as lp_db
 
     db_path = str(tmp_path / "test_lucky_pot.db")
-    original_path = lp_config.DB_PATH
-    lp_config.DB_PATH = db_path
+    original_path = settings.db_path
+    settings.db_path = db_path
     lp_db.init_database()
 
     yield db_path
 
-    lp_config.DB_PATH = original_path
+    settings.db_path = original_path
 
 
 @pytest.fixture
 def configure_luckypot_stk(stackcoin_server, seed_data):
     """Configure luckypot.stk to point at the test StackCoin server."""
-    import luckypot.config as lp_config
+    from luckypot.config import settings
 
-    original_url = lp_config.STACKCOIN_API_URL
-    original_token = lp_config.STACKCOIN_API_TOKEN
+    original_url = settings.stackcoin_api_url
+    original_token = settings.stackcoin_api_token
 
-    lp_config.STACKCOIN_API_URL = stackcoin_server["base_url"]
-    lp_config.STACKCOIN_API_TOKEN = seed_data["BOT_TOKEN"]
+    settings.stackcoin_api_url = stackcoin_server["base_url"]
+    settings.stackcoin_api_token = seed_data["BOT_TOKEN"]
 
     yield
 
-    lp_config.STACKCOIN_API_URL = original_url
-    lp_config.STACKCOIN_API_TOKEN = original_token
+    settings.stackcoin_api_url = original_url
+    settings.stackcoin_api_token = original_token
