@@ -2,7 +2,7 @@ defmodule StackCoinWeb.RequestController do
   use StackCoinWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias StackCoin.Core.Request
+  alias StackCoin.Core.{Request, Idempotency}
   alias StackCoinWeb.ApiHelpers
 
   operation :show,
@@ -40,7 +40,38 @@ defmodule StackCoinWeb.RequestController do
       forbidden: {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
     ]
 
-  def create(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
+  def create(conn, params) do
+    idempotency_key = get_req_header(conn, "idempotency-key") |> List.first()
+
+    if idempotency_key do
+      bot = conn.assigns.current_bot
+
+      case Idempotency.check(bot.id, idempotency_key) do
+        {:hit, code, body} ->
+          conn
+          |> put_status(code)
+          |> json(Jason.decode!(body))
+
+        :miss ->
+          conn = do_create(conn, params)
+
+          if conn.status do
+            Idempotency.store(
+              bot.id,
+              idempotency_key,
+              conn.status,
+              conn.resp_body
+            )
+          end
+
+          conn
+      end
+    else
+      do_create(conn, params)
+    end
+  end
+
+  defp do_create(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
 
@@ -80,7 +111,7 @@ defmodule StackCoinWeb.RequestController do
     end
   end
 
-  def create(conn, _params) do
+  defp do_create(conn, _params) do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "Missing required parameters: user_id, amount"})

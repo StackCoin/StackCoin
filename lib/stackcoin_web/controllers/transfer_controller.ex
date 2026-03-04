@@ -2,7 +2,7 @@ defmodule StackCoinWeb.TransferController do
   use StackCoinWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias StackCoin.Core.Bank
+  alias StackCoin.Core.{Bank, Idempotency}
   alias StackCoinWeb.ApiHelpers
 
   operation :send_stk,
@@ -22,7 +22,38 @@ defmodule StackCoinWeb.TransferController do
         {"Error response", "application/json", StackCoinWeb.Schemas.ErrorResponse}
     ]
 
-  def send_stk(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
+  def send_stk(conn, params) do
+    idempotency_key = get_req_header(conn, "idempotency-key") |> List.first()
+
+    if idempotency_key do
+      bot = conn.assigns.current_bot
+
+      case Idempotency.check(bot.id, idempotency_key) do
+        {:hit, code, body} ->
+          conn
+          |> put_status(code)
+          |> json(Jason.decode!(body))
+
+        :miss ->
+          conn = do_send_stk(conn, params)
+
+          if conn.status do
+            Idempotency.store(
+              bot.id,
+              idempotency_key,
+              conn.status,
+              conn.resp_body
+            )
+          end
+
+          conn
+      end
+    else
+      do_send_stk(conn, params)
+    end
+  end
+
+  defp do_send_stk(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
 
@@ -56,7 +87,7 @@ defmodule StackCoinWeb.TransferController do
     end
   end
 
-  def send_stk(conn, _params) do
+  defp do_send_stk(conn, _params) do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "Missing required parameters: amount"})
