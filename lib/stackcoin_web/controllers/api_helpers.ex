@@ -80,6 +80,15 @@ defmodule StackCoinWeb.ApiHelpers do
   end
 
   @doc """
+  Returns {integer_status_code, response_map} for an error, without sending the response.
+  Useful when the caller needs to capture the response body (e.g. for idempotency caching).
+  """
+  def error_response_tuple(error) do
+    {status_atom, message} = error_to_status_and_message(error)
+    {Plug.Conn.Status.code(status_atom), %{error: message}}
+  end
+
+  @doc """
   Parses a user ID string parameter and validates it's a valid integer.
   Returns {:ok, user_id} or {:error, :invalid_user_id}.
   """

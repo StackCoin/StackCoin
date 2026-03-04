@@ -1,5 +1,5 @@
 defmodule StackCoin.Bot.Discord do
-  use Nostrum.Consumer
+  @behaviour Nostrum.Consumer
 
   alias Nostrum.Api
   alias Nostrum.Struct.Interaction

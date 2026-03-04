@@ -5,7 +5,11 @@ defmodule StackCoinWeb.BotChannel do
 
   @impl true
   def join("user:" <> user_id_str, payload, socket) do
-    user_id = String.to_integer(user_id_str)
+    user_id =
+      case user_id_str do
+        "self" -> socket.assigns.user.id
+        id_str -> String.to_integer(id_str)
+      end
 
     if user_id == socket.assigns.user.id do
       Phoenix.PubSub.subscribe(StackCoin.PubSub, "user:#{user_id}")
