@@ -49,7 +49,7 @@ class TestAuthSecurity:
         """WebSocket endpoint must refuse connections with an invalid token."""
         ws_url = (
             test_context["base_url"].replace("http://", "ws://")
-            + "/bot/websocket?token=invalid_token_here&vsn=2.0.0"
+            + "/ws?token=invalid_token_here&vsn=2.0.0"
         )
         rejected = False
         try:
