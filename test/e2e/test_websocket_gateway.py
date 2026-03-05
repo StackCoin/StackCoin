@@ -14,7 +14,7 @@ import websockets
 
 async def phoenix_connect(base_url: str, token: str, last_event_id: int = 0):
     """Connect to Phoenix Channel and join the user events channel."""
-    ws_url = base_url.replace("http://", "ws://") + f"/bot/websocket?token={token}&vsn=2.0.0"
+    ws_url = base_url.replace("http://", "ws://") + f"/ws?token={token}&vsn=2.0.0"
 
     ws = await websockets.connect(ws_url)
 
@@ -121,7 +121,7 @@ class TestWebSocketRobustness:
         token = test_context["bot_token"]
         user1_id = test_context["user1_id"]
 
-        ws_url = base.replace("http://", "ws://") + f"/bot/websocket?token={token}&vsn=2.0.0"
+        ws_url = base.replace("http://", "ws://") + f"/ws?token={token}&vsn=2.0.0"
         ws = await websockets.connect(ws_url)
 
         try:

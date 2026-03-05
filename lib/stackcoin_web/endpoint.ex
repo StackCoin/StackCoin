@@ -11,8 +11,8 @@ defmodule StackCoinWeb.Endpoint do
     same_site: "Lax"
   ]
 
-  socket("/bot", StackCoinWeb.BotSocket,
-    websocket: true,
+  socket("/ws", StackCoinWeb.BotSocket,
+    websocket: [path: ""],
     longpoll: false
   )
 
