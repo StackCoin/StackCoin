@@ -335,6 +335,56 @@
         "x-struct": "Elixir.StackCoinWeb.Schemas.ErrorResponse",
         "x-validate": null
       },
+      "Event": {
+        "description": "A StackCoin event (discriminated by type)",
+        "discriminator": {
+          "mapping": {
+            "request.accepted": "#/components/schemas/RequestAcceptedEvent",
+            "request.created": "#/components/schemas/RequestCreatedEvent",
+            "request.denied": "#/components/schemas/RequestDeniedEvent",
+            "transfer.completed": "#/components/schemas/TransferCompletedEvent"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TransferCompletedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RequestCreatedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RequestAcceptedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RequestDeniedEvent"
+          }
+        ],
+        "title": "Event",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.Event",
+        "x-validate": null
+      },
+      "EventsResponse": {
+        "description": "Response schema for listing events",
+        "properties": {
+          "events": {
+            "description": "The events list",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            },
+            "type": "array",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "EventsResponse",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.EventsResponse",
+        "x-validate": null
+      },
       "Request": {
         "description": "A STK request",
         "example": {
@@ -454,6 +504,85 @@
         "x-struct": "Elixir.StackCoinWeb.Schemas.Request",
         "x-validate": null
       },
+      "RequestAcceptedData": {
+        "description": "Data payload for request.accepted events",
+        "properties": {
+          "amount": {
+            "description": "Request amount",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "request_id": {
+            "description": "Request ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "description": "New request status",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "transaction_id": {
+            "description": "Created transaction ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "request_id",
+          "status",
+          "transaction_id",
+          "amount"
+        ],
+        "title": "RequestAcceptedData",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestAcceptedData",
+        "x-validate": null
+      },
+      "RequestAcceptedEvent": {
+        "description": "A request.accepted event",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RequestAcceptedData"
+          },
+          "id": {
+            "description": "Event ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "description": "Event timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "type": {
+            "description": "Event type",
+            "enum": [
+              "request.accepted"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "data",
+          "inserted_at"
+        ],
+        "title": "RequestAcceptedEvent",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestAcceptedEvent",
+        "x-validate": null
+      },
       "RequestActionResponse": {
         "description": "Response schema for request actions (accept/deny)",
         "example": {
@@ -506,6 +635,157 @@
         "title": "RequestActionResponse",
         "type": "object",
         "x-struct": "Elixir.StackCoinWeb.Schemas.RequestActionResponse",
+        "x-validate": null
+      },
+      "RequestCreatedData": {
+        "description": "Data payload for request.created events",
+        "properties": {
+          "amount": {
+            "description": "Requested amount",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "label": {
+            "description": "Request label",
+            "nullable": true,
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "request_id": {
+            "description": "Request ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "requester_id": {
+            "description": "Requester user ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "responder_id": {
+            "description": "Responder user ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "request_id",
+          "requester_id",
+          "responder_id",
+          "amount"
+        ],
+        "title": "RequestCreatedData",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestCreatedData",
+        "x-validate": null
+      },
+      "RequestCreatedEvent": {
+        "description": "A request.created event",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RequestCreatedData"
+          },
+          "id": {
+            "description": "Event ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "description": "Event timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "type": {
+            "description": "Event type",
+            "enum": [
+              "request.created"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "data",
+          "inserted_at"
+        ],
+        "title": "RequestCreatedEvent",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestCreatedEvent",
+        "x-validate": null
+      },
+      "RequestDeniedData": {
+        "description": "Data payload for request.denied events",
+        "properties": {
+          "request_id": {
+            "description": "Request ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "status": {
+            "description": "New request status",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "request_id",
+          "status"
+        ],
+        "title": "RequestDeniedData",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestDeniedData",
+        "x-validate": null
+      },
+      "RequestDeniedEvent": {
+        "description": "A request.denied event",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RequestDeniedData"
+          },
+          "id": {
+            "description": "Event ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "description": "Event timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "type": {
+            "description": "Event type",
+            "enum": [
+              "request.denied"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "data",
+          "inserted_at"
+        ],
+        "title": "RequestDeniedEvent",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestDeniedEvent",
         "x-validate": null
       },
       "RequestResponse": {
@@ -1046,6 +1326,92 @@
         "x-struct": "Elixir.StackCoinWeb.Schemas.TransactionsResponse",
         "x-validate": null
       },
+      "TransferCompletedData": {
+        "description": "Data payload for transfer.completed events",
+        "properties": {
+          "amount": {
+            "description": "Amount transferred",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "from_id": {
+            "description": "Sender user ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "role": {
+            "description": "Role of the event recipient (sender or receiver)",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "to_id": {
+            "description": "Recipient user ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "transaction_id": {
+            "description": "Transaction ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "transaction_id",
+          "from_id",
+          "to_id",
+          "amount",
+          "role"
+        ],
+        "title": "TransferCompletedData",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.TransferCompletedData",
+        "x-validate": null
+      },
+      "TransferCompletedEvent": {
+        "description": "A transfer.completed event",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TransferCompletedData"
+          },
+          "id": {
+            "description": "Event ID",
+            "type": "integer",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "inserted_at": {
+            "description": "Event timestamp",
+            "format": "date-time",
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          },
+          "type": {
+            "description": "Event type",
+            "enum": [
+              "transfer.completed"
+            ],
+            "type": "string",
+            "x-struct": null,
+            "x-validate": null
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "data",
+          "inserted_at"
+        ],
+        "title": "TransferCompletedEvent",
+        "type": "object",
+        "x-struct": "Elixir.StackCoinWeb.Schemas.TransferCompletedEvent",
+        "x-validate": null
+      },
       "User": {
         "description": "A StackCoin user",
         "example": {
@@ -1382,6 +1748,41 @@
           }
         },
         "summary": "Get Discord guilds",
+        "tags": []
+      }
+    },
+    "/api/events": {
+      "get": {
+        "callbacks": {},
+        "description": "Returns events since the given ID, ordered by ID ascending. Used for polling and cursor-based pagination.",
+        "operationId": "stackcoin_events",
+        "parameters": [
+          {
+            "description": "Return events with ID greater than this value",
+            "example": 0,
+            "in": "query",
+            "name": "since_id",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "x-struct": null,
+              "x-validate": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsResponse"
+                }
+              }
+            },
+            "description": "Events response"
+          }
+        },
+        "summary": "Get events for the authenticated user",
         "tags": []
       }
     },

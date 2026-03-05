@@ -1,7 +1,26 @@
 defmodule StackCoinWeb.EventController do
   use StackCoinWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias StackCoin.Core.Event
+
+  operation :index,
+    operation_id: "stackcoin_events",
+    summary: "Get events for the authenticated user",
+    description:
+      "Returns events since the given ID, ordered by ID ascending. Used for polling and cursor-based pagination.",
+    parameters: [
+      since_id: [
+        in: :query,
+        description: "Return events with ID greater than this value",
+        type: :integer,
+        example: 0,
+        required: false
+      ]
+    ],
+    responses: [
+      ok: {"Events response", "application/json", StackCoinWeb.Schemas.EventsResponse}
+    ]
 
   def index(conn, params) do
     user = conn.assigns.current_user

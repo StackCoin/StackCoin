@@ -7,6 +7,7 @@ db module, and stk module against the live StackCoin test server.
 from unittest.mock import patch
 
 import pytest
+from stackcoin import RequestAcceptedData, RequestDeniedData
 
 from luckypot import db, game, stk
 
@@ -138,8 +139,8 @@ class TestLuckyPotInstantWin:
         request_id = result["request_id"]
 
         # Simulate the user accepting the payment request
-        event = {"request_id": request_id}
-        await game.on_request_accepted(event)
+        event_data = RequestAcceptedData(request_id=int(request_id), status="accepted", transaction_id=0, amount=0)
+        await game.on_request_accepted(event_data)
 
         conn = db.get_connection()
         try:
@@ -166,8 +167,8 @@ class TestLuckyPotInstantWin:
         request_id = result["request_id"]
 
         # Simulate the user denying the payment request
-        event = {"request_id": request_id}
-        await game.on_request_denied(event)
+        event_data = RequestDeniedData(request_id=int(request_id), status="denied")
+        await game.on_request_denied(event_data)
 
         conn = db.get_connection()
         try:
@@ -282,8 +283,8 @@ class TestLuckyPotEventHandlers:
         finally:
             conn.close()
 
-        event = {"request_id": "12345"}
-        await game.on_request_accepted(event)
+        event_data = RequestAcceptedData(request_id=12345, status="accepted", transaction_id=0, amount=0)
+        await game.on_request_accepted(event_data)
 
         conn = db.get_connection()
         try:
@@ -301,8 +302,8 @@ class TestLuckyPotEventHandlers:
         finally:
             conn.close()
 
-        event = {"request_id": "99999"}
-        await game.on_request_denied(event)
+        event_data = RequestDeniedData(request_id=99999, status="denied")
+        await game.on_request_denied(event_data)
 
         conn = db.get_connection()
         try:
