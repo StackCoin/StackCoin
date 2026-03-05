@@ -614,6 +614,179 @@ defmodule StackCoinWeb.Schemas do
     })
   end
 
+  defmodule TransferCompletedData do
+    OpenApiSpex.schema(%{
+      title: "TransferCompletedData",
+      description: "Data payload for transfer.completed events",
+      type: :object,
+      properties: %{
+        transaction_id: %Schema{type: :integer, description: "Transaction ID"},
+        from_id: %Schema{type: :integer, description: "Sender user ID"},
+        to_id: %Schema{type: :integer, description: "Recipient user ID"},
+        amount: %Schema{type: :integer, description: "Amount transferred"},
+        role: %Schema{
+          type: :string,
+          description: "Role of the event recipient (sender or receiver)"
+        }
+      },
+      required: [:transaction_id, :from_id, :to_id, :amount, :role]
+    })
+  end
+
+  defmodule RequestCreatedData do
+    OpenApiSpex.schema(%{
+      title: "RequestCreatedData",
+      description: "Data payload for request.created events",
+      type: :object,
+      properties: %{
+        request_id: %Schema{type: :integer, description: "Request ID"},
+        requester_id: %Schema{type: :integer, description: "Requester user ID"},
+        responder_id: %Schema{type: :integer, description: "Responder user ID"},
+        amount: %Schema{type: :integer, description: "Requested amount"},
+        label: %Schema{type: :string, description: "Request label", nullable: true}
+      },
+      required: [:request_id, :requester_id, :responder_id, :amount]
+    })
+  end
+
+  defmodule RequestAcceptedData do
+    OpenApiSpex.schema(%{
+      title: "RequestAcceptedData",
+      description: "Data payload for request.accepted events",
+      type: :object,
+      properties: %{
+        request_id: %Schema{type: :integer, description: "Request ID"},
+        status: %Schema{type: :string, description: "New request status"},
+        transaction_id: %Schema{type: :integer, description: "Created transaction ID"},
+        amount: %Schema{type: :integer, description: "Request amount"}
+      },
+      required: [:request_id, :status, :transaction_id, :amount]
+    })
+  end
+
+  defmodule RequestDeniedData do
+    OpenApiSpex.schema(%{
+      title: "RequestDeniedData",
+      description: "Data payload for request.denied events",
+      type: :object,
+      properties: %{
+        request_id: %Schema{type: :integer, description: "Request ID"},
+        status: %Schema{type: :string, description: "New request status"}
+      },
+      required: [:request_id, :status]
+    })
+  end
+
+  defmodule TransferCompletedEvent do
+    OpenApiSpex.schema(%{
+      title: "TransferCompletedEvent",
+      description: "A transfer.completed event",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Event ID"},
+        type: %Schema{type: :string, description: "Event type", enum: ["transfer.completed"]},
+        data: TransferCompletedData,
+        inserted_at: %Schema{
+          type: :string,
+          description: "Event timestamp",
+          format: :"date-time"
+        }
+      },
+      required: [:id, :type, :data, :inserted_at]
+    })
+  end
+
+  defmodule RequestCreatedEvent do
+    OpenApiSpex.schema(%{
+      title: "RequestCreatedEvent",
+      description: "A request.created event",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Event ID"},
+        type: %Schema{type: :string, description: "Event type", enum: ["request.created"]},
+        data: RequestCreatedData,
+        inserted_at: %Schema{
+          type: :string,
+          description: "Event timestamp",
+          format: :"date-time"
+        }
+      },
+      required: [:id, :type, :data, :inserted_at]
+    })
+  end
+
+  defmodule RequestAcceptedEvent do
+    OpenApiSpex.schema(%{
+      title: "RequestAcceptedEvent",
+      description: "A request.accepted event",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Event ID"},
+        type: %Schema{type: :string, description: "Event type", enum: ["request.accepted"]},
+        data: RequestAcceptedData,
+        inserted_at: %Schema{
+          type: :string,
+          description: "Event timestamp",
+          format: :"date-time"
+        }
+      },
+      required: [:id, :type, :data, :inserted_at]
+    })
+  end
+
+  defmodule RequestDeniedEvent do
+    OpenApiSpex.schema(%{
+      title: "RequestDeniedEvent",
+      description: "A request.denied event",
+      type: :object,
+      properties: %{
+        id: %Schema{type: :integer, description: "Event ID"},
+        type: %Schema{type: :string, description: "Event type", enum: ["request.denied"]},
+        data: RequestDeniedData,
+        inserted_at: %Schema{
+          type: :string,
+          description: "Event timestamp",
+          format: :"date-time"
+        }
+      },
+      required: [:id, :type, :data, :inserted_at]
+    })
+  end
+
+  defmodule Event do
+    OpenApiSpex.schema(%{
+      title: "Event",
+      description: "A StackCoin event (discriminated by type)",
+      oneOf: [
+        TransferCompletedEvent,
+        RequestCreatedEvent,
+        RequestAcceptedEvent,
+        RequestDeniedEvent
+      ],
+      discriminator: %OpenApiSpex.Discriminator{
+        propertyName: "type",
+        mapping: %{
+          "transfer.completed" => "#/components/schemas/TransferCompletedEvent",
+          "request.created" => "#/components/schemas/RequestCreatedEvent",
+          "request.accepted" => "#/components/schemas/RequestAcceptedEvent",
+          "request.denied" => "#/components/schemas/RequestDeniedEvent"
+        }
+      }
+    })
+  end
+
+  defmodule EventsResponse do
+    OpenApiSpex.schema(%{
+      title: "EventsResponse",
+      description: "Response schema for listing events",
+      type: :object,
+      properties: %{
+        events: %Schema{description: "The events list", type: :array, items: Event}
+      },
+      required: [:events]
+    })
+  end
+
   defmodule ErrorResponse do
     OpenApiSpex.schema(%{
       title: "ErrorResponse",
