@@ -256,14 +256,17 @@ def luckypot_db(tmp_path):
 def configure_luckypot_stk(stackcoin_server, seed_data):
     """Configure luckypot.stk to point at the test StackCoin server."""
     from luckypot.config import settings
+    import luckypot.stk as lp_stk
 
     original_url = settings.stackcoin_api_url
     original_token = settings.stackcoin_api_token
 
     settings.stackcoin_api_url = stackcoin_server["base_url"]
     settings.stackcoin_api_token = seed_data["BOT_TOKEN"]
+    lp_stk.reset_client()  # force new client with updated settings
 
     yield
 
     settings.stackcoin_api_url = original_url
     settings.stackcoin_api_token = original_token
+    lp_stk.reset_client()  # reset for next test
