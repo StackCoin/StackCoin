@@ -20,7 +20,7 @@ defmodule StackCoin.MixProject do
   def application do
     [
       mod: {StackCoin.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :os_mon]
     ]
   end
 
@@ -28,6 +28,7 @@ defmodule StackCoin.MixProject do
     [
       {:ecto_sql, "~> 3.13"},
       {:ecto_sqlite3, "~> 0.21"},
+      {:ecto_sqlite3_extras, "~> 1.2.0"},
       {:nostrum, github: "Kraigie/nostrum", branch: "master"},
       {:dotenvy, "~> 1.1.0"},
       {:vega_lite, "~> 0.1.11"},
