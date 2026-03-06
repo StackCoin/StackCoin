@@ -65,19 +65,27 @@ defmodule StackCoinWeb.Router do
     get("/discord/guild/:snowflake", StackCoinWeb.DiscordGuildController, :show)
   end
 
-  # Enable LiveDashboard in development
-  if Application.compile_env(:stackcoin, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
-    import Phoenix.LiveDashboard.Router
+  # LiveDashboard — available in all environments, protected by basic auth.
+  import Phoenix.LiveDashboard.Router
 
-    scope "/dev" do
-      pipe_through(:browser)
+  pipeline :dashboard_auth do
+    plug(:dashboard_basic_auth)
+  end
 
-      live_dashboard("/dashboard", metrics: StackCoinWeb.Telemetry)
+  scope "/dev" do
+    pipe_through([:browser, :dashboard_auth])
+
+    live_dashboard("/dashboard", metrics: StackCoinWeb.Telemetry)
+  end
+
+  defp dashboard_basic_auth(conn, _opts) do
+    username = Application.get_env(:stackcoin, :dashboard_username, "admin")
+    password = Application.get_env(:stackcoin, :dashboard_password)
+
+    if password do
+      Plug.BasicAuth.basic_auth(conn, username: username, password: password)
+    else
+      conn
     end
   end
 end

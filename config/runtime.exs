@@ -14,6 +14,14 @@ config :stackcoin,
   discord_application_id: env!("STACKCOIN_DISCORD_APPLICATION_ID", :integer, nil),
   discord_token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil)
 
+# Dashboard basic auth — no password in dev means no auth prompt.
+# In prod, set DASHBOARD_USER and DASHBOARD_PASSWORD env vars.
+if password = System.get_env("DASHBOARD_PASSWORD") do
+  config :stackcoin,
+    dashboard_username: System.get_env("DASHBOARD_USER", "admin"),
+    dashboard_password: password
+end
+
 if System.get_env("PHX_SERVER") do
   config :stackcoin, StackCoinWeb.Endpoint, server: true
 end
