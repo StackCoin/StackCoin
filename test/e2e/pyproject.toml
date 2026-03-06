@@ -17,7 +17,7 @@ no-build-package = ["stackcoin-e2e-tests"]
 
 [tool.uv.sources]
 luckypot = { path = "../../tmp/LuckyPot", editable = true }
-stackcoin = { path = "../../tmp/stackcoin-python/stackcoin", editable = true }
+stackcoin = { path = "../../tmp/stackcoin-python", editable = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

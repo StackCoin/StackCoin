@@ -8,7 +8,7 @@ Setup instructions:
   cd test/e2e
   uv venv
   source .venv/bin/activate
-  uv pip install -e "../../tmp/stackcoin-python/stackcoin"
+  uv pip install -e "../../tmp/stackcoin-python"
   uv pip install -e "../../tmp/LuckyPot"
   uv pip install -e .
   pytest
