@@ -86,7 +86,7 @@ defmodule StackCoin.Core.EventTest do
           amount: 25
         })
 
-      events = Event.list_events_since(user1.id, e1.id)
+      {events, _has_more} = Event.list_events_since(user1.id, e1.id)
       assert length(events) == 1
       assert hd(events).id == e2.id
     end
@@ -108,8 +108,20 @@ defmodule StackCoin.Core.EventTest do
           amount: 50
         })
 
-      events = Event.list_events_since(user1.id, 0)
+      {events, _has_more} = Event.list_events_since(user1.id, 0)
       assert length(events) == 2
+    end
+
+    test "returns has_more=false when events fit in one page", %{user1: user1} do
+      {:ok, _} =
+        Event.create_event("request.denied", user1.id, %{
+          request_id: 1,
+          status: "denied"
+        })
+
+      {events, has_more} = Event.list_events_since(user1.id, 0)
+      assert length(events) == 1
+      refute has_more
     end
   end
 end

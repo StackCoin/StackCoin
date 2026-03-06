@@ -26,11 +26,12 @@ defmodule StackCoinWeb.EventController do
     user = conn.assigns.current_user
     since_id = parse_since_id(params)
 
-    events =
-      Event.list_events_since(user.id, since_id)
-      |> Enum.map(&Event.serialize_event/1)
+    {events, has_more} = Event.list_events_since(user.id, since_id)
 
-    json(conn, %{events: events})
+    json(conn, %{
+      events: Enum.map(events, &Event.serialize_event/1),
+      has_more: has_more
+    })
   end
 
   defp parse_since_id(%{"since_id" => id}) when is_binary(id) do

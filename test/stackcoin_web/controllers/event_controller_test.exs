@@ -53,7 +53,7 @@ defmodule StackCoinWebTest.EventControllerTest do
       {:ok, _txn1} = Bank.transfer_between_users(bot.user.id, recipient.id, 5, "first")
       {:ok, _txn2} = Bank.transfer_between_users(bot.user.id, recipient.id, 5, "second")
 
-      events = Event.list_events_since(bot.user.id, 0)
+      {events, _has_more} = Event.list_events_since(bot.user.id, 0)
       first_id = hd(events).id
 
       conn =
@@ -63,6 +63,24 @@ defmodule StackCoinWebTest.EventControllerTest do
 
       response = json_response(conn, 200)
       assert Enum.all?(response["events"], fn e -> e["id"] > first_id end)
+    end
+
+    test "response includes has_more field", %{
+      conn: conn,
+      bot: bot,
+      bot_token: bot_token,
+      recipient: recipient
+    } do
+      {:ok, _txn} = Bank.transfer_between_users(bot.user.id, recipient.id, 10, "test")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/events")
+
+      response = json_response(conn, 200)
+      assert is_boolean(response["has_more"])
+      assert response["has_more"] == false
     end
   end
 end

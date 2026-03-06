@@ -24,7 +24,7 @@ defmodule StackCoinWeb.BotChannel do
 
   @impl true
   def handle_info({:replay_events, last_event_id}, socket) do
-    events = Event.list_events_since(socket.assigns.user.id, last_event_id)
+    {events, _has_more} = Event.list_events_since(socket.assigns.user.id, last_event_id)
 
     for event <- events do
       push(socket, "event", Event.serialize_event(event))
