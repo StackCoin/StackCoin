@@ -82,10 +82,19 @@ defmodule StackCoinWeb.Router do
     username = Application.get_env(:stackcoin, :dashboard_username, "admin")
     password = Application.get_env(:stackcoin, :dashboard_password)
 
-    if password do
-      Plug.BasicAuth.basic_auth(conn, username: username, password: password)
-    else
-      conn
+    cond do
+      password ->
+        Plug.BasicAuth.basic_auth(conn, username: username, password: password)
+
+      Application.get_env(:stackcoin, :dev_routes) ->
+        # Dev/test: no auth required
+        conn
+
+      true ->
+        # Prod without password configured: block access
+        conn
+        |> Plug.Conn.send_resp(403, "Dashboard credentials not configured")
+        |> Plug.Conn.halt()
     end
   end
 end
