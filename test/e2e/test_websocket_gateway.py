@@ -16,18 +16,22 @@ async def phoenix_connect(base_url: str, token: str, last_event_id: int = 0):
     """Connect to Phoenix Channel and join the user events channel."""
     ws_url = base_url.replace("http://", "ws://") + f"/ws?token={token}&vsn=2.0.0"
 
-    ws = await websockets.connect(ws_url)
+    ws = await websockets.connect(ws_url, open_timeout=5)
 
-    # Join the user events channel
-    join_msg = json.dumps([None, "1", "user:self", "phx_join", {"last_event_id": last_event_id}])
-    await ws.send(join_msg)
+    try:
+        # Join the user events channel
+        join_msg = json.dumps([None, "1", "user:self", "phx_join", {"last_event_id": last_event_id}])
+        await ws.send(join_msg)
 
-    # Wait for join reply
-    reply = json.loads(await asyncio.wait_for(ws.recv(), timeout=5))
-    assert reply[3] == "phx_reply"
-    assert reply[4]["status"] == "ok"
+        # Wait for join reply
+        reply = json.loads(await asyncio.wait_for(ws.recv(), timeout=5))
+        assert reply[3] == "phx_reply"
+        assert reply[4]["status"] == "ok", f"Join failed: {reply[4]}"
 
-    return ws
+        return ws
+    except:
+        await ws.close()
+        raise
 
 
 @pytest.mark.asyncio
@@ -122,7 +126,7 @@ class TestWebSocketRobustness:
         user1_id = test_context["user1_id"]
 
         ws_url = base.replace("http://", "ws://") + f"/ws?token={token}&vsn=2.0.0"
-        ws = await websockets.connect(ws_url)
+        ws = await websockets.connect(ws_url, open_timeout=5)
 
         try:
             join_msg = json.dumps([None, "1", f"user:{user1_id}", "phx_join", {}])

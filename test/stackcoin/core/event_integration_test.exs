@@ -24,17 +24,26 @@ defmodule StackCoin.Core.EventIntegrationTest do
     {:ok, _txn} = Bank.transfer_between_users(bot.user.id, recipient.id, 50, "test")
 
     {sender_events, _has_more} = Event.list_events_since(bot.user.id, 0)
-    transfer_events = Enum.filter(sender_events, &(&1.type == "transfer.completed"))
-    assert length(transfer_events) >= 1
 
-    event = List.last(transfer_events)
-    data = Jason.decode!(event.data)
+    sender_event =
+      Enum.find(sender_events, fn e ->
+        e.type == "transfer.completed" &&
+          match?(%{"amount" => 50, "to_id" => _}, Jason.decode!(e.data))
+      end)
+
+    assert sender_event, "expected a transfer.completed event with amount 50 for sender"
+    data = Jason.decode!(sender_event.data)
     assert data["amount"] == 50
     assert data["to_id"] == recipient.id
 
     {receiver_events, _has_more} = Event.list_events_since(recipient.id, 0)
-    receiver_transfer_events = Enum.filter(receiver_events, &(&1.type == "transfer.completed"))
-    assert length(receiver_transfer_events) >= 1
+
+    receiver_event =
+      Enum.find(receiver_events, fn e ->
+        e.type == "transfer.completed" && match?(%{"amount" => 50}, Jason.decode!(e.data))
+      end)
+
+    assert receiver_event, "expected a transfer.completed event with amount 50 for receiver"
   end
 
   test "create_request emits request.created event for both parties", %{
@@ -44,16 +53,32 @@ defmodule StackCoin.Core.EventIntegrationTest do
     {:ok, request} = Request.create_request(bot.user.id, recipient.id, 75, "test request")
 
     {requester_events, _has_more} = Event.list_events_since(bot.user.id, 0)
-    created_events = Enum.filter(requester_events, &(&1.type == "request.created"))
-    assert length(created_events) >= 1
 
-    data = Jason.decode!(List.last(created_events).data)
+    requester_event =
+      Enum.find(requester_events, fn e ->
+        e.type == "request.created" &&
+          (fn data -> data["request_id"] == request.id && data["amount"] == 75 end).(
+            Jason.decode!(e.data)
+          )
+      end)
+
+    assert requester_event,
+           "expected a request.created event with request_id #{request.id} for requester"
+
+    data = Jason.decode!(requester_event.data)
     assert data["request_id"] == request.id
     assert data["amount"] == 75
 
     {responder_events, _has_more} = Event.list_events_since(recipient.id, 0)
-    responder_created = Enum.filter(responder_events, &(&1.type == "request.created"))
-    assert length(responder_created) >= 1
+
+    responder_event =
+      Enum.find(responder_events, fn e ->
+        e.type == "request.created" &&
+          (fn data -> data["request_id"] == request.id end).(Jason.decode!(e.data))
+      end)
+
+    assert responder_event,
+           "expected a request.created event with request_id #{request.id} for responder"
   end
 
   test "accept_request emits request.accepted event for both parties", %{
@@ -64,16 +89,32 @@ defmodule StackCoin.Core.EventIntegrationTest do
     {:ok, _accepted} = Request.accept_request(request.id, bot.user.id)
 
     {responder_events, _has_more} = Event.list_events_since(bot.user.id, 0)
-    accepted_events = Enum.filter(responder_events, &(&1.type == "request.accepted"))
-    assert length(accepted_events) >= 1
 
-    data = Jason.decode!(List.last(accepted_events).data)
+    responder_event =
+      Enum.find(responder_events, fn e ->
+        e.type == "request.accepted" &&
+          (fn data -> data["request_id"] == request.id && data["status"] == "accepted" end).(
+            Jason.decode!(e.data)
+          )
+      end)
+
+    assert responder_event,
+           "expected a request.accepted event with request_id #{request.id} for responder"
+
+    data = Jason.decode!(responder_event.data)
     assert data["request_id"] == request.id
     assert data["status"] == "accepted"
 
     {requester_events, _has_more} = Event.list_events_since(recipient.id, 0)
-    requester_accepted = Enum.filter(requester_events, &(&1.type == "request.accepted"))
-    assert length(requester_accepted) >= 1
+
+    requester_event =
+      Enum.find(requester_events, fn e ->
+        e.type == "request.accepted" &&
+          (fn data -> data["request_id"] == request.id end).(Jason.decode!(e.data))
+      end)
+
+    assert requester_event,
+           "expected a request.accepted event with request_id #{request.id} for requester"
   end
 
   test "deny_request emits request.denied event for both parties", %{
@@ -84,15 +125,31 @@ defmodule StackCoin.Core.EventIntegrationTest do
     {:ok, _denied} = Request.deny_request(request.id, bot.user.id)
 
     {responder_events, _has_more} = Event.list_events_since(bot.user.id, 0)
-    denied_events = Enum.filter(responder_events, &(&1.type == "request.denied"))
-    assert length(denied_events) >= 1
 
-    data = Jason.decode!(List.last(denied_events).data)
+    responder_event =
+      Enum.find(responder_events, fn e ->
+        e.type == "request.denied" &&
+          (fn data -> data["request_id"] == request.id && data["status"] == "denied" end).(
+            Jason.decode!(e.data)
+          )
+      end)
+
+    assert responder_event,
+           "expected a request.denied event with request_id #{request.id} for responder"
+
+    data = Jason.decode!(responder_event.data)
     assert data["request_id"] == request.id
     assert data["status"] == "denied"
 
     {requester_events, _has_more} = Event.list_events_since(recipient.id, 0)
-    requester_denied = Enum.filter(requester_events, &(&1.type == "request.denied"))
-    assert length(requester_denied) >= 1
+
+    requester_event =
+      Enum.find(requester_events, fn e ->
+        e.type == "request.denied" &&
+          (fn data -> data["request_id"] == request.id end).(Jason.decode!(e.data))
+      end)
+
+    assert requester_event,
+           "expected a request.denied event with request_id #{request.id} for requester"
   end
 end

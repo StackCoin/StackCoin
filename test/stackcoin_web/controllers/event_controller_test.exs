@@ -35,9 +35,16 @@ defmodule StackCoinWebTest.EventControllerTest do
 
       response = json_response(conn, 200)
       assert is_list(response["events"])
-      assert length(response["events"]) >= 1
 
-      event = hd(response["events"])
+      transfer_event =
+        Enum.find(response["events"], fn e ->
+          e["type"] == "transfer.completed" &&
+            e["data"]["amount"] == 10
+        end)
+
+      assert transfer_event, "expected a transfer.completed event with amount 10"
+
+      event = transfer_event
       assert Map.has_key?(event, "id")
       assert Map.has_key?(event, "type")
       assert Map.has_key?(event, "data")

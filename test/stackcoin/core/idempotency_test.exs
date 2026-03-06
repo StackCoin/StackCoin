@@ -32,8 +32,6 @@ defmodule StackCoin.Core.IdempotencyTest do
 
   describe "delete_expired/0" do
     test "deletes keys older than 7 days", %{bot1: bot1} do
-      import Ecto.Query
-
       :ok = Idempotency.store(bot1.id, "old-key", 200, ~s({"old": true}))
 
       # Backdate the record to 8 days ago
@@ -61,8 +59,6 @@ defmodule StackCoin.Core.IdempotencyTest do
 
       # Backdate only bot1's key
       eight_days_ago = NaiveDateTime.utc_now() |> NaiveDateTime.add(-8, :day)
-
-      import Ecto.Query
 
       from(k in StackCoin.Schema.IdempotencyKey, where: k.bot_id == ^bot1.id)
       |> StackCoin.Repo.update_all(set: [inserted_at: eight_days_ago])

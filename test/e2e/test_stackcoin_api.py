@@ -105,7 +105,8 @@ class TestDirectTransfer:
                 json={"amount": 999999},
                 headers=auth_headers,
             )
-            assert resp.status_code in (400, 422)
+            # :insufficient_balance → :unprocessable_entity (422)
+            assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
@@ -132,7 +133,8 @@ class TestTransferEdgeCases:
                 headers=auth_headers,
                 json={"amount": 0, "label": "zero amount"},
             )
-        assert resp.status_code in (400, 422)
+        # amount <= 0 → :invalid_amount → :bad_request (400)
+        assert resp.status_code == 400
         assert "error" in resp.json()
 
     async def test_negative_amount_rejected(self, test_context, auth_headers):
@@ -144,7 +146,8 @@ class TestTransferEdgeCases:
                 headers=auth_headers,
                 json={"amount": -5, "label": "negative amount"},
             )
-        assert resp.status_code in (400, 422)
+        # amount <= 0 → :invalid_amount → :bad_request (400)
+        assert resp.status_code == 400
         assert "error" in resp.json()
 
     async def test_transfer_to_nonexistent_user(self, test_context, auth_headers):

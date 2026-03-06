@@ -14,7 +14,6 @@ defmodule StackCoin.SchedulerTest do
     :ok = Idempotency.store(bot.id, "old-key", 200, ~s({"old": true}))
 
     # Backdate the record to 8 days ago
-    import Ecto.Query
     eight_days_ago = NaiveDateTime.utc_now() |> NaiveDateTime.add(-8, :day)
 
     from(k in StackCoin.Schema.IdempotencyKey,
@@ -22,11 +21,14 @@ defmodule StackCoin.SchedulerTest do
     )
     |> StackCoin.Repo.update_all(set: [inserted_at: eight_days_ago])
 
-    # Send cleanup to the already-running scheduler
+    # Trigger cleanup on the app-managed scheduler and wait for it to process
     send(StackCoin.Scheduler, :cleanup)
-    # Wait for the GenServer to process the message
     :sys.get_state(StackCoin.Scheduler)
 
     assert :miss = Idempotency.check(bot.id, "old-key")
+  end
+
+  test "scheduler is running in the supervision tree" do
+    assert Process.whereis(StackCoin.Scheduler) != nil
   end
 end
