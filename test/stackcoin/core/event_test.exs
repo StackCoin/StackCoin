@@ -123,5 +123,25 @@ defmodule StackCoin.Core.EventTest do
       assert length(events) == 1
       refute has_more
     end
+
+    test "returns has_more=true when more events exist beyond the limit", %{user1: user1} do
+      for _ <- 1..4 do
+        Event.create_event("request.denied", user1.id, %{
+          request_id: 1,
+          status: "denied"
+        })
+      end
+
+      # Use a small limit to test the boundary without inserting 101 rows
+      {events, has_more} = Event.list_events_since(user1.id, 0, 3)
+      assert length(events) == 3
+      assert has_more
+
+      # Paginate with cursor from last event
+      last_id = List.last(events).id
+      {events2, has_more2} = Event.list_events_since(user1.id, last_id, 3)
+      assert length(events2) == 1
+      refute has_more2
+    end
   end
 end
