@@ -38,16 +38,16 @@ defmodule StackCoin.Core.Event do
 
   @events_page_size 100
 
-  def list_events_since(user_id, last_event_id) do
+  def list_events_since(user_id, last_event_id, limit \\ @events_page_size) do
     rows =
       Event
       |> where([e], e.user_id == ^user_id and e.id > ^last_event_id)
       |> order_by([e], asc: e.id)
-      |> limit(^(@events_page_size + 1))
+      |> limit(^(limit + 1))
       |> Repo.all()
 
-    has_more = length(rows) > @events_page_size
-    events = Enum.take(rows, @events_page_size)
+    has_more = length(rows) > limit
+    events = Enum.take(rows, limit)
     {events, has_more}
   end
 
