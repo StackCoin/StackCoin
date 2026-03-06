@@ -138,11 +138,13 @@ def stackcoin_server():
         env=env, cwd=STACKCOIN_ROOT,
         capture_output=True, timeout=30,
     )
-    subprocess.run(
+    result = subprocess.run(
         ["mix", "ecto.create", "--quiet"],
         env=env, cwd=STACKCOIN_ROOT,
-        capture_output=True, timeout=30,
+        capture_output=True, text=True, timeout=30,
     )
+    if result.returncode != 0:
+        raise RuntimeError(f"ecto.create failed: {result.stderr}")
     result = subprocess.run(
         ["mix", "ecto.migrate", "--quiet"],
         env=env, cwd=STACKCOIN_ROOT,

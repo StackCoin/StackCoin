@@ -151,7 +151,7 @@ defmodule StackCoin.EventSchemaTest do
       assert Map.has_key?(schema.properties, :type)
       assert Map.has_key?(schema.properties, :data)
       assert Map.has_key?(schema.properties, :inserted_at)
-      assert [:id, :type, :data, :inserted_at] == schema.required
+      assert Enum.sort([:id, :type, :data, :inserted_at]) == Enum.sort(schema.required)
     end
 
     test "Event discriminated union schema exists" do
@@ -167,7 +167,7 @@ defmodule StackCoin.EventSchemaTest do
       assert schema.title == "EventsResponse"
       assert schema.type == :object
       assert Map.has_key?(schema.properties, :events)
-      assert [:events, :has_more] == schema.required
+      assert Enum.sort([:events, :has_more]) == Enum.sort(schema.required)
       assert Map.has_key?(schema.properties, :has_more)
     end
   end

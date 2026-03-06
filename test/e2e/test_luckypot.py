@@ -276,14 +276,16 @@ class TestLuckyPotEventHandlers:
 
     async def test_on_request_accepted_confirms_entry(self, luckypot_db, configure_luckypot_stk):
         """Simulating a request.accepted event should confirm a pending entry."""
+        request_id = 12345
         conn = db.get_connection()
         try:
             pot = db.create_pot(conn, "guild1")
-            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, "12345")
+            # DB column is TEXT; game.on_request_accepted converts int→str via str()
+            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, str(request_id))
         finally:
             conn.close()
 
-        event_data = RequestAcceptedData(request_id=12345, status="accepted", transaction_id=0, amount=0)
+        event_data = RequestAcceptedData(request_id=request_id, status="accepted", transaction_id=0, amount=0)
         await game.on_request_accepted(event_data)
 
         conn = db.get_connection()
@@ -295,14 +297,16 @@ class TestLuckyPotEventHandlers:
 
     async def test_on_request_denied_denies_entry(self, luckypot_db, configure_luckypot_stk):
         """Simulating a request.denied event should deny a pending entry."""
+        request_id = 99999
         conn = db.get_connection()
         try:
             pot = db.create_pot(conn, "guild1")
-            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, "99999")
+            # DB column is TEXT; game.on_request_denied converts int→str via str()
+            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, str(request_id))
         finally:
             conn.close()
 
-        event_data = RequestDeniedData(request_id=99999, status="denied")
+        event_data = RequestDeniedData(request_id=request_id, status="denied")
         await game.on_request_denied(event_data)
 
         conn = db.get_connection()

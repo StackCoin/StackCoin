@@ -1,4 +1,4 @@
-defmodule StackCoinWeb.BotChannelTest do
+defmodule StackCoinWebTest.BotChannelTest do
   use StackCoinWeb.ConnCase
 
   import Phoenix.ChannelTest
@@ -79,9 +79,13 @@ defmodule StackCoinWeb.BotChannelTest do
     bot: bot,
     bot_token: bot_token
   } do
-    # Setup already creates 1 event for bot.user (receiver of funding transfer)
-    # Create 100 more to reach 101 total, which exceeds the replay limit of 100
-    for _ <- 1..100 do
+    # Query current event count for this user as baseline (setup may create events)
+    {existing_events, _has_more} = Event.list_events_since(bot.user.id, 0)
+    baseline = length(existing_events)
+    # We need total events to exceed 100, so create enough beyond baseline
+    remaining = 101 - baseline
+
+    for _ <- 1..remaining do
       Event.create_event("transfer.completed", bot.user.id, %{
         transaction_id: 1,
         from_id: bot.user.id,
@@ -97,7 +101,7 @@ defmodule StackCoinWeb.BotChannelTest do
     assert {:error, %{reason: "too_many_missed_events"} = error} =
              Phoenix.ChannelTest.join(socket, "user:#{bot.user.id}", %{"last_event_id" => 0})
 
-    assert error.missed_count == 101
+    assert error.missed_count == baseline + remaining
     assert error.replay_limit == 100
   end
 
@@ -105,9 +109,13 @@ defmodule StackCoinWeb.BotChannelTest do
     bot: bot,
     bot_token: bot_token
   } do
-    # Setup already creates 1 event for bot.user (receiver of funding transfer)
-    # Create 99 more to reach exactly 100 total, which is at the replay limit
-    for _ <- 1..99 do
+    # Query current event count for this user as baseline (setup may create events)
+    {existing_events, _has_more} = Event.list_events_since(bot.user.id, 0)
+    baseline = length(existing_events)
+    # We need exactly 100 total events, so create enough beyond baseline
+    remaining = 100 - baseline
+
+    for _ <- 1..remaining do
       Event.create_event("transfer.completed", bot.user.id, %{
         transaction_id: 1,
         from_id: bot.user.id,
