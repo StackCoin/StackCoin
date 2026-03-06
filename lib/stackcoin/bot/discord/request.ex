@@ -23,6 +23,11 @@ defmodule StackCoin.Bot.Discord.Request do
   Returns :ok if successful, :error if the user is not a Discord user or DM fails.
   """
   def send_request_notification(request) do
+    # This is a bit of a wart, however, `send_request_dm` will eventually
+    # call Nostrum, and Nostrum will do some rate-limit checks, which will
+    # fail if we don't have discord enabled, so here, we _don't_ test this
+    # path if we're running in the context of a test, i.e. we have not
+    # started the Nostrum / discord application.
     if Application.get_env(:stackcoin, :start_discord, true) do
       with {:ok, responder_discord} <- get_discord_user(request.responder_id),
            {:ok, requester_name} <- format_requester_info(request.requester) do
