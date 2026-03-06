@@ -473,6 +473,22 @@ class TestReadEndpoints:
 
 
 @pytest.mark.asyncio
+class TestEventPagination:
+    """Test event pagination with has_more."""
+
+    async def test_has_more_false_with_few_events(self, test_context, auth_headers):
+        """Events response includes has_more=false when all events fit in one page."""
+        base = test_context["base_url"]
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.get("/api/events", headers=auth_headers)
+            assert resp.status_code == 200
+            body = resp.json()
+            assert "has_more" in body
+            assert body["has_more"] is False
+
+
+@pytest.mark.asyncio
 class TestEventDelivery:
 
     async def test_events_appear_after_transfer(self, test_context, auth_headers):
