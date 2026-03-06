@@ -1,1 +1,1 @@
-call "%~dp0\jahns" eval StackCoin.Release.migrate
+call "%~dp0\stackcoin" eval StackCoin.Release.migrate

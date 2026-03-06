@@ -91,4 +91,4 @@ COPY --from=builder /app/_build/${MIX_ENV}/rel/stackcoin ./
 # above and adding an entrypoint. See https://github.com/krallin/tini for details
 # ENTRYPOINT ["/tini", "--"]
 
-CMD ["/app/bin/server"]
+CMD ["/bin/sh", "-c", "/app/bin/migrate && /app/bin/server"]

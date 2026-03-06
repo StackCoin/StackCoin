@@ -8,7 +8,6 @@ defmodule StackCoin.MixProject do
       elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases(),
       deps: deps()
     ]
