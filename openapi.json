@@ -375,10 +375,17 @@
             "type": "array",
             "x-struct": null,
             "x-validate": null
+          },
+          "has_more": {
+            "description": "Whether more events exist beyond this page",
+            "type": "boolean",
+            "x-struct": null,
+            "x-validate": null
           }
         },
         "required": [
-          "events"
+          "events",
+          "has_more"
         ],
         "title": "EventsResponse",
         "type": "object",
