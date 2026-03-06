@@ -10,7 +10,14 @@ defmodule StackCoinWeb.TransferController do
     summary: "Send STK to a user",
     description: "Transfers STK from the authenticated user to a specified user.",
     parameters: [
-      user_id: [in: :path, description: "Recipient user ID", type: :integer, example: 123]
+      user_id: [in: :path, description: "Recipient user ID", type: :integer, example: 123],
+      "Idempotency-Key": [
+        in: :header,
+        description:
+          "Optional idempotency key. If provided, duplicate requests with the same key return the original response.",
+        type: :string,
+        required: false
+      ]
     ],
     request_body: {"Send STK params", "application/json", StackCoinWeb.Schemas.SendStkParams},
     responses: [

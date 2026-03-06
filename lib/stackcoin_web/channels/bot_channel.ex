@@ -3,8 +3,6 @@ defmodule StackCoinWeb.BotChannel do
 
   alias StackCoin.Core.Event
 
-  @replay_limit 100
-
   @impl true
   def join("user:" <> user_id_str, payload, socket) do
     user_id =
@@ -13,16 +11,18 @@ defmodule StackCoinWeb.BotChannel do
         id_str -> String.to_integer(id_str)
       end
 
+    replay_limit = Event.page_size()
+
     if user_id == socket.assigns.user.id do
       last_event_id = Map.get(payload, "last_event_id", 0)
       missed_count = Event.count_events_since(user_id, last_event_id)
 
-      if missed_count > @replay_limit do
+      if missed_count > replay_limit do
         {:error,
          %{
            reason: "too_many_missed_events",
            missed_count: missed_count,
-           replay_limit: @replay_limit,
+           replay_limit: replay_limit,
            message:
              "Use GET /api/events?since_id=#{last_event_id} to catch up, then reconnect with a recent last_event_id"
          }}
