@@ -1,35 +1,38 @@
 defmodule StackCoin.Core.Event do
   alias StackCoin.Repo
   alias StackCoin.Schema.Event
+  alias StackCoin.Core.EventData
   import Ecto.Query
 
   def create_event(type, user_id, data) when is_binary(type) and is_map(data) do
-    attrs = %{
-      type: type,
-      user_id: user_id,
-      data: Jason.encode!(data),
-      inserted_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    }
+    with {:ok, _validated} <- EventData.validate(type, data) do
+      attrs = %{
+        type: type,
+        user_id: user_id,
+        data: Jason.encode!(data),
+        inserted_at: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+      }
 
-    result =
-      %Event{}
-      |> Event.changeset(attrs)
-      |> Repo.insert()
+      result =
+        %Event{}
+        |> Event.changeset(attrs)
+        |> Repo.insert()
 
-    case result do
-      {:ok, event} ->
-        if user_id do
-          Phoenix.PubSub.broadcast(
-            StackCoin.PubSub,
-            "user:#{user_id}",
-            {:event, serialize_event(event)}
-          )
-        end
+      case result do
+        {:ok, event} ->
+          if user_id do
+            Phoenix.PubSub.broadcast(
+              StackCoin.PubSub,
+              "user:#{user_id}",
+              {:event, serialize_event(event)}
+            )
+          end
 
-        {:ok, event}
+          {:ok, event}
 
-      error ->
-        error
+        error ->
+          error
+      end
     end
   end
 

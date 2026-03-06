@@ -368,7 +368,7 @@ requires-dist = [
     { name = "hikari-lightbulb", specifier = ">=3.1.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pydantic-settings", specifier = ">=2.0" },
-    { name = "stackcoin", specifier = ">=0.1.0" },
+    { name = "stackcoin", editable = "../../tmp/stackcoin-python/stackcoin" },
 ]
 
 [[package]]
