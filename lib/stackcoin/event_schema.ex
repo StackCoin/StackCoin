@@ -212,9 +212,13 @@ defmodule StackCoin.EventSchema do
               description: "The events list",
               type: :array,
               items: unquote(event_module)
+            },
+            has_more: %OpenApiSpex.Schema{
+              description: "Whether more events exist beyond this page",
+              type: :boolean
             }
           },
-          required: [:events]
+          required: [:events, :has_more]
         })
       end
     end

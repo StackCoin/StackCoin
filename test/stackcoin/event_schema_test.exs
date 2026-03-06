@@ -167,7 +167,8 @@ defmodule StackCoin.EventSchemaTest do
       assert schema.title == "EventsResponse"
       assert schema.type == :object
       assert Map.has_key?(schema.properties, :events)
-      assert [:events] == schema.required
+      assert [:events, :has_more] == schema.required
+      assert Map.has_key?(schema.properties, :has_more)
     end
   end
 end

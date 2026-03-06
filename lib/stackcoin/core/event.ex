@@ -36,12 +36,25 @@ defmodule StackCoin.Core.Event do
     end
   end
 
+  @events_page_size 100
+
   def list_events_since(user_id, last_event_id) do
+    rows =
+      Event
+      |> where([e], e.user_id == ^user_id and e.id > ^last_event_id)
+      |> order_by([e], asc: e.id)
+      |> limit(^(@events_page_size + 1))
+      |> Repo.all()
+
+    has_more = length(rows) > @events_page_size
+    events = Enum.take(rows, @events_page_size)
+    {events, has_more}
+  end
+
+  def count_events_since(user_id, last_event_id) do
     Event
     |> where([e], e.user_id == ^user_id and e.id > ^last_event_id)
-    |> order_by([e], asc: e.id)
-    |> limit(100)
-    |> Repo.all()
+    |> Repo.aggregate(:count)
   end
 
   def serialize_event(%Event{} = event) do
