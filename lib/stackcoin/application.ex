@@ -6,7 +6,8 @@ defmodule StackCoin.Application do
     children =
       [
         StackCoinWeb.Telemetry,
-        StackCoin.Repo
+        StackCoin.Repo,
+        StackCoin.Scheduler
       ] ++
         discord_children() ++
         [
