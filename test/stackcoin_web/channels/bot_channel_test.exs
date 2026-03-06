@@ -75,6 +75,28 @@ defmodule StackCoinWebTest.BotChannelTest do
     assert_push("event", %{type: "transfer.completed"})
   end
 
+  test "joining without last_event_id skips replay and receives only live events", %{
+    bot: bot,
+    bot_token: bot_token,
+    recipient: recipient
+  } do
+    # Create events BEFORE connecting — these should NOT be replayed
+    {:ok, _txn} = Bank.transfer_between_users(bot.user.id, recipient.id, 5, "before connect")
+
+    {:ok, socket} = Phoenix.ChannelTest.connect(StackCoinWeb.BotSocket, %{"token" => bot_token})
+
+    # Join without last_event_id in the payload
+    {:ok, _reply, _socket} =
+      Phoenix.ChannelTest.join(socket, "user:#{bot.user.id}", %{})
+
+    # Should NOT receive any replayed events
+    refute_push("event", %{type: "transfer.completed"}, 200)
+
+    # But a new transfer AFTER joining should arrive as a live event
+    {:ok, _txn} = Bank.transfer_between_users(bot.user.id, recipient.id, 3, "after connect")
+    assert_push("event", %{type: "transfer.completed", data: %{"amount" => 3}})
+  end
+
   test "rejects join when too many events are missed", %{
     bot: bot,
     bot_token: bot_token

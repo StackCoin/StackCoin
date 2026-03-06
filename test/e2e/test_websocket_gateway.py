@@ -12,15 +12,22 @@ import pytest
 import websockets
 
 
-async def phoenix_connect(base_url: str, token: str, last_event_id: int = 0):
-    """Connect to Phoenix Channel and join the user events channel."""
+async def phoenix_connect(base_url: str, token: str, last_event_id: int | None = None):
+    """Connect to Phoenix Channel and join the user events channel.
+
+    If last_event_id is None, joins without a cursor (live events only).
+    If last_event_id is an int, the server replays events after that ID.
+    """
     ws_url = base_url.replace("http://", "ws://") + f"/ws?token={token}&vsn=2.0.0"
 
     ws = await websockets.connect(ws_url, open_timeout=5)
 
     try:
         # Join the user events channel
-        join_msg = json.dumps([None, "1", "user:self", "phx_join", {"last_event_id": last_event_id}])
+        payload = {}
+        if last_event_id is not None:
+            payload["last_event_id"] = last_event_id
+        join_msg = json.dumps([None, "1", "user:self", "phx_join", payload])
         await ws.send(join_msg)
 
         # Wait for join reply
@@ -78,6 +85,39 @@ class TestWebSocketGateway:
                     break
 
             assert received_transfer, "Did not receive transfer.completed event with amount=1 via WebSocket"
+        finally:
+            await ws.close()
+
+    async def test_no_replay_without_last_event_id(self, test_context, auth_headers):
+        """Connecting without last_event_id should not replay any events."""
+        base = test_context["base_url"]
+        token = test_context["bot_token"]
+        user1_id = test_context["user1_id"]
+
+        # Create an event BEFORE connecting
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/send",
+                json={"amount": 1, "label": "should not replay"},
+                headers=auth_headers,
+            )
+            assert resp.status_code == 200
+
+        # Connect without last_event_id — should get no replay
+        ws = await phoenix_connect(base, token)
+
+        try:
+            replayed = []
+            for _ in range(10):
+                try:
+                    raw = await asyncio.wait_for(ws.recv(), timeout=2)
+                    msg = json.loads(raw)
+                    if len(msg) >= 5 and msg[3] == "event":
+                        replayed.append(msg[4])
+                except asyncio.TimeoutError:
+                    break
+
+            assert len(replayed) == 0, f"Expected no replayed events, got {len(replayed)}"
         finally:
             await ws.close()
 
