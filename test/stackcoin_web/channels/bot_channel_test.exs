@@ -3,7 +3,7 @@ defmodule StackCoinWeb.BotChannelTest do
 
   import Phoenix.ChannelTest
 
-  alias StackCoin.Core.{User, Bot, Bank, Reserve}
+  alias StackCoin.Core.{User, Bot, Bank, Reserve, Event}
 
   setup do
     {:ok, _reserve} = User.create_user_account("1", "Reserve", balance: 1000)
@@ -73,5 +73,54 @@ defmodule StackCoinWeb.BotChannelTest do
 
     # Should receive replayed events
     assert_push("event", %{type: "transfer.completed"})
+  end
+
+  test "rejects join when too many events are missed", %{
+    bot: bot,
+    bot_token: bot_token
+  } do
+    # Setup already creates 1 event for bot.user (receiver of funding transfer)
+    # Create 100 more to reach 101 total, which exceeds the replay limit of 100
+    for _ <- 1..100 do
+      Event.create_event("transfer.completed", bot.user.id, %{
+        transaction_id: 1,
+        from_id: bot.user.id,
+        to_id: 999,
+        amount: 1,
+        role: "sender"
+      })
+    end
+
+    {:ok, socket} =
+      Phoenix.ChannelTest.connect(StackCoinWeb.BotSocket, %{"token" => bot_token})
+
+    assert {:error, %{reason: "too_many_missed_events"} = error} =
+             Phoenix.ChannelTest.join(socket, "user:#{bot.user.id}", %{"last_event_id" => 0})
+
+    assert error.missed_count == 101
+    assert error.replay_limit == 100
+  end
+
+  test "allows join when missed events are at the replay limit", %{
+    bot: bot,
+    bot_token: bot_token
+  } do
+    # Setup already creates 1 event for bot.user (receiver of funding transfer)
+    # Create 99 more to reach exactly 100 total, which is at the replay limit
+    for _ <- 1..99 do
+      Event.create_event("transfer.completed", bot.user.id, %{
+        transaction_id: 1,
+        from_id: bot.user.id,
+        to_id: 999,
+        amount: 1,
+        role: "sender"
+      })
+    end
+
+    {:ok, socket} =
+      Phoenix.ChannelTest.connect(StackCoinWeb.BotSocket, %{"token" => bot_token})
+
+    assert {:ok, _reply, _socket} =
+             Phoenix.ChannelTest.join(socket, "user:#{bot.user.id}", %{"last_event_id" => 0})
   end
 end
