@@ -27,7 +27,14 @@ defmodule StackCoinWeb.RequestController do
     summary: "Create a STK request",
     description: "Creates a request for STK from a specified user.",
     parameters: [
-      user_id: [in: :path, description: "Responder user ID", type: :integer, example: 456]
+      user_id: [in: :path, description: "Responder user ID", type: :integer, example: 456],
+      "Idempotency-Key": [
+        in: :header,
+        description:
+          "Optional idempotency key. If provided, duplicate requests with the same key return the original response.",
+        type: :string,
+        required: false
+      ]
     ],
     request_body:
       {"Create request params", "application/json", StackCoinWeb.Schemas.CreateRequestParams},

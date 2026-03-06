@@ -11,25 +11,19 @@
         "properties": {
           "amount": {
             "description": "Amount of STK to request",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "label": {
             "description": "Optional request label",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
           "amount"
         ],
         "title": "CreateRequestParams",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.CreateRequestParams",
-        "x-validate": null
+        "type": "object"
       },
       "CreateRequestResponse": {
         "description": "Response schema for creating a request",
@@ -51,72 +45,50 @@
         "properties": {
           "amount": {
             "description": "Requested amount",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "request_id": {
             "description": "Created request ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "requested_at": {
             "description": "Request timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "requester": {
             "properties": {
               "id": {
                 "description": "Requester user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "Requester username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "responder": {
             "properties": {
               "id": {
                 "description": "Responder user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "Responder username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "status": {
             "description": "Request status",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "success": {
             "description": "Whether the operation succeeded",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           }
         },
         "required": [
@@ -129,9 +101,7 @@
           "responder"
         ],
         "title": "CreateRequestResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.CreateRequestResponse",
-        "x-validate": null
+        "type": "object"
       },
       "DiscordGuild": {
         "description": "A Discord guild",
@@ -146,34 +116,24 @@
           "designated_channel_snowflake": {
             "description": "Designated channel snowflake ID",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "id": {
             "description": "Guild ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "last_updated": {
             "description": "Last updated timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "name": {
             "description": "Guild name",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "snowflake": {
             "description": "Discord guild snowflake ID",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -183,9 +143,7 @@
           "last_updated"
         ],
         "title": "DiscordGuild",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.DiscordGuild",
-        "x-validate": null
+        "type": "object"
       },
       "DiscordGuildResponse": {
         "description": "Response schema for single Discord guild",
@@ -200,34 +158,24 @@
           "designated_channel_snowflake": {
             "description": "Designated channel snowflake ID",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "id": {
             "description": "Guild ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "last_updated": {
             "description": "Last updated timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "name": {
             "description": "Guild name",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "snowflake": {
             "description": "Discord guild snowflake ID",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -237,9 +185,7 @@
           "last_updated"
         ],
         "title": "DiscordGuildResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.DiscordGuildResponse",
-        "x-validate": null
+        "type": "object"
       },
       "DiscordGuildsResponse": {
         "description": "Response schema for multiple Discord guilds",
@@ -273,46 +219,32 @@
             "items": {
               "$ref": "#/components/schemas/DiscordGuild"
             },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
+            "type": "array"
           },
           "pagination": {
             "properties": {
               "limit": {
                 "description": "Items per page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "page": {
                 "description": "Current page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total": {
                 "description": "Total items",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total_pages": {
                 "description": "Total pages",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           }
         },
         "title": "DiscordGuildsResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.DiscordGuildsResponse",
-        "x-validate": null
+        "type": "object"
       },
       "ErrorResponse": {
         "description": "Error response schema",
@@ -322,18 +254,14 @@
         "properties": {
           "error": {
             "description": "Error message",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
           "error"
         ],
         "title": "ErrorResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.ErrorResponse",
-        "x-validate": null
+        "type": "object"
       },
       "Event": {
         "description": "A StackCoin event (discriminated by type)",
@@ -360,9 +288,7 @@
             "$ref": "#/components/schemas/RequestDeniedEvent"
           }
         ],
-        "title": "Event",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.Event",
-        "x-validate": null
+        "title": "Event"
       },
       "EventsResponse": {
         "description": "Response schema for listing events",
@@ -372,15 +298,11 @@
             "items": {
               "$ref": "#/components/schemas/Event"
             },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
+            "type": "array"
           },
           "has_more": {
             "description": "Whether more events exist beyond this page",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           }
         },
         "required": [
@@ -388,9 +310,7 @@
           "has_more"
         ],
         "title": "EventsResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.EventsResponse",
-        "x-validate": null
+        "type": "object"
       },
       "Request": {
         "description": "A STK request",
@@ -414,88 +334,62 @@
         "properties": {
           "amount": {
             "description": "Requested amount",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "id": {
             "description": "Request ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "label": {
             "description": "Request label",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "requested_at": {
             "description": "Request timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "requester": {
             "properties": {
               "id": {
                 "description": "Requester user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "Requester username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "resolved_at": {
             "description": "Resolution timestamp",
             "format": "date-time",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "responder": {
             "properties": {
               "id": {
                 "description": "Responder user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "Responder username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "status": {
             "description": "Request status",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "transaction_id": {
             "description": "Associated transaction ID",
             "nullable": true,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           }
         },
         "required": [
@@ -507,36 +401,26 @@
           "responder"
         ],
         "title": "Request",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.Request",
-        "x-validate": null
+        "type": "object"
       },
       "RequestAcceptedData": {
         "description": "Data payload for request.accepted events",
         "properties": {
           "amount": {
             "description": "Request amount",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "request_id": {
             "description": "Request ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "status": {
             "description": "New request status",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "transaction_id": {
             "description": "Created transaction ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           }
         },
         "required": [
@@ -546,9 +430,7 @@
           "amount"
         ],
         "title": "RequestAcceptedData",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestAcceptedData",
-        "x-validate": null
+        "type": "object"
       },
       "RequestAcceptedEvent": {
         "description": "A request.accepted event",
@@ -558,25 +440,19 @@
           },
           "id": {
             "description": "Event ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "inserted_at": {
             "description": "Event timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "type": {
             "description": "Event type",
             "enum": [
               "request.accepted"
             ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -586,9 +462,7 @@
           "inserted_at"
         ],
         "title": "RequestAcceptedEvent",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestAcceptedEvent",
-        "x-validate": null
+        "type": "object"
       },
       "RequestActionResponse": {
         "description": "Response schema for request actions (accept/deny)",
@@ -602,35 +476,25 @@
         "properties": {
           "request_id": {
             "description": "Request ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "resolved_at": {
             "description": "Resolution timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "status": {
             "description": "New request status",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "success": {
             "description": "Whether the operation succeeded",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           },
           "transaction_id": {
             "description": "Associated transaction ID",
             "nullable": true,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           }
         },
         "required": [
@@ -640,43 +504,31 @@
           "resolved_at"
         ],
         "title": "RequestActionResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestActionResponse",
-        "x-validate": null
+        "type": "object"
       },
       "RequestCreatedData": {
         "description": "Data payload for request.created events",
         "properties": {
           "amount": {
             "description": "Requested amount",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "label": {
             "description": "Request label",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "request_id": {
             "description": "Request ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "requester_id": {
             "description": "Requester user ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "responder_id": {
             "description": "Responder user ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           }
         },
         "required": [
@@ -686,9 +538,7 @@
           "amount"
         ],
         "title": "RequestCreatedData",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestCreatedData",
-        "x-validate": null
+        "type": "object"
       },
       "RequestCreatedEvent": {
         "description": "A request.created event",
@@ -698,25 +548,19 @@
           },
           "id": {
             "description": "Event ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "inserted_at": {
             "description": "Event timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "type": {
             "description": "Event type",
             "enum": [
               "request.created"
             ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -726,24 +570,18 @@
           "inserted_at"
         ],
         "title": "RequestCreatedEvent",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestCreatedEvent",
-        "x-validate": null
+        "type": "object"
       },
       "RequestDeniedData": {
         "description": "Data payload for request.denied events",
         "properties": {
           "request_id": {
             "description": "Request ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "status": {
             "description": "New request status",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -751,9 +589,7 @@
           "status"
         ],
         "title": "RequestDeniedData",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestDeniedData",
-        "x-validate": null
+        "type": "object"
       },
       "RequestDeniedEvent": {
         "description": "A request.denied event",
@@ -763,25 +599,19 @@
           },
           "id": {
             "description": "Event ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "inserted_at": {
             "description": "Event timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "type": {
             "description": "Event type",
             "enum": [
               "request.denied"
             ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -791,9 +621,7 @@
           "inserted_at"
         ],
         "title": "RequestDeniedEvent",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestDeniedEvent",
-        "x-validate": null
+        "type": "object"
       },
       "RequestResponse": {
         "description": "Response schema for single request",
@@ -817,88 +645,62 @@
         "properties": {
           "amount": {
             "description": "Requested amount",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "id": {
             "description": "Request ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "label": {
             "description": "Request label",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "requested_at": {
             "description": "Request timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "requester": {
             "properties": {
               "id": {
                 "description": "Requester user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "Requester username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "resolved_at": {
             "description": "Resolution timestamp",
             "format": "date-time",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "responder": {
             "properties": {
               "id": {
                 "description": "Responder user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "Responder username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "status": {
             "description": "Request status",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "transaction_id": {
             "description": "Associated transaction ID",
             "nullable": true,
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           }
         },
         "required": [
@@ -910,9 +712,7 @@
           "responder"
         ],
         "title": "RequestResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestResponse",
-        "x-validate": null
+        "type": "object"
       },
       "RequestsResponse": {
         "description": "Response schema for multiple requests",
@@ -948,47 +748,33 @@
             "properties": {
               "limit": {
                 "description": "Items per page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "page": {
                 "description": "Current page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total": {
                 "description": "Total items",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total_pages": {
                 "description": "Total pages",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "requests": {
             "description": "The requests list",
             "items": {
               "$ref": "#/components/schemas/Request"
             },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
+            "type": "array"
           }
         },
         "title": "RequestsResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.RequestsResponse",
-        "x-validate": null
+        "type": "object"
       },
       "SendStkParams": {
         "description": "Parameters for sending STK",
@@ -999,25 +785,19 @@
         "properties": {
           "amount": {
             "description": "Amount of STK to send",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "label": {
             "description": "Optional transaction label",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
           "amount"
         ],
         "title": "SendStkParams",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.SendStkParams",
-        "x-validate": null
+        "type": "object"
       },
       "SendStkResponse": {
         "description": "Response schema for sending STK",
@@ -1031,33 +811,23 @@
         "properties": {
           "amount": {
             "description": "Amount sent",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "from_new_balance": {
             "description": "Sender's new balance",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "success": {
             "description": "Whether the operation succeeded",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           },
           "to_new_balance": {
             "description": "Recipient's new balance",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "transaction_id": {
             "description": "Created transaction ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           }
         },
         "required": [
@@ -1068,9 +838,7 @@
           "to_new_balance"
         ],
         "title": "SendStkResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.SendStkResponse",
-        "x-validate": null
+        "type": "object"
       },
       "Transaction": {
         "description": "A STK transaction",
@@ -1091,67 +859,47 @@
         "properties": {
           "amount": {
             "description": "Transaction amount",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "from": {
             "properties": {
               "id": {
                 "description": "From user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "From username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "id": {
             "description": "Transaction ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "label": {
             "description": "Transaction label",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "time": {
             "description": "Transaction timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "to": {
             "properties": {
               "id": {
                 "description": "To user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "To username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           }
         },
         "required": [
@@ -1162,9 +910,7 @@
           "time"
         ],
         "title": "Transaction",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.Transaction",
-        "x-validate": null
+        "type": "object"
       },
       "TransactionResponse": {
         "description": "Response schema for single transaction",
@@ -1185,67 +931,47 @@
         "properties": {
           "amount": {
             "description": "Transaction amount",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "from": {
             "properties": {
               "id": {
                 "description": "From user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "From username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "id": {
             "description": "Transaction ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "label": {
             "description": "Transaction label",
             "nullable": true,
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "time": {
             "description": "Transaction timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "to": {
             "properties": {
               "id": {
                 "description": "To user ID",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "username": {
                 "description": "To username",
-                "type": "string",
-                "x-struct": null,
-                "x-validate": null
+                "type": "string"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           }
         },
         "required": [
@@ -1256,9 +982,7 @@
           "time"
         ],
         "title": "TransactionResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.TransactionResponse",
-        "x-validate": null
+        "type": "object"
       },
       "TransactionsResponse": {
         "description": "Response schema for multiple transactions",
@@ -1291,80 +1015,56 @@
             "properties": {
               "limit": {
                 "description": "Items per page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "page": {
                 "description": "Current page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total": {
                 "description": "Total items",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total_pages": {
                 "description": "Total pages",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "transactions": {
             "description": "The transactions list",
             "items": {
               "$ref": "#/components/schemas/Transaction"
             },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
+            "type": "array"
           }
         },
         "title": "TransactionsResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.TransactionsResponse",
-        "x-validate": null
+        "type": "object"
       },
       "TransferCompletedData": {
         "description": "Data payload for transfer.completed events",
         "properties": {
           "amount": {
             "description": "Amount transferred",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "from_id": {
             "description": "Sender user ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "role": {
             "description": "Role of the event recipient (sender or receiver)",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "to_id": {
             "description": "Recipient user ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "transaction_id": {
             "description": "Transaction ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           }
         },
         "required": [
@@ -1375,9 +1075,7 @@
           "role"
         ],
         "title": "TransferCompletedData",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.TransferCompletedData",
-        "x-validate": null
+        "type": "object"
       },
       "TransferCompletedEvent": {
         "description": "A transfer.completed event",
@@ -1387,25 +1085,19 @@
           },
           "id": {
             "description": "Event ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "inserted_at": {
             "description": "Event timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "type": {
             "description": "Event type",
             "enum": [
               "transfer.completed"
             ],
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -1415,9 +1107,7 @@
           "inserted_at"
         ],
         "title": "TransferCompletedEvent",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.TransferCompletedEvent",
-        "x-validate": null
+        "type": "object"
       },
       "User": {
         "description": "A StackCoin user",
@@ -1433,47 +1123,33 @@
         "properties": {
           "admin": {
             "description": "Whether user is an admin",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           },
           "balance": {
             "description": "User's STK balance",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "banned": {
             "description": "Whether user is banned",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           },
           "id": {
             "description": "User ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "inserted_at": {
             "description": "Creation timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "updated_at": {
             "description": "Update timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "username": {
             "description": "Username",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -1483,9 +1159,7 @@
           "banned"
         ],
         "title": "User",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.User",
-        "x-validate": null
+        "type": "object"
       },
       "UserResponse": {
         "description": "Response schema for single user",
@@ -1501,47 +1175,33 @@
         "properties": {
           "admin": {
             "description": "Whether user is an admin",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           },
           "balance": {
             "description": "User's STK balance",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "banned": {
             "description": "Whether user is banned",
-            "type": "boolean",
-            "x-struct": null,
-            "x-validate": null
+            "type": "boolean"
           },
           "id": {
             "description": "User ID",
-            "type": "integer",
-            "x-struct": null,
-            "x-validate": null
+            "type": "integer"
           },
           "inserted_at": {
             "description": "Creation timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "updated_at": {
             "description": "Update timestamp",
             "format": "date-time",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           },
           "username": {
             "description": "Username",
-            "type": "string",
-            "x-struct": null,
-            "x-validate": null
+            "type": "string"
           }
         },
         "required": [
@@ -1551,9 +1211,7 @@
           "banned"
         ],
         "title": "UserResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.UserResponse",
-        "x-validate": null
+        "type": "object"
       },
       "UsersResponse": {
         "description": "Response schema for multiple users",
@@ -1586,47 +1244,33 @@
             "properties": {
               "limit": {
                 "description": "Items per page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "page": {
                 "description": "Current page",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total": {
                 "description": "Total items",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               },
               "total_pages": {
                 "description": "Total pages",
-                "type": "integer",
-                "x-struct": null,
-                "x-validate": null
+                "type": "integer"
               }
             },
-            "type": "object",
-            "x-struct": null,
-            "x-validate": null
+            "type": "object"
           },
           "users": {
             "description": "The users list",
             "items": {
               "$ref": "#/components/schemas/User"
             },
-            "type": "array",
-            "x-struct": null,
-            "x-validate": null
+            "type": "array"
           }
         },
         "title": "UsersResponse",
-        "type": "object",
-        "x-struct": "Elixir.StackCoinWeb.Schemas.UsersResponse",
-        "x-validate": null
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -1655,9 +1299,7 @@
             "name": "snowflake",
             "required": true,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           }
         ],
@@ -1700,9 +1342,7 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -1712,9 +1352,7 @@
             "name": "limit",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -1724,9 +1362,7 @@
             "name": "name",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -1736,9 +1372,7 @@
             "name": "snowflake",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           }
         ],
@@ -1771,9 +1405,7 @@
             "name": "since_id",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           }
         ],
@@ -1806,9 +1438,7 @@
             "name": "request_id",
             "required": true,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           }
         ],
@@ -1851,9 +1481,7 @@
             "name": "role",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -1863,9 +1491,7 @@
             "name": "status",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -1875,9 +1501,7 @@
             "name": "discord_id",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -1887,9 +1511,7 @@
             "name": "since",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -1899,9 +1521,7 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -1911,9 +1531,7 @@
             "name": "limit",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           }
         ],
@@ -1956,9 +1574,7 @@
             "name": "request_id",
             "required": true,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           }
         ],
@@ -2021,9 +1637,7 @@
             "name": "request_id",
             "required": true,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           }
         ],
@@ -2086,9 +1700,7 @@
             "name": "transaction_id",
             "required": true,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           }
         ],
@@ -2131,9 +1743,7 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -2143,9 +1753,7 @@
             "name": "limit",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -2155,9 +1763,7 @@
             "name": "from_user_id",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -2167,9 +1773,7 @@
             "name": "to_user_id",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -2179,9 +1783,7 @@
             "name": "from_discord_id",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -2191,9 +1793,7 @@
             "name": "to_discord_id",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -2203,9 +1803,7 @@
             "name": "includes_discord_id",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           }
         ],
@@ -2270,9 +1868,7 @@
             "name": "user_id",
             "required": true,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           }
         ],
@@ -2315,9 +1911,16 @@
             "name": "user_id",
             "required": true,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Optional idempotency key. If provided, duplicate requests with the same key return the original response.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -2391,9 +1994,16 @@
             "name": "user_id",
             "required": true,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Optional idempotency key. If provided, duplicate requests with the same key return the original response.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -2477,9 +2087,7 @@
             "name": "page",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -2489,9 +2097,7 @@
             "name": "limit",
             "required": false,
             "schema": {
-              "type": "integer",
-              "x-struct": null,
-              "x-validate": null
+              "type": "integer"
             }
           },
           {
@@ -2501,9 +2107,7 @@
             "name": "username",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -2513,9 +2117,7 @@
             "name": "discord_id",
             "required": false,
             "schema": {
-              "type": "string",
-              "x-struct": null,
-              "x-validate": null
+              "type": "string"
             }
           },
           {
@@ -2525,9 +2127,7 @@
             "name": "banned",
             "required": false,
             "schema": {
-              "type": "boolean",
-              "x-struct": null,
-              "x-validate": null
+              "type": "boolean"
             }
           },
           {
@@ -2537,9 +2137,7 @@
             "name": "admin",
             "required": false,
             "schema": {
-              "type": "boolean",
-              "x-struct": null,
-              "x-validate": null
+              "type": "boolean"
             }
           }
         ],

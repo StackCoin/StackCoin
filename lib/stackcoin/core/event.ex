@@ -38,6 +38,8 @@ defmodule StackCoin.Core.Event do
 
   @events_page_size 100
 
+  def page_size, do: @events_page_size
+
   def list_events_since(user_id, last_event_id, limit \\ @events_page_size) do
     rows =
       Event
