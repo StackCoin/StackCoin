@@ -5,7 +5,4 @@ livebook:
   livebook server --port 8010
 
 openapi:
-  mix openapi.spec.json --spec StackCoinWeb.ApiSpec
-  mv openapi.json temp.json
-  cat temp.json | jq > openapi.json
-  rm temp.json
+  mix openapi.spec.json --spec StackCoinWeb.ApiSpec --pretty --vendor-extensions=false
