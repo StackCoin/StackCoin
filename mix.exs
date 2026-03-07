@@ -9,7 +9,14 @@ defmodule StackCoin.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -33,6 +40,7 @@ defmodule StackCoin.MixProject do
       {:vega_lite, "~> 0.1.11"},
       {:vega_lite_convert, "~> 1.0"},
       {:mock, "~> 0.3.0", only: :test},
+      {:excoveralls, "~> 0.18", only: :test},
       {:phoenix, "~> 1.7.21"},
       {:phoenix_ecto, "~> 4.5"},
       {:phoenix_html, "~> 4.1"},

@@ -417,7 +417,8 @@ defmodule StackCoinTest.Bot.Discord.Dole do
          create_interaction_response: fn _interaction, response ->
            assert response.type == 4
            assert response.data.content != nil
-           assert String.contains?(response.data.content, "banned")
+           # Should tell the user they've been banned, not some other confusing message
+           assert String.contains?(response.data.content, "You have been banned")
            {:ok}
          end
        ]}
@@ -428,6 +429,47 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     # Verify user balance unchanged
     {:ok, user} = User.get_user_by_discord_id(user_id)
     assert user.balance == 0
+  end
+
+  test "dole fails for pre-banned user (account created via admin ban before user tried dole)" do
+    guild_id = 123_456_789
+    designated_channel_id = 987_654_321
+    admin_user_id = 999_999_999
+    user_id = 888_888_888
+
+    # Set up admin, reserve with funds
+    setup_admin_user(admin_user_id)
+    create_reserve_user(100)
+    setup_guild_with_admin(admin_user_id, guild_id, designated_channel_id)
+
+    # Pre-ban: create the user account as banned (simulates what admin_ban_user does)
+    {:ok, _user} = User.create_user_account(user_id, "PreBannedUser", banned: true)
+
+    # Create dole interaction - user tries /dole for the first time
+    interaction =
+      create_dole_interaction(user_id, guild_id, designated_channel_id, "PreBannedUser")
+
+    # Test dole command - should fail because user is pre-banned
+    with_mocks([
+      {Nostrum.Api, [],
+       [
+         create_interaction_response: fn _interaction, response ->
+           assert response.type == 4
+           assert response.data.content != nil
+           # Should tell the user they've been banned, NOT "You don't have a StackCoin account"
+           assert String.contains?(response.data.content, "You have been banned")
+           refute String.contains?(response.data.content, "Use `/dole` to get started")
+           {:ok}
+         end
+       ]}
+    ]) do
+      Dole.handle(interaction)
+    end
+
+    # Verify user balance unchanged (still 0)
+    {:ok, user} = User.get_user_by_discord_id(user_id)
+    assert user.balance == 0
+    assert user.banned == true
   end
 
   test "non-admin cannot use pump command" do

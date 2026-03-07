@@ -25,6 +25,7 @@ defmodule StackCoin.Bot.Discord.Dole do
     with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
          {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, user} <- get_or_create_user(interaction.user),
+         {:ok, _banned_check} <- User.check_user_banned(user),
          {:ok, transaction} <- Reserve.transfer_dole_to_user(user.id) do
       send_success_response(interaction, user, transaction)
     else

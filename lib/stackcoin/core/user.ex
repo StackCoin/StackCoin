@@ -41,13 +41,14 @@ defmodule StackCoin.Core.User do
   def create_user_account(discord_snowflake, username, opts \\ []) do
     admin = Keyword.get(opts, :admin, false)
     balance = Keyword.get(opts, :balance, 0)
+    banned = Keyword.get(opts, :banned, false)
 
     Repo.transaction(fn ->
       user_attrs = %{
         username: username,
         balance: balance,
         admin: admin,
-        banned: false
+        banned: banned
       }
 
       with {:ok, user} <- Repo.insert(Schema.User.changeset(%Schema.User{}, user_attrs)),
@@ -142,7 +143,7 @@ defmodule StackCoin.Core.User do
   """
   def admin_ban_user(admin_discord_snowflake, target_discord_snowflake) do
     with {:ok, _admin_check} <- check_admin_permissions(admin_discord_snowflake),
-         {:ok, target_user} <- get_user_by_discord_id(target_discord_snowflake) do
+         {:ok, target_user} <- get_or_create_user_for_ban(target_discord_snowflake) do
       ban_user(target_user)
     else
       {:error, :not_admin} -> {:error, :not_admin}
@@ -159,6 +160,7 @@ defmodule StackCoin.Core.User do
       unban_user(target_user)
     else
       {:error, :not_admin} -> {:error, :not_admin}
+      {:error, :user_not_found} -> {:error, :other_user_not_found}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -256,15 +258,26 @@ defmodule StackCoin.Core.User do
     )
   end
 
+  defp get_or_create_user_for_ban(discord_snowflake) do
+    case get_user_by_discord_id(discord_snowflake) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, :user_not_found} ->
+        {:ok, discord_user} = Nostrum.Api.User.get(discord_snowflake)
+        create_user_account(discord_snowflake, discord_user.username, banned: true)
+    end
+  end
+
   defp ensure_admin_user_exists(user_snowflake) do
     case get_user_by_discord_id(user_snowflake) do
       {:ok, _user} ->
         :ok
 
       {:error, :user_not_found} ->
-        {:ok, username} = Nostrum.Api.User.get(user_snowflake)
+        {:ok, discord_user} = Nostrum.Api.User.get(user_snowflake)
 
-        case create_user_account(user_snowflake, username, admin: true) do
+        case create_user_account(user_snowflake, discord_user.username, admin: true) do
           {:ok, _user} -> :ok
           {:error, _} -> :error
         end
