@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 
 const STACKCOIN_ROOT = resolve(import.meta.dirname, "../../..");
 
@@ -53,15 +53,15 @@ export interface TestContext {
 
 function truncateAllTables(port: number): void {
   const dbPath = resolve(STACKCOIN_ROOT, `data/e2e_test_${port}.db`);
-  const db = new Database(dbPath, { timeout: 10_000 });
+  const db = new DatabaseSync(dbPath);
   try {
-    db.pragma("busy_timeout = 5000");
-    db.pragma("foreign_keys = OFF");
+    db.exec("PRAGMA busy_timeout = 5000");
+    db.exec("PRAGMA foreign_keys = OFF");
     for (const table of ALL_TABLES) {
       db.exec(`DELETE FROM "${table}"`);
     }
     db.exec("DELETE FROM sqlite_sequence");
-    db.pragma("foreign_keys = ON");
+    db.exec("PRAGMA foreign_keys = ON");
   } finally {
     db.close();
   }
@@ -73,11 +73,16 @@ function runSeed(port: number): Record<string, string> {
   writeFileSync(tmpFile, SEED_SCRIPT);
 
   try {
+    // PHX_SERVER=true is needed so the Repo uses ConnectionPool (not Sandbox),
+    // making seeded data visible to the already-running E2E server.
+    // PORT is set to 0 so the seed process doesn't collide with the test server.
+    const seedPort = 40000 + Math.floor(Math.random() * 10000);
     const stdout = execSync(`mix run ${tmpFile}`, {
       env: {
         ...process.env,
         MIX_ENV: "test",
         PHX_SERVER: "true",
+        PORT: String(seedPort),
         STACKCOIN_DATABASE: `./data/e2e_test_${port}.db`,
       },
       cwd: STACKCOIN_ROOT,
