@@ -39,6 +39,8 @@ config :tailwind,
 # because Nostrum validates :caches at compile time.
 # The bot only uses Nostrum.Cache.Me (bot's own user) which is unaffected.
 config :nostrum,
+  youtubedl: false,
+  streamlink: false,
   caches: %{
     presences: Nostrum.Cache.PresenceCache.NoOp,
     members: Nostrum.Cache.MemberCache.NoOp,

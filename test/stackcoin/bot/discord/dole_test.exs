@@ -94,20 +94,14 @@ defmodule StackCoinTest.Bot.Discord.Dole do
     # Create dole interaction
     interaction = create_dole_interaction(user_id, guild_id, designated_channel_id)
 
-    # Test dole command - should fail due to insufficient reserve (5 < 10 needed)
+    # Test dole command - should fail due to insufficient reserve
     with_mocks([
       {Nostrum.Api, [],
        [
          create_interaction_response: fn _interaction, response ->
            assert response.type == 4
-           # Should fail because 5 STK < 10 STK needed for dole
-           if Map.has_key?(response.data, :content) do
-             assert String.contains?(response.data.content, "doesn't have enough STK")
-           else
-             # If it succeeded, the reserve had more funds than expected
-             flunk("Expected insufficient reserve error, but dole succeeded")
-           end
-
+           assert response.data.content != nil
+           assert String.contains?(response.data.content, "reserve doesn't have enough STK")
            {:ok}
          end
        ]}

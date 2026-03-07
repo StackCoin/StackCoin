@@ -6,3 +6,10 @@ livebook:
 
 openapi:
   mix openapi.spec.json --spec StackCoinWeb.ApiSpec --pretty --vendor-extensions=false
+
+test *args:
+  mix test {{ args }}
+
+cover:
+  MIX_ENV=test mix coveralls.html
+  @echo "Report: cover/excoveralls.html"
