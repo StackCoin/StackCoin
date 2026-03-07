@@ -194,6 +194,176 @@ class TestLuckyPotInstantWin:
 
 
 @pytest.mark.asyncio
+class TestLuckyPotMultiGuildIsolation:
+    """Tests that verify pots in different guilds are fully independent."""
+
+    @patch("luckypot.game.random.random", return_value=0.001)
+    async def test_instant_win_in_guild_a_does_not_block_guild_b(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """An instant win lock in one guild should not prevent entries in another guild."""
+        # User1 gets instant win in guild_A
+        result_a = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_A",
+        )
+        assert result_a["status"] == "instant_win"
+
+        # User2 should still be able to enter guild_B
+        with patch("luckypot.game.random.random", return_value=0.99):
+            result_b = await game.enter_pot(
+                discord_id=test_context["user2_discord_id"],
+                guild_id="guild_B",
+            )
+        assert result_b["status"] == "pending"
+
+    @patch("luckypot.game.random.random", return_value=0.001)
+    async def test_same_user_instant_win_one_guild_normal_entry_another(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Same user can have an instant win in guild A and a normal entry in guild B."""
+        result_a = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_A",
+        )
+        assert result_a["status"] == "instant_win"
+
+        # Same user enters guild_B normally
+        with patch("luckypot.game.random.random", return_value=0.99):
+            result_b = await game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id="guild_B",
+            )
+        assert result_b["status"] == "pending"
+
+    @patch("luckypot.game.random.random", return_value=0.001)
+    async def test_ending_pot_in_guild_a_does_not_affect_guild_b(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Accepting an instant win in guild A ends that pot but leaves guild B intact."""
+        # User1 instant win in guild_A
+        result_a = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_A",
+        )
+        assert result_a["status"] == "instant_win"
+
+        # User2 normal entry in guild_B
+        with patch("luckypot.game.random.random", return_value=0.99):
+            result_b = await game.enter_pot(
+                discord_id=test_context["user2_discord_id"],
+                guild_id="guild_B",
+            )
+        assert result_b["status"] == "pending"
+
+        # Accept instant win in guild_A — ends that pot
+        event_data = RequestAcceptedData(
+            request_id=int(result_a["request_id"]), status="accepted",
+            transaction_id=0, amount=0,
+        )
+        await game.on_request_accepted(event_data)
+
+        conn = db.get_connection()
+        try:
+            # Guild A pot should be ended
+            assert db.get_active_pot(conn, "guild_A") is None
+
+            # Guild B pot should still be active with its entry
+            pot_b = db.get_active_pot(conn, "guild_B")
+            assert pot_b is not None
+            participants = db.get_pot_participants(conn, pot_b["pot_id"])
+            assert len(participants) == 0  # still pending (not confirmed)
+
+            # The pending entry in guild_B should be untouched
+            entry_b = db.get_entry_by_request_id(conn, result_b["request_id"])
+            assert entry_b is not None
+            assert entry_b["status"] == "pending"
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_denied_in_guild_a_does_not_affect_guild_b_entry(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Denying a payment in guild A should not touch the same user's entry in guild B."""
+        # Same user enters both guilds
+        result_a = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_A",
+        )
+        result_b = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_B",
+        )
+        assert result_a["status"] == "pending"
+        assert result_b["status"] == "pending"
+
+        # Deny guild_A entry
+        event_data = RequestDeniedData(
+            request_id=int(result_a["request_id"]), status="denied",
+        )
+        await game.on_request_denied(event_data)
+
+        conn = db.get_connection()
+        try:
+            entry_a = db.get_entry_by_request_id(conn, result_a["request_id"])
+            assert entry_a["status"] == "denied"
+
+            # Guild B entry should be completely untouched
+            entry_b = db.get_entry_by_request_id(conn, result_b["request_id"])
+            assert entry_b["status"] == "pending"
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_daily_draw_processes_guilds_independently(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Daily draw should process each guild's pot separately."""
+        # User1 enters guild_A, user2 enters guild_B
+        result_a = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_A",
+        )
+        result_b = await game.enter_pot(
+            discord_id=test_context["user2_discord_id"],
+            guild_id="guild_B",
+        )
+        assert result_a["status"] == "pending"
+        assert result_b["status"] == "pending"
+
+        # Confirm both entries via accepted events
+        for result in [result_a, result_b]:
+            event_data = RequestAcceptedData(
+                request_id=int(result["request_id"]), status="accepted",
+                transaction_id=0, amount=0,
+            )
+            await game.on_request_accepted(event_data)
+
+        # Run daily draw with 100% chance (mock random to always trigger)
+        with patch("luckypot.game.random.random", return_value=0.01):
+            await game.daily_pot_draw()
+
+        conn = db.get_connection()
+        try:
+            # Both guilds' pots should have been drawn independently
+            assert db.get_active_pot(conn, "guild_A") is None
+            assert db.get_active_pot(conn, "guild_B") is None
+
+            # Check pot history — each guild should have exactly one ended pot
+            history_a = db.get_pot_history(conn, "guild_A")
+            history_b = db.get_pot_history(conn, "guild_B")
+            assert len(history_a) == 1
+            assert len(history_b) == 1
+
+            # Winners should be the only participant in each guild
+            assert history_a[0]["winner_discord_id"] == test_context["user1_discord_id"]
+            assert history_b[0]["winner_discord_id"] == test_context["user2_discord_id"]
+        finally:
+            conn.close()
+
+
+@pytest.mark.asyncio
 class TestLuckyPotPayout:
 
     async def test_send_winnings_success(self, configure_luckypot_stk, test_context):

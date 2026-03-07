@@ -368,7 +368,7 @@ requires-dist = [
     { name = "hikari-lightbulb", specifier = ">=3.1.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pydantic-settings", specifier = ">=2.0" },
-    { name = "stackcoin", editable = "../../tmp/stackcoin-python" },
+    { name = "stackcoin", specifier = ">=0.1.1" },
 ]
 
 [[package]]
@@ -669,7 +669,7 @@ wheels = [
 
 [[package]]
 name = "stackcoin"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "../../tmp/stackcoin-python" }
 dependencies = [
     { name = "httpx" },
