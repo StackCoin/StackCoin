@@ -79,6 +79,10 @@ defmodule StackCoin.Bot.Discord do
     Request.handle_request_interaction(interaction)
   end
 
+  defp handle_message_component("bot_create_" <> _rest, interaction) do
+    Bot.handle_bot_creation_interaction(interaction)
+  end
+
   defp handle_message_component(custom_id, interaction) do
     response = %{
       type: InteractionCallbackType.channel_message_with_source(),

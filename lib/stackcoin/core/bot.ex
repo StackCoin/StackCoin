@@ -5,7 +5,7 @@ defmodule StackCoin.Core.Bot do
 
   alias StackCoin.Repo
   alias StackCoin.Schema
-  alias StackCoin.Core.User
+  alias StackCoin.Core.{User, Request}
   import Ecto.Query
 
   @doc """
@@ -110,8 +110,12 @@ defmodule StackCoin.Core.Bot do
       case bot
            |> Schema.BotUser.changeset(%{active: false})
            |> Repo.update() do
-        {:ok, updated_bot} -> {:ok, Repo.preload(updated_bot, :user)}
-        {:error, changeset} -> {:error, changeset}
+        {:ok, updated_bot} ->
+          Request.cancel_all_pending_requests(updated_bot.user_id)
+          {:ok, Repo.preload(updated_bot, :user)}
+
+        {:error, changeset} ->
+          {:error, changeset}
       end
     else
       {:error, reason} -> {:error, reason}

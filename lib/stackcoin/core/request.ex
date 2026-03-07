@@ -275,6 +275,23 @@ defmodule StackCoin.Core.Request do
     end
   end
 
+  @doc """
+  Cancels all pending requests where the given user is either the requester or responder.
+  Returns the number of requests cancelled.
+  """
+  def cancel_all_pending_requests(user_id) do
+    now = NaiveDateTime.utc_now()
+
+    {count, _} =
+      from(r in Schema.Request,
+        where: r.status == "pending",
+        where: r.requester_id == ^user_id or r.responder_id == ^user_id
+      )
+      |> Repo.update_all(set: [status: "cancelled", resolved_at: now])
+
+    {:ok, count}
+  end
+
   defp validate_request_responder(request, responder_id) do
     if request.responder_id == responder_id do
       :ok

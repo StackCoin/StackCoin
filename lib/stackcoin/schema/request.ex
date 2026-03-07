@@ -31,7 +31,7 @@ defmodule StackCoin.Schema.Request do
       :label
     ])
     |> validate_required([:requester_id, :responder_id, :status, :amount, :requested_at])
-    |> validate_inclusion(:status, ["pending", "accepted", "denied", "expired"])
+    |> validate_inclusion(:status, ["pending", "accepted", "denied", "expired", "cancelled"])
     |> validate_number(:amount, greater_than: 0)
     |> validate_different_users()
   end

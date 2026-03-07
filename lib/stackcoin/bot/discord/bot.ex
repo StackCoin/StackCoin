@@ -3,8 +3,11 @@ defmodule StackCoin.Bot.Discord.Bot do
   Discord bot management command implementation for all users.
   """
 
+  require Logger
+
   alias StackCoin.Core.{Bot, DiscordGuild}
   alias StackCoin.Bot.Discord.Commands
+  alias StackCoin.Bot.Discord.Components
   alias Nostrum.Api
   alias Nostrum.Constants.{ApplicationCommandOptionType, InteractionCallbackType}
 
@@ -152,7 +155,7 @@ defmodule StackCoin.Bot.Discord.Bot do
         send_bot_created_response(interaction, bot)
 
       {:error, :not_admin} ->
-        Commands.send_error_response(interaction, :not_admin)
+        send_bot_creation_request(bot_name, interaction)
 
       {:error, changeset} ->
         Commands.send_error_response(interaction, changeset)
@@ -258,6 +261,203 @@ defmodule StackCoin.Bot.Discord.Bot do
             title: "#{Commands.stackcoin_emoji()} Bot Deleted",
             description: "Bot **#{bot.name}** has been deleted.",
             color: Commands.stackcoin_color()
+          }
+        ]
+      }
+    })
+  end
+
+  @doc """
+  Handles a bot creation approval/rejection button interaction.
+  Called from the Discord message component handler.
+  """
+  def handle_bot_creation_interaction(interaction) do
+    case parse_bot_creation_custom_id(interaction.data.custom_id) do
+      {:ok, {:accept, requester_snowflake, bot_name}} ->
+        handle_bot_creation_accept(requester_snowflake, bot_name, interaction)
+
+      {:ok, {:reject, requester_snowflake, bot_name}} ->
+        handle_bot_creation_reject(requester_snowflake, bot_name, interaction)
+
+      {:error, :invalid_custom_id} ->
+        send_update_message(interaction, 0xFF6B6B, "❌ Invalid bot creation action.")
+    end
+  end
+
+  defp send_bot_creation_request(bot_name, interaction) do
+    requester_snowflake = interaction.user.id
+
+    requester_display =
+      case StackCoin.Core.User.get_user_by_discord_id(requester_snowflake) do
+        {:ok, user} -> user.username
+        _ -> "#{requester_snowflake}"
+      end
+
+    # Send channel reply to the requester
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.channel_message_with_source(),
+      data: %{
+        embeds: [
+          %{
+            title: "#{Commands.stackcoin_emoji()} Bot Creation Request",
+            description:
+              "Your request to create bot **#{bot_name}** has been sent for approval. You will be notified when an admin reviews your request.",
+            color: Commands.stackcoin_color()
+          }
+        ]
+      }
+    })
+
+    # DM the admin with Accept/Reject buttons
+    admin_user_id_str = Application.get_env(:stackcoin, :admin_user_id)
+
+    if admin_user_id_str do
+      admin_user_id =
+        if is_binary(admin_user_id_str),
+          do: String.to_integer(admin_user_id_str),
+          else: admin_user_id_str
+
+      case Api.User.create_dm(admin_user_id) do
+        {:ok, dm_channel} ->
+          Api.Message.create(dm_channel.id, %{
+            flags: Components.is_components_v2_flag(),
+            components: [
+              %{
+                type: Components.container(),
+                accent_color: Commands.stackcoin_color(),
+                components: [
+                  %{
+                    type: Components.text_display(),
+                    content:
+                      "#{Commands.stackcoin_emoji()} Bot Creation Request\n\n**#{requester_display}** (<@#{requester_snowflake}>) is requesting to create a bot named **#{bot_name}**.\n\nRequester: #{requester_display}\nBot Name: #{bot_name}"
+                  },
+                  %{
+                    type: Components.action_row(),
+                    components: [
+                      %{
+                        type: Components.button(),
+                        style: Components.button_style_success(),
+                        label: "Accept",
+                        custom_id: "bot_create_accept:#{requester_snowflake}:#{bot_name}"
+                      },
+                      %{
+                        type: Components.button(),
+                        style: Components.button_style_danger(),
+                        label: "Reject",
+                        custom_id: "bot_create_reject:#{requester_snowflake}:#{bot_name}"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          })
+
+        {:error, reason} ->
+          Logger.error(
+            "Failed to DM admin for bot creation request '#{bot_name}': #{inspect(reason)}"
+          )
+
+          :error
+      end
+    end
+  end
+
+  defp parse_bot_creation_custom_id("bot_create_" <> rest) do
+    case String.split(rest, ":", parts: 3) do
+      ["accept", snowflake_str, bot_name] ->
+        parse_snowflake(snowflake_str, :accept, bot_name)
+
+      ["reject", snowflake_str, bot_name] ->
+        parse_snowflake(snowflake_str, :reject, bot_name)
+
+      _ ->
+        {:error, :invalid_custom_id}
+    end
+  end
+
+  defp parse_bot_creation_custom_id(_), do: {:error, :invalid_custom_id}
+
+  defp parse_snowflake(snowflake_str, action, bot_name) do
+    case Integer.parse(snowflake_str) do
+      {snowflake, ""} -> {:ok, {action, snowflake, bot_name}}
+      _ -> {:error, :invalid_custom_id}
+    end
+  end
+
+  defp handle_bot_creation_accept(requester_snowflake, bot_name, interaction) do
+    case Bot.create_bot_user(requester_snowflake, bot_name) do
+      {:ok, bot} ->
+        send_update_message(
+          interaction,
+          0x00FF00,
+          "#{Commands.stackcoin_emoji()} Bot Creation Approved\n\nBot **#{bot_name}** has been created for <@#{requester_snowflake}>."
+        )
+
+        # DM the requester with their bot token
+        send_bot_token_dm(requester_snowflake, bot)
+
+      {:error, %Ecto.Changeset{}} ->
+        send_update_message(
+          interaction,
+          0xFF6B6B,
+          "❌ Failed to create bot **#{bot_name}**: a bot with that name may already exist."
+        )
+
+      {:error, reason} ->
+        send_update_message(
+          interaction,
+          0xFF6B6B,
+          "❌ Failed to create bot **#{bot_name}**: #{inspect(reason)}"
+        )
+    end
+  end
+
+  defp handle_bot_creation_reject(requester_snowflake, bot_name, interaction) do
+    send_update_message(
+      interaction,
+      0xFF0000,
+      "#{Commands.stackcoin_emoji()} Bot Creation Denied\n\nBot creation request for **#{bot_name}** from <@#{requester_snowflake}> has been denied."
+    )
+
+    # DM the requester about the rejection
+    case Api.User.create_dm(requester_snowflake) do
+      {:ok, dm_channel} ->
+        Api.Message.create(dm_channel.id, %{
+          embeds: [
+            %{
+              title: "#{Commands.stackcoin_emoji()} Bot Creation Request Denied",
+              description:
+                "Your request to create bot **#{bot_name}** has been denied by an admin.",
+              color: 0xFF0000
+            }
+          ]
+        })
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to DM requester about bot creation rejection '#{bot_name}': #{inspect(reason)}"
+        )
+
+        :error
+    end
+  end
+
+  defp send_update_message(interaction, color, content) do
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.update_message(),
+      data: %{
+        flags: Components.is_components_v2_flag(),
+        components: [
+          %{
+            type: Components.container(),
+            accent_color: color,
+            components: [
+              %{
+                type: Components.text_display(),
+                content: content
+              }
+            ]
           }
         ]
       }

@@ -4,7 +4,7 @@ defmodule StackCoinTest.Bot.Discord.Bot do
   import StackCoinTest.Support.DiscordUtils
 
   alias StackCoin.Bot.Discord.Bot, as: BotCommand
-  alias StackCoin.Core.{Bot, User}
+  alias StackCoin.Core.{Bot, Request, User}
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(StackCoin.Repo)
@@ -128,12 +128,27 @@ defmodule StackCoinTest.Bot.Discord.Bot do
         ])
 
       with_mocks([
+        {Nostrum.Api.User, [],
+         [
+           get: fn user_id ->
+             if user_id == admin_user_id or user_id == to_string(admin_user_id) do
+               {:ok, %{id: admin_user_id, username: "TestAdmin"}}
+             else
+               {:error, :not_found}
+             end
+           end,
+           create_dm: fn _user_id -> {:ok, %{id: 12345}} end
+         ]},
+        {Nostrum.Api.Message, [],
+         [
+           create: fn _channel_id, _message -> {:ok, %{id: 0}} end
+         ]},
         {Nostrum.Api, [],
          [
            create_interaction_response: fn _interaction, response ->
              assert response.type == 4
-             assert response.data.content != nil
-             assert String.contains?(response.data.content, "don't have permission")
+             embed = hd(response.data.embeds)
+             assert String.contains?(embed.description, "sent for approval")
              {:ok}
            end
          ]}
@@ -141,7 +156,7 @@ defmodule StackCoinTest.Bot.Discord.Bot do
         BotCommand.handle(interaction)
       end
 
-      # Verify bot was NOT created
+      # Verify bot was NOT created (needs admin approval)
       assert {:error, :bot_not_found} = Bot.get_bot_by_name("SneakyBot")
     end
 
@@ -399,6 +414,61 @@ defmodule StackCoinTest.Bot.Discord.Bot do
       refute Enum.any?(bots, fn b -> b.name == "Doomed" end)
     end
 
+    test "deleting a bot cancels all pending requests involving that bot" do
+      guild_id = 123_456_789
+      channel_id = 987_654_321
+      admin_user_id = 999_999_999
+      other_user_id = 888_888_888
+
+      setup_admin_user(admin_user_id)
+      setup_guild_with_admin(admin_user_id, guild_id, channel_id)
+      {:ok, other} = User.create_user_account(other_user_id, "OtherUser")
+      {:ok, bot} = Bot.create_bot_user(admin_user_id, "VictimBot")
+
+      # Create pending requests involving the bot's user
+      {req_from_bot, req_to_bot} =
+        with_mocks([
+          {Nostrum.Api.User, [], [create_dm: fn _id -> {:error, :no_dm} end]},
+          {Nostrum.Api.Message, [], [create: fn _ch, _msg -> {:ok, %{id: 0}} end]}
+        ]) do
+          {:ok, r1} = Request.create_request(bot.user.id, other.id, 10, "from bot")
+          {:ok, r2} = Request.create_request(other.id, bot.user.id, 20, "to bot")
+          {r1, r2}
+        end
+
+      # Verify both are pending
+      {:ok, check1} = Request.get_request_by_id(req_from_bot.id)
+      assert check1.status == "pending"
+      {:ok, check2} = Request.get_request_by_id(req_to_bot.id)
+      assert check2.status == "pending"
+
+      # Now delete the bot via Discord command
+      interaction =
+        create_bot_interaction(admin_user_id, guild_id, channel_id, "delete", [
+          {"bot_id", bot.id}
+        ])
+
+      with_mocks([
+        {Nostrum.Api, [],
+         [
+           create_interaction_response: fn _interaction, _response -> {:ok} end
+         ]}
+      ]) do
+        BotCommand.handle(interaction)
+      end
+
+      # Both requests should now be cancelled
+      {:ok, req1} = Request.get_request_by_id(req_from_bot.id)
+
+      assert req1.status == "cancelled",
+             "Pending request FROM deleted bot should be cancelled, got: #{req1.status}"
+
+      {:ok, req2} = Request.get_request_by_id(req_to_bot.id)
+
+      assert req2.status == "cancelled",
+             "Pending request TO deleted bot should be cancelled, got: #{req2.status}"
+    end
+
     test "cannot delete a bot you don't own" do
       guild_id = 123_456_789
       channel_id = 987_654_321
@@ -482,6 +552,321 @@ defmodule StackCoinTest.Bot.Discord.Bot do
       names = Enum.map(bots, & &1.name)
       assert "KeepMe" in names
       refute "DeleteMe" in names
+    end
+  end
+
+  describe "bot creation approval flow" do
+    test "non-admin bot create sends approval request to admin" do
+      guild_id = 123_456_789
+      channel_id = 987_654_321
+      admin_user_id = 999_999_999
+      regular_user_id = 777_777_777
+
+      setup_admin_user(admin_user_id)
+      setup_guild_with_admin(admin_user_id, guild_id, channel_id)
+      {:ok, _regular} = User.create_user_account(regular_user_id, "RegularUser")
+
+      interaction =
+        create_bot_interaction(regular_user_id, guild_id, channel_id, "create", [
+          {"name", "RequestedBot"}
+        ])
+
+      dm_sent = :ets.new(:dm_sent, [:set, :public])
+      :ets.insert(dm_sent, {:sent, false})
+
+      with_mocks([
+        {Nostrum.Api.User, [],
+         [
+           get: fn user_id ->
+             if user_id == admin_user_id or user_id == to_string(admin_user_id) do
+               {:ok, %{id: admin_user_id, username: "TestAdmin"}}
+             else
+               {:error, :not_found}
+             end
+           end,
+           create_dm: fn _user_id -> {:ok, %{id: 12345}} end
+         ]},
+        {Nostrum.Api.Message, [],
+         [
+           create: fn _channel_id, message ->
+             # Verify DM to admin uses Components v2 with approval buttons and bot name
+             assert message.flags == 32768,
+                    "DM should use Components v2 flag"
+
+             assert message.components != nil,
+                    "DM should have components"
+
+             container = hd(message.components)
+             assert container.type == 17, "First component should be a container"
+
+             text_display =
+               Enum.find(container.components, fn c -> c.type == 10 end)
+
+             assert text_display != nil, "Container should have a text_display"
+
+             assert String.contains?(text_display.content, "RequestedBot"),
+                    "DM should mention the bot name"
+
+             assert String.contains?(text_display.content, "RegularUser"),
+                    "DM should mention the requester"
+
+             action_row =
+               Enum.find(container.components, fn c -> c.type == 1 end)
+
+             assert action_row != nil, "Container should have an action row with buttons"
+             assert length(action_row.components) == 2, "Should have Accept and Reject buttons"
+
+             :ets.insert(dm_sent, {:sent, true})
+             {:ok, %{id: 0}}
+           end
+         ]},
+        {Nostrum.Api, [],
+         [
+           create_interaction_response: fn _interaction, response ->
+             assert response.type == 4
+             embed = hd(response.data.embeds)
+
+             assert String.contains?(embed.description, "RequestedBot"),
+                    "Channel reply should mention bot name"
+
+             assert String.contains?(embed.description, "approval") or
+                      String.contains?(embed.description, "sent"),
+                    "Channel reply should mention approval or sent"
+
+             {:ok}
+           end
+         ]}
+      ]) do
+        BotCommand.handle(interaction)
+      end
+
+      [{:sent, was_sent}] = :ets.lookup(dm_sent, :sent)
+      assert was_sent, "Approval DM should have been sent to admin"
+      :ets.delete(dm_sent)
+
+      # Bot should NOT exist yet — it needs admin approval
+      assert {:error, :bot_not_found} = Bot.get_bot_by_name("RequestedBot")
+    end
+
+    test "admin approves bot creation request via button" do
+      guild_id = 123_456_789
+      channel_id = 987_654_321
+      admin_user_id = 999_999_999
+      requester_user_id = 777_777_777
+
+      setup_admin_user(admin_user_id)
+      setup_guild_with_admin(admin_user_id, guild_id, channel_id)
+      {:ok, _requester} = User.create_user_account(requester_user_id, "RequesterUser")
+
+      # Button interaction (type 3 = message component)
+      interaction = %{
+        type: 3,
+        user: %{id: admin_user_id},
+        guild_id: guild_id,
+        channel_id: channel_id,
+        data: %{custom_id: "bot_create_accept:#{requester_user_id}:ApprovedBot"}
+      }
+
+      dm_sent = :ets.new(:dm_sent, [:set, :public])
+      :ets.insert(dm_sent, {:sent, false})
+
+      with_mocks([
+        {Nostrum.Api.User, [],
+         [
+           get: fn user_id ->
+             if user_id == admin_user_id or user_id == to_string(admin_user_id) do
+               {:ok, %{id: admin_user_id, username: "TestAdmin"}}
+             else
+               {:error, :not_found}
+             end
+           end,
+           create_dm: fn _user_id -> {:ok, %{id: 12345}} end
+         ]},
+        {Nostrum.Api.Message, [],
+         [
+           create: fn _channel_id, message ->
+             # Verify DM to requester contains bot name and token in spoiler tags
+             embed =
+               cond do
+                 is_map(message) and Map.has_key?(message, :embeds) -> hd(message.embeds)
+                 is_list(message[:embeds]) -> hd(message[:embeds])
+               end
+
+             assert String.contains?(embed.description, "ApprovedBot"),
+                    "DM should contain the bot name"
+
+             assert String.contains?(embed.description, "||"),
+                    "DM should contain spoiler-tagged token"
+
+             :ets.insert(dm_sent, {:sent, true})
+             {:ok, %{id: 0}}
+           end
+         ]},
+        {Nostrum.Api, [],
+         [
+           create_interaction_response: fn _interaction, response ->
+             # Type 7 = UPDATE_MESSAGE (edit the original approval DM)
+             assert response.type == 7,
+                    "Response should be type 7 (update_message), got #{response.type}"
+
+             {:ok}
+           end
+         ]}
+      ]) do
+        BotCommand.handle_bot_creation_interaction(interaction)
+      end
+
+      [{:sent, was_sent}] = :ets.lookup(dm_sent, :sent)
+      assert was_sent, "Token DM should have been sent to requester"
+      :ets.delete(dm_sent)
+
+      # Bot should now exist
+      {:ok, bot} = Bot.get_bot_by_name("ApprovedBot")
+      assert bot.active == true
+    end
+
+    test "admin rejects bot creation request via button" do
+      guild_id = 123_456_789
+      channel_id = 987_654_321
+      admin_user_id = 999_999_999
+      requester_user_id = 777_777_777
+
+      setup_admin_user(admin_user_id)
+      setup_guild_with_admin(admin_user_id, guild_id, channel_id)
+      {:ok, _requester} = User.create_user_account(requester_user_id, "RequesterUser")
+
+      # Button interaction (type 3 = message component)
+      interaction = %{
+        type: 3,
+        user: %{id: admin_user_id},
+        guild_id: guild_id,
+        channel_id: channel_id,
+        data: %{custom_id: "bot_create_reject:#{requester_user_id}:RejectedBot"}
+      }
+
+      dm_sent = :ets.new(:dm_sent, [:set, :public])
+      :ets.insert(dm_sent, {:sent, false})
+
+      with_mocks([
+        {Nostrum.Api.User, [],
+         [
+           get: fn user_id ->
+             if user_id == admin_user_id or user_id == to_string(admin_user_id) do
+               {:ok, %{id: admin_user_id, username: "TestAdmin"}}
+             else
+               {:error, :not_found}
+             end
+           end,
+           create_dm: fn _user_id -> {:ok, %{id: 12345}} end
+         ]},
+        {Nostrum.Api.Message, [],
+         [
+           create: fn _channel_id, message ->
+             # Verify DM to requester contains rejection info
+             content =
+               cond do
+                 is_map(message) and Map.has_key?(message, :embeds) ->
+                   hd(message.embeds).description
+
+                 is_map(message) and Map.has_key?(message, :content) ->
+                   message.content
+
+                 is_list(message[:embeds]) ->
+                   hd(message[:embeds]).description
+
+                 true ->
+                   message[:content] || ""
+               end
+
+             assert String.contains?(content, "RejectedBot"),
+                    "DM should mention the bot name"
+
+             assert String.contains?(content, "denied") or
+                      String.contains?(content, "rejected"),
+                    "DM should indicate rejection"
+
+             :ets.insert(dm_sent, {:sent, true})
+             {:ok, %{id: 0}}
+           end
+         ]},
+        {Nostrum.Api, [],
+         [
+           create_interaction_response: fn _interaction, response ->
+             # Type 7 = UPDATE_MESSAGE
+             assert response.type == 7,
+                    "Response should be type 7 (update_message), got #{response.type}"
+
+             {:ok}
+           end
+         ]}
+      ]) do
+        BotCommand.handle_bot_creation_interaction(interaction)
+      end
+
+      [{:sent, was_sent}] = :ets.lookup(dm_sent, :sent)
+      assert was_sent, "Rejection DM should have been sent to requester"
+      :ets.delete(dm_sent)
+
+      # Bot should NOT exist
+      assert {:error, :bot_not_found} = Bot.get_bot_by_name("RejectedBot")
+    end
+
+    test "duplicate approval is handled gracefully" do
+      guild_id = 123_456_789
+      channel_id = 987_654_321
+      admin_user_id = 999_999_999
+      requester_user_id = 777_777_777
+
+      setup_admin_user(admin_user_id)
+      setup_guild_with_admin(admin_user_id, guild_id, channel_id)
+      {:ok, _requester} = User.create_user_account(requester_user_id, "RequesterUser")
+
+      # Create the bot directly first (simulating it was already approved)
+      {:ok, _bot} = Bot.create_bot_user(requester_user_id, "AlreadyApproved")
+
+      # Then simulate another Accept button click with the same name
+      interaction = %{
+        type: 3,
+        user: %{id: admin_user_id},
+        guild_id: guild_id,
+        channel_id: channel_id,
+        data: %{custom_id: "bot_create_accept:#{requester_user_id}:AlreadyApproved"}
+      }
+
+      with_mocks([
+        {Nostrum.Api.User, [],
+         [
+           get: fn user_id ->
+             if user_id == admin_user_id or user_id == to_string(admin_user_id) do
+               {:ok, %{id: admin_user_id, username: "TestAdmin"}}
+             else
+               {:error, :not_found}
+             end
+           end,
+           create_dm: fn _user_id -> {:ok, %{id: 12345}} end
+         ]},
+        {Nostrum.Api.Message, [],
+         [
+           create: fn _channel_id, _message -> {:ok, %{id: 0}} end
+         ]},
+        {Nostrum.Api, [],
+         [
+           create_interaction_response: fn _interaction, response ->
+             # Type 7 = UPDATE_MESSAGE — should not crash
+             assert response.type == 7,
+                    "Response should be type 7 (update_message), got #{response.type}"
+
+             {:ok}
+           end
+         ]}
+      ]) do
+        # Should not crash even though bot already exists
+        BotCommand.handle_bot_creation_interaction(interaction)
+      end
+
+      # Bot should still exist (the original one)
+      {:ok, bot} = Bot.get_bot_by_name("AlreadyApproved")
+      assert bot.active == true
     end
   end
 end

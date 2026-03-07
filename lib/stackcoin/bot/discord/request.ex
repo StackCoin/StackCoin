@@ -6,17 +6,9 @@ defmodule StackCoin.Bot.Discord.Request do
 
   alias StackCoin.Core.{Request, User, Bot}
   alias StackCoin.Bot.Discord.Commands
+  alias StackCoin.Bot.Discord.Components
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
-
-  # Discord Message Components v2 constants
-  @is_components_v2_flag 32768
-  @container_component 17
-  @text_display_component 10
-  @action_row_component 1
-  @button_component 2
-  @button_style_success 3
-  @button_style_danger 4
 
   @doc """
   Sends a DM notification to a Discord user about a payment request.
@@ -99,26 +91,26 @@ defmodule StackCoin.Bot.Discord.Request do
 
         components = [
           %{
-            type: @container_component,
+            type: Components.container(),
             accent_color: Commands.stackcoin_color(),
             components: [
               %{
-                type: @text_display_component,
+                type: Components.text_display(),
                 content:
                   "#{Commands.stackcoin_emoji()} Payment Request\n\n#{requester_name} is requesting #{amount_display} STK from you#{label_text}.\n\nAmount: #{amount_display} STK\nFrom: #{requester_name}#{label_info}\nRequest ID: #{request.id}"
               },
               %{
-                type: @action_row_component,
+                type: Components.action_row(),
                 components: [
                   %{
-                    type: @button_component,
-                    style: @button_style_success,
+                    type: Components.button(),
+                    style: Components.button_style_success(),
                     label: "Accept",
                     custom_id: "request_accept_#{request.id}"
                   },
                   %{
-                    type: @button_component,
-                    style: @button_style_danger,
+                    type: Components.button(),
+                    style: Components.button_style_danger(),
                     label: "Deny",
                     custom_id: "request_deny_#{request.id}"
                   }
@@ -129,7 +121,7 @@ defmodule StackCoin.Bot.Discord.Request do
         ]
 
         case Api.Message.create(dm_channel.id, %{
-               flags: @is_components_v2_flag,
+               flags: Components.is_components_v2_flag(),
                components: components
              }) do
           {:ok, _message} -> :ok
@@ -225,15 +217,15 @@ defmodule StackCoin.Bot.Discord.Request do
     Api.create_interaction_response(interaction, %{
       type: InteractionCallbackType.update_message(),
       data: %{
-        flags: @is_components_v2_flag,
+        flags: Components.is_components_v2_flag(),
         components: [
           %{
-            type: @container_component,
+            type: Components.container(),
             # Green for success
             accent_color: 0x00FF00,
             components: [
               %{
-                type: @text_display_component,
+                type: Components.text_display(),
                 content:
                   "#{Commands.stackcoin_emoji()} Request Accepted\n\nYou have successfully sent #{amount_display} STK to #{requester_name}.\n\nAmount: #{amount_display} STK\nTo: #{requester_name}#{label_info}\nTransaction ID: #{request.transaction_id}"
               }
@@ -252,15 +244,15 @@ defmodule StackCoin.Bot.Discord.Request do
     Api.create_interaction_response(interaction, %{
       type: InteractionCallbackType.update_message(),
       data: %{
-        flags: @is_components_v2_flag,
+        flags: Components.is_components_v2_flag(),
         components: [
           %{
-            type: @container_component,
+            type: Components.container(),
             # Red for denial
             accent_color: 0xFF0000,
             components: [
               %{
-                type: @text_display_component,
+                type: Components.text_display(),
                 content:
                   "#{Commands.stackcoin_emoji()} Request Denied\n\nYou have denied the request for #{amount_display} STK from #{requester_name}.\n\nAmount: #{amount_display} STK\nFrom: #{requester_name}#{label_info}"
               }
@@ -275,15 +267,15 @@ defmodule StackCoin.Bot.Discord.Request do
     Api.create_interaction_response(interaction, %{
       type: InteractionCallbackType.update_message(),
       data: %{
-        flags: @is_components_v2_flag,
+        flags: Components.is_components_v2_flag(),
         components: [
           %{
-            type: @container_component,
+            type: Components.container(),
             # Light red for errors
             accent_color: 0xFF6B6B,
             components: [
               %{
-                type: @text_display_component,
+                type: Components.text_display(),
                 content: "❌ #{message}"
               }
             ]
@@ -307,30 +299,30 @@ defmodule StackCoin.Bot.Discord.Request do
             Api.create_interaction_response(interaction, %{
               type: InteractionCallbackType.update_message(),
               data: %{
-                flags: @is_components_v2_flag,
+                flags: Components.is_components_v2_flag(),
                 components: [
                   %{
-                    type: @container_component,
+                    type: Components.container(),
                     # Light red for errors
                     accent_color: 0xFF6B6B,
                     components: [
                       %{
-                        type: @text_display_component,
+                        type: Components.text_display(),
                         content:
                           "❌ #{error_message}\n\n#{Commands.stackcoin_emoji()} Original Request\n#{requester_name} is requesting #{amount_display} STK from you#{label_text}.\n\nAmount: #{amount_display} STK\nFrom: #{requester_name}#{label_info}\nRequest ID: #{request.id}"
                       },
                       %{
-                        type: @action_row_component,
+                        type: Components.action_row(),
                         components: [
                           %{
-                            type: @button_component,
-                            style: @button_style_success,
+                            type: Components.button(),
+                            style: Components.button_style_success(),
                             label: "Try Again",
                             custom_id: "request_accept_#{request.id}"
                           },
                           %{
-                            type: @button_component,
-                            style: @button_style_danger,
+                            type: Components.button(),
+                            style: Components.button_style_danger(),
                             label: "Deny",
                             custom_id: "request_deny_#{request.id}"
                           }
