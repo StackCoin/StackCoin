@@ -92,124 +92,115 @@ class TestLuckyPotInstantWin:
     """Tests for the instant win path -- random.random is mocked to always trigger it."""
 
     @patch("luckypot.game.random.random", return_value=0.001)
-    async def test_instant_win_returns_correct_status(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
-        """An instant win roll returns status='instant_win' and marks the DB entry."""
+    async def test_instant_win_on_empty_pot_gives_free_entry(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
+        """An instant win on an empty pot gives a free confirmed entry (no payment)."""
         result = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
             guild_id="test_guild_iw",
         )
-        assert result["status"] == "instant_win"
+        assert result["status"] == "instant_win_free_entry"
         assert "entry_id" in result
-        assert "request_id" in result
 
-        # Verify DB entry has instant_win status
+        # Entry should be confirmed with amount=0 (free)
         conn = db.get_connection()
         try:
             entry = db.get_entry_by_id(conn, result["entry_id"])
             assert entry is not None
-            assert entry["status"] == "instant_win"
+            assert entry["status"] == "confirmed"
+            assert entry["amount"] == 0
+
+            # Pot should still be active (not ended — nothing to win)
+            assert db.get_active_pot(conn, "test_guild_iw") is not None
         finally:
             conn.close()
 
-    @patch("luckypot.game.random.random", return_value=0.001)
-    async def test_instant_win_blocks_other_entries(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
-        """While an instant win is pending, other users cannot enter the same guild's pot."""
-        result1 = await game.enter_pot(
-            discord_id=test_context["user1_discord_id"],
-            guild_id="test_guild_iw",
-        )
-        assert result1["status"] == "instant_win"
+    async def test_instant_win_with_pot_pays_out_and_ends(self, luckypot_db, configure_luckypot_stk, test_context):
+        """An instant win on a pot with confirmed entries pays out immediately and ends the pot."""
+        # First, user1 enters normally and confirms
+        with patch("luckypot.game.random.random", return_value=0.99):
+            result1 = await game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id="test_guild_iw",
+            )
+        assert result1["status"] == "pending"
 
-        # Second user in same guild should be blocked
-        result2 = await game.enter_pot(
-            discord_id=test_context["user2_discord_id"],
-            guild_id="test_guild_iw",
+        # Confirm user1's entry
+        event_data = RequestAcceptedData(
+            request_id=int(result1["request_id"]), status="accepted",
+            transaction_id=0, amount=0,
         )
-        assert result2["status"] == "error"
-        assert "instant win" in result2["message"].lower()
-
-    @patch("luckypot.game.random.random", return_value=0.001)
-    async def test_instant_win_accepted_pays_out_and_ends_pot(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
-        """Accepting payment on an instant win triggers payout and ends the pot."""
-        result = await game.enter_pot(
-            discord_id=test_context["user1_discord_id"],
-            guild_id="test_guild_iw",
-        )
-        assert result["status"] == "instant_win"
-        request_id = result["request_id"]
-
-        # Simulate the user accepting the payment request
-        event_data = RequestAcceptedData(request_id=int(request_id), status="accepted", transaction_id=0, amount=0)
         await game.on_request_accepted(event_data)
 
-        conn = db.get_connection()
-        try:
-            # Entry should be confirmed
-            entry = db.get_entry_by_id(conn, result["entry_id"])
-            assert entry["status"] == "confirmed"
-
-            # Pot should be ended (no active pot for this guild)
-            assert db.get_active_pot(conn, "test_guild_iw") is None
-
-            # Instant win lock should be cleared
-            assert db.has_pending_instant_wins(conn, "test_guild_iw") is False
-        finally:
-            conn.close()
-
-    @patch("luckypot.game.random.random", return_value=0.001)
-    async def test_instant_win_denied_clears_lock(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
-        """Denying payment on an instant win clears the lock so others can enter."""
-        result = await game.enter_pot(
-            discord_id=test_context["user1_discord_id"],
-            guild_id="test_guild_iw",
-        )
-        assert result["status"] == "instant_win"
-        request_id = result["request_id"]
-
-        # Simulate the user denying the payment request
-        event_data = RequestDeniedData(request_id=int(request_id), status="denied")
-        await game.on_request_denied(event_data)
-
-        conn = db.get_connection()
-        try:
-            # Entry should be denied
-            entry = db.get_entry_by_id(conn, result["entry_id"])
-            assert entry["status"] == "denied"
-
-            # Pot should still be active (no winner)
-            assert db.get_active_pot(conn, "test_guild_iw") is not None
-
-            # Instant win lock should be cleared
-            assert db.has_pending_instant_wins(conn, "test_guild_iw") is False
-        finally:
-            conn.close()
-
-        # Another user should now be able to enter
-        with patch("luckypot.game.random.random", return_value=0.99):
+        # Now user2 enters and rolls instant win — should win the pot
+        with patch("luckypot.game.random.random", return_value=0.001):
             result2 = await game.enter_pot(
                 discord_id=test_context["user2_discord_id"],
                 guild_id="test_guild_iw",
             )
-            assert result2["status"] == "pending"
+        assert result2["status"] == "instant_win"
+        assert result2["winning_amount"] == 5  # user1's 5 STK entry
+
+        conn = db.get_connection()
+        try:
+            # Pot should be ended
+            assert db.get_active_pot(conn, "test_guild_iw") is None
+        finally:
+            conn.close()
+
+    async def test_new_pot_starts_after_instant_win(self, luckypot_db, configure_luckypot_stk, test_context):
+        """After an instant win ends a pot, a new pot can be started."""
+        # User1 enters and confirms
+        with patch("luckypot.game.random.random", return_value=0.99):
+            result1 = await game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id="test_guild_iw",
+            )
+        assert result1["status"] == "pending"
+        event_data = RequestAcceptedData(
+            request_id=int(result1["request_id"]), status="accepted",
+            transaction_id=0, amount=0,
+        )
+        await game.on_request_accepted(event_data)
+
+        # User2 instant wins
+        with patch("luckypot.game.random.random", return_value=0.001):
+            result2 = await game.enter_pot(
+                discord_id=test_context["user2_discord_id"],
+                guild_id="test_guild_iw",
+            )
+        assert result2["status"] == "instant_win"
+
+        # User1 should be able to enter a new pot
+        with patch("luckypot.game.random.random", return_value=0.99):
+            result3 = await game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id="test_guild_iw",
+            )
+        assert result3["status"] == "pending"
 
 
 @pytest.mark.asyncio
 class TestLuckyPotMultiGuildIsolation:
     """Tests that verify pots in different guilds are fully independent."""
 
-    @patch("luckypot.game.random.random", return_value=0.001)
-    async def test_instant_win_in_guild_a_does_not_block_guild_b(
-        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    async def test_instant_win_in_guild_a_does_not_affect_guild_b(
+        self, luckypot_db, configure_luckypot_stk, test_context
     ):
-        """An instant win lock in one guild should not prevent entries in another guild."""
-        # User1 gets instant win in guild_A
-        result_a = await game.enter_pot(
-            discord_id=test_context["user1_discord_id"],
-            guild_id="guild_A",
+        """An instant win ending guild A's pot should not affect guild B."""
+        # User1 enters guild_A normally and confirms
+        with patch("luckypot.game.random.random", return_value=0.99):
+            result_a1 = await game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id="guild_A",
+            )
+        assert result_a1["status"] == "pending"
+        event_data = RequestAcceptedData(
+            request_id=int(result_a1["request_id"]), status="accepted",
+            transaction_id=0, amount=0,
         )
-        assert result_a["status"] == "instant_win"
+        await game.on_request_accepted(event_data)
 
-        # User2 should still be able to enter guild_B
+        # User2 enters guild_B normally
         with patch("luckypot.game.random.random", return_value=0.99):
             result_b = await game.enter_pot(
                 discord_id=test_context["user2_discord_id"],
@@ -217,16 +208,39 @@ class TestLuckyPotMultiGuildIsolation:
             )
         assert result_b["status"] == "pending"
 
-    @patch("luckypot.game.random.random", return_value=0.001)
+        # User2 instant wins guild_A's pot — ends it
+        with patch("luckypot.game.random.random", return_value=0.001):
+            result_a2 = await game.enter_pot(
+                discord_id=test_context["user2_discord_id"],
+                guild_id="guild_A",
+            )
+        assert result_a2["status"] == "instant_win"
+
+        conn = db.get_connection()
+        try:
+            # Guild A pot should be ended
+            assert db.get_active_pot(conn, "guild_A") is None
+
+            # Guild B pot should still be active with its pending entry
+            pot_b = db.get_active_pot(conn, "guild_B")
+            assert pot_b is not None
+            entry_b = db.get_entry_by_request_id(conn, result_b["request_id"])
+            assert entry_b is not None
+            assert entry_b["status"] == "pending"
+        finally:
+            conn.close()
+
     async def test_same_user_instant_win_one_guild_normal_entry_another(
-        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+        self, luckypot_db, configure_luckypot_stk, test_context
     ):
-        """Same user can have an instant win in guild A and a normal entry in guild B."""
-        result_a = await game.enter_pot(
-            discord_id=test_context["user1_discord_id"],
-            guild_id="guild_A",
-        )
-        assert result_a["status"] == "instant_win"
+        """Same user can instant win in guild A and enter guild B normally."""
+        # On an empty pot, instant win gives a free entry
+        with patch("luckypot.game.random.random", return_value=0.001):
+            result_a = await game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id="guild_A",
+            )
+        assert result_a["status"] == "instant_win_free_entry"
 
         # Same user enters guild_B normally
         with patch("luckypot.game.random.random", return_value=0.99):
@@ -235,51 +249,6 @@ class TestLuckyPotMultiGuildIsolation:
                 guild_id="guild_B",
             )
         assert result_b["status"] == "pending"
-
-    @patch("luckypot.game.random.random", return_value=0.001)
-    async def test_ending_pot_in_guild_a_does_not_affect_guild_b(
-        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
-    ):
-        """Accepting an instant win in guild A ends that pot but leaves guild B intact."""
-        # User1 instant win in guild_A
-        result_a = await game.enter_pot(
-            discord_id=test_context["user1_discord_id"],
-            guild_id="guild_A",
-        )
-        assert result_a["status"] == "instant_win"
-
-        # User2 normal entry in guild_B
-        with patch("luckypot.game.random.random", return_value=0.99):
-            result_b = await game.enter_pot(
-                discord_id=test_context["user2_discord_id"],
-                guild_id="guild_B",
-            )
-        assert result_b["status"] == "pending"
-
-        # Accept instant win in guild_A — ends that pot
-        event_data = RequestAcceptedData(
-            request_id=int(result_a["request_id"]), status="accepted",
-            transaction_id=0, amount=0,
-        )
-        await game.on_request_accepted(event_data)
-
-        conn = db.get_connection()
-        try:
-            # Guild A pot should be ended
-            assert db.get_active_pot(conn, "guild_A") is None
-
-            # Guild B pot should still be active with its entry
-            pot_b = db.get_active_pot(conn, "guild_B")
-            assert pot_b is not None
-            participants = db.get_pot_participants(conn, pot_b["pot_id"])
-            assert len(participants) == 0  # still pending (not confirmed)
-
-            # The pending entry in guild_B should be untouched
-            entry_b = db.get_entry_by_request_id(conn, result_b["request_id"])
-            assert entry_b is not None
-            assert entry_b["status"] == "pending"
-        finally:
-            conn.close()
 
     @patch("luckypot.game.random.random", return_value=0.99)
     async def test_denied_in_guild_a_does_not_affect_guild_b_entry(
@@ -410,20 +379,6 @@ class TestLuckyPotDb:
 
             # Pot should no longer be active
             assert db.get_active_pot(conn, "guild1") is None
-        finally:
-            conn.close()
-
-    def test_instant_win_included_in_status(self, luckypot_db):
-        """Instant-win entries should be counted in pot status."""
-        conn = db.get_connection()
-        try:
-            pot = db.create_pot(conn, "guild1")
-            e1 = db.add_entry(conn, pot["pot_id"], "user1", 5, "req_1")
-            db.mark_entry_instant_win(conn, e1)
-
-            status = db.get_pot_status(conn, "guild1")
-            assert status["participants"] == 1
-            assert status["total_amount"] == 5
         finally:
             conn.close()
 
