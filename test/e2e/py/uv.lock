@@ -353,7 +353,7 @@ wheels = [
 [[package]]
 name = "luckypot"
 version = "0.1.0"
-source = { editable = "../../tmp/LuckyPot" }
+source = { editable = "../../../tmp/LuckyPot" }
 dependencies = [
     { name = "hikari" },
     { name = "hikari-lightbulb" },
@@ -368,7 +368,7 @@ requires-dist = [
     { name = "hikari-lightbulb", specifier = ">=3.1.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pydantic-settings", specifier = ">=2.0" },
-    { name = "stackcoin", specifier = ">=0.1.1" },
+    { name = "stackcoin", specifier = ">=0.1.2" },
 ]
 
 [[package]]
@@ -669,8 +669,8 @@ wheels = [
 
 [[package]]
 name = "stackcoin"
-version = "0.1.1"
-source = { editable = "../../tmp/stackcoin-python" }
+version = "0.1.2"
+source = { editable = "../../../tmp/stackcoin-python" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
@@ -700,10 +700,10 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
-    { name = "luckypot", editable = "../../tmp/LuckyPot" },
+    { name = "luckypot", editable = "../../../tmp/LuckyPot" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "stackcoin", editable = "../../tmp/stackcoin-python" },
+    { name = "stackcoin", editable = "../../../tmp/stackcoin-python" },
     { name = "websockets", specifier = ">=13.0" },
 ]
 

@@ -5,11 +5,11 @@ Each test gets a freshly seeded database — the server stays running but all
 tables are truncated and re-seeded before every test.
 
 Setup instructions:
-  cd test/e2e
+  cd test/e2e/py
   uv venv
   source .venv/bin/activate
-  uv pip install -e "../../tmp/stackcoin-python"
-  uv pip install -e "../../tmp/LuckyPot"
+  uv pip install -e "../../../tmp/stackcoin-python"
+  uv pip install -e "../../../tmp/LuckyPot"
   uv pip install -e .
   pytest
 """
@@ -23,7 +23,7 @@ import httpx
 import pytest
 
 
-STACKCOIN_ROOT = os.path.join(os.path.dirname(__file__), "../..")
+STACKCOIN_ROOT = os.path.join(os.path.dirname(__file__), "../../..")
 
 # All tables in dependency-safe deletion order (children before parents).
 _ALL_TABLES = [
