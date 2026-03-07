@@ -16,6 +16,7 @@ defmodule StackCoin.Core.Reserve do
   """
   def transfer_dole_to_user(user_id) do
     with {:ok, user} <- User.get_user_by_id(user_id),
+         {:ok, _dole_ban_check} <- User.check_user_dole_banned(user),
          {:ok, _dole_check} <- check_daily_dole_eligibility(user),
          {:ok, reserve_balance} <- get_reserve_balance(),
          {:ok, _balance_check} <- check_reserve_balance(reserve_balance),
@@ -26,6 +27,9 @@ defmodule StackCoin.Core.Reserve do
     else
       {:error, :user_not_found} ->
         {:error, :user_not_found}
+
+      {:error, :user_dole_banned} ->
+        {:error, :user_dole_banned}
 
       {:error, :insufficient_balance} ->
         {:error, :insufficient_reserve_balance}
