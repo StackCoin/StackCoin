@@ -60,7 +60,8 @@ defmodule StackCoinWeb.Router do
     post("/user/:user_id/send", StackCoinWeb.TransferController, :send_stk)
     post("/user/:user_id/request", StackCoinWeb.RequestController, :create)
 
-    # Discord guild operations
+    # Discord operations
+    get("/discord/bot", StackCoinWeb.DiscordBotController, :show)
     get("/discord/guilds", StackCoinWeb.DiscordGuildController, :index)
     get("/discord/guild/:snowflake", StackCoinWeb.DiscordGuildController, :show)
   end

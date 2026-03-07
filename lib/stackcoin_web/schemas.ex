@@ -508,6 +508,24 @@ defmodule StackCoinWeb.Schemas do
     })
   end
 
+  defmodule DiscordBotResponse do
+    OpenApiSpex.schema(%{
+      title: "DiscordBotResponse",
+      description: "Response containing the StackCoin Discord bot's user ID",
+      type: :object,
+      properties: %{
+        discord_id: %Schema{
+          type: :string,
+          description: "The Discord snowflake ID of the StackCoin bot"
+        }
+      },
+      required: [:discord_id],
+      example: %{
+        "discord_id" => "123456789012345678"
+      }
+    })
+  end
+
   defmodule DiscordGuild do
     OpenApiSpex.schema(%{
       title: "DiscordGuild",
