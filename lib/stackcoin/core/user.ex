@@ -42,13 +42,15 @@ defmodule StackCoin.Core.User do
     admin = Keyword.get(opts, :admin, false)
     balance = Keyword.get(opts, :balance, 0)
     banned = Keyword.get(opts, :banned, false)
+    dole_banned = Keyword.get(opts, :dole_banned, false)
 
     Repo.transaction(fn ->
       user_attrs = %{
         username: username,
         balance: balance,
         admin: admin,
-        banned: banned
+        banned: banned,
+        dole_banned: dole_banned
       }
 
       with {:ok, user} <- Repo.insert(Schema.User.changeset(%Schema.User{}, user_attrs)),
@@ -117,6 +119,35 @@ defmodule StackCoin.Core.User do
   end
 
   @doc """
+  Dole-bans a user (prevents dole collection only).
+  """
+  def dole_ban_user(user) do
+    user
+    |> Schema.User.changeset(%{dole_banned: true})
+    |> Repo.update()
+  end
+
+  @doc """
+  Removes dole ban from a user.
+  """
+  def dole_unban_user(user) do
+    user
+    |> Schema.User.changeset(%{dole_banned: false})
+    |> Repo.update()
+  end
+
+  @doc """
+  Checks if a user is dole-banned.
+  """
+  def check_user_dole_banned(user) do
+    if user.dole_banned do
+      {:error, :user_dole_banned}
+    else
+      {:ok, :not_dole_banned}
+    end
+  end
+
+  @doc """
   Checks if a user is banned.
   """
   def check_user_banned(user) do
@@ -158,6 +189,33 @@ defmodule StackCoin.Core.User do
     with {:ok, _admin_check} <- check_admin_permissions(admin_discord_snowflake),
          {:ok, target_user} <- get_user_by_discord_id(target_discord_snowflake) do
       unban_user(target_user)
+    else
+      {:error, :not_admin} -> {:error, :not_admin}
+      {:error, :user_not_found} -> {:error, :other_user_not_found}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Admin-only dole ban with permission check. Supports pre-ban.
+  """
+  def admin_dole_ban_user(admin_discord_snowflake, target_discord_snowflake) do
+    with {:ok, _admin_check} <- check_admin_permissions(admin_discord_snowflake),
+         {:ok, target_user} <- get_or_create_user_for_dole_ban(target_discord_snowflake) do
+      dole_ban_user(target_user)
+    else
+      {:error, :not_admin} -> {:error, :not_admin}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Admin-only dole unban with permission check.
+  """
+  def admin_dole_unban_user(admin_discord_snowflake, target_discord_snowflake) do
+    with {:ok, _admin_check} <- check_admin_permissions(admin_discord_snowflake),
+         {:ok, target_user} <- get_user_by_discord_id(target_discord_snowflake) do
+      dole_unban_user(target_user)
     else
       {:error, :not_admin} -> {:error, :not_admin}
       {:error, :user_not_found} -> {:error, :other_user_not_found}
@@ -266,6 +324,17 @@ defmodule StackCoin.Core.User do
       {:error, :user_not_found} ->
         {:ok, discord_user} = Nostrum.Api.User.get(discord_snowflake)
         create_user_account(discord_snowflake, discord_user.username, banned: true)
+    end
+  end
+
+  defp get_or_create_user_for_dole_ban(discord_snowflake) do
+    case get_user_by_discord_id(discord_snowflake) do
+      {:ok, user} ->
+        {:ok, user}
+
+      {:error, :user_not_found} ->
+        {:ok, discord_user} = Nostrum.Api.User.get(discord_snowflake)
+        create_user_account(discord_snowflake, discord_user.username, dole_banned: true)
     end
   end
 

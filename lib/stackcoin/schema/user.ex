@@ -8,6 +8,7 @@ defmodule StackCoin.Schema.User do
     field(:last_given_dole, :naive_datetime)
     field(:admin, :boolean, default: false)
     field(:banned, :boolean, default: false)
+    field(:dole_banned, :boolean, default: false)
 
     has_one(:internal_user, StackCoin.Schema.InternalUser, foreign_key: :id)
     has_one(:discord_user, StackCoin.Schema.DiscordUser, foreign_key: :id)
@@ -22,8 +23,8 @@ defmodule StackCoin.Schema.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:username, :balance, :last_given_dole, :admin, :banned])
-    |> validate_required([:username, :balance, :admin, :banned])
+    |> cast(attrs, [:username, :balance, :last_given_dole, :admin, :banned, :dole_banned])
+    |> validate_required([:username, :balance, :admin, :banned, :dole_banned])
     |> validate_number(:balance, greater_than_or_equal_to: 0)
   end
 end
