@@ -29,6 +29,9 @@ defmodule StackCoinWeb.ApiHelpers do
       :recipient_banned ->
         {:forbidden, "recipient_banned"}
 
+      :user_dole_banned ->
+        {:forbidden, "user_dole_banned"}
+
       :insufficient_balance ->
         {:unprocessable_entity, "insufficient_balance"}
 

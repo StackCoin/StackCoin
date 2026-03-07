@@ -203,6 +203,9 @@ defmodule StackCoin.Bot.Discord.Commands do
         :user_banned ->
           "❌ You have been banned from StackCoin."
 
+        :user_dole_banned ->
+          "❌ You have been banned from collecting dole."
+
         :recipient_banned ->
           "❌ You cannot send STK to a banned user."
 
