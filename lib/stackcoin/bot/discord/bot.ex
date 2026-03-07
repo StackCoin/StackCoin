@@ -155,7 +155,13 @@ defmodule StackCoin.Bot.Discord.Bot do
         send_bot_created_response(interaction, bot)
 
       {:error, :not_admin} ->
-        send_bot_creation_request(bot_name, interaction)
+        case StackCoin.Core.User.get_user_by_discord_id(interaction.user.id) do
+          {:ok, _user} ->
+            send_bot_creation_request(bot_name, interaction)
+
+          {:error, :user_not_found} ->
+            Commands.send_error_response(interaction, :user_not_found)
+        end
 
       {:error, changeset} ->
         Commands.send_error_response(interaction, changeset)

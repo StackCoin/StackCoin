@@ -160,6 +160,45 @@ defmodule StackCoinTest.Bot.Discord.Bot do
       assert {:error, :bot_not_found} = Bot.get_bot_by_name("SneakyBot")
     end
 
+    test "user without StackCoin account is denied bot creation and told to run /dole" do
+      guild_id = 123_456_789
+      channel_id = 987_654_321
+      admin_user_id = 999_999_999
+      no_account_user_id = 555_555_555
+
+      setup_admin_user(admin_user_id)
+      setup_guild_with_admin(admin_user_id, guild_id, channel_id)
+
+      # User has no StackCoin account — never ran /dole
+      interaction =
+        create_bot_interaction(no_account_user_id, guild_id, channel_id, "create", [
+          {"name", "GhostBot"}
+        ])
+
+      with_mocks([
+        {Nostrum.Api, [],
+         [
+           create_interaction_response: fn _interaction, response ->
+             assert response.type == 4
+             assert response.data.content != nil
+
+             assert String.contains?(response.data.content, "StackCoin account"),
+                    "Should tell user they don't have an account"
+
+             assert String.contains?(response.data.content, "/dole"),
+                    "Should tell user to use /dole"
+
+             {:ok}
+           end
+         ]}
+      ]) do
+        BotCommand.handle(interaction)
+      end
+
+      # Bot should NOT exist
+      assert {:error, :bot_not_found} = Bot.get_bot_by_name("GhostBot")
+    end
+
     test "creating a bot with a duplicate name fails" do
       guild_id = 123_456_789
       channel_id = 987_654_321
