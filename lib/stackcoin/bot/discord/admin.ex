@@ -67,6 +67,32 @@ defmodule StackCoin.Bot.Discord.Admin do
               required: true
             }
           ]
+        },
+        %{
+          type: ApplicationCommandOptionType.sub_command(),
+          name: "dole-ban",
+          description: "Ban a user from collecting dole",
+          options: [
+            %{
+              type: ApplicationCommandOptionType.user(),
+              name: "user",
+              description: "User to dole-ban",
+              required: true
+            }
+          ]
+        },
+        %{
+          type: ApplicationCommandOptionType.sub_command(),
+          name: "dole-unban",
+          description: "Remove dole ban from a user",
+          options: [
+            %{
+              type: ApplicationCommandOptionType.user(),
+              name: "user",
+              description: "User to dole-unban",
+              required: true
+            }
+          ]
         }
       ]
     }
@@ -124,6 +150,24 @@ defmodule StackCoin.Bot.Discord.Admin do
   defp handle_subcommand("unban", interaction) do
     with {:ok, target_user_id} <- get_unban_user(interaction) do
       unban_user(target_user_id, interaction)
+    else
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp handle_subcommand("dole-ban", interaction) do
+    with {:ok, target_user_id} <- get_user_option_from_subcommand_result(interaction) do
+      dole_ban_user(target_user_id, interaction)
+    else
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp handle_subcommand("dole-unban", interaction) do
+    with {:ok, target_user_id} <- get_user_option_from_subcommand_result(interaction) do
+      dole_unban_user(target_user_id, interaction)
     else
       {:error, reason} ->
         Commands.send_error_response(interaction, reason)
@@ -227,6 +271,14 @@ defmodule StackCoin.Bot.Discord.Admin do
     end
   end
 
+  defp get_user_option_from_subcommand_result(interaction) do
+    case get_user_option_from_subcommand(interaction) do
+      nil -> {:error, :missing_user}
+      user_id when is_integer(user_id) -> {:ok, user_id}
+      _ -> {:error, :invalid_user}
+    end
+  end
+
   defp get_user_option_from_subcommand(interaction) do
     case interaction.data.options do
       [%{options: sub_options} | _] ->
@@ -319,6 +371,62 @@ defmodule StackCoin.Bot.Discord.Admin do
           %{
             title: "#{Commands.stackcoin_emoji()} User Unbanned",
             description: "**#{user.username}** has been unbanned from the StackCoin.",
+            color: Commands.stackcoin_color()
+          }
+        ]
+      }
+    })
+  end
+
+  defp dole_ban_user(target_user_id, interaction) do
+    case User.admin_dole_ban_user(interaction.user.id, target_user_id) do
+      {:ok, user} ->
+        send_dole_ban_success_response(interaction, user)
+
+      {:error, :not_admin} ->
+        Commands.send_error_response(interaction, :not_admin)
+
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp send_dole_ban_success_response(interaction, user) do
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.channel_message_with_source(),
+      data: %{
+        embeds: [
+          %{
+            title: "#{Commands.stackcoin_emoji()} User Dole Banned",
+            description: "**#{user.username}** has been banned from collecting dole.",
+            color: Commands.stackcoin_color()
+          }
+        ]
+      }
+    })
+  end
+
+  defp dole_unban_user(target_user_id, interaction) do
+    case User.admin_dole_unban_user(interaction.user.id, target_user_id) do
+      {:ok, user} ->
+        send_dole_unban_success_response(interaction, user)
+
+      {:error, :not_admin} ->
+        Commands.send_error_response(interaction, :not_admin)
+
+      {:error, reason} ->
+        Commands.send_error_response(interaction, reason)
+    end
+  end
+
+  defp send_dole_unban_success_response(interaction, user) do
+    Api.create_interaction_response(interaction, %{
+      type: InteractionCallbackType.channel_message_with_source(),
+      data: %{
+        embeds: [
+          %{
+            title: "#{Commands.stackcoin_emoji()} User Dole Unbanned",
+            description: "**#{user.username}** has been unbanned from collecting dole.",
             color: Commands.stackcoin_color()
           }
         ]
