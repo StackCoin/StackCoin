@@ -63,10 +63,13 @@ const NetworkGraph = {
     // Zoom (full mode only)
     if (!compact) {
       const g = svg.append("g")
-      svg.call(d3.zoom()
+      const zoom = d3.zoom()
         .scaleExtent([0.3, 5])
-        .on("zoom", (event) => g.attr("transform", event.transform)))
+        .on("zoom", (event) => g.attr("transform", event.transform))
+      svg.call(zoom)
       this.g = g
+      this.zoom = zoom
+      this.svg = svg
     } else {
       this.g = svg.append("g")
     }
@@ -161,6 +164,39 @@ const NetworkGraph = {
 
       node.attr("transform", d => `translate(${d.x},${d.y})`)
     })
+
+    // Fit to bounds once simulation settles (full mode only)
+    if (!compact && this.zoom && this.svg) {
+      const zoom = this.zoom
+      const svgEl = this.svg
+      simulation.on("end", () => {
+        const padding = 60
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+        nodes.forEach(d => {
+          const r = radiusScale(d.balance)
+          if (d.x - r < x0) x0 = d.x - r
+          if (d.y - r < y0) y0 = d.y - r
+          if (d.x + r > x1) x1 = d.x + r
+          if (d.y + r > y1) y1 = d.y + r
+        })
+
+        const bw = x1 - x0
+        const bh = y1 - y0
+        if (bw <= 0 || bh <= 0) return
+
+        const scale = Math.min(
+          (width - padding * 2) / bw,
+          (height - padding * 2) / bh,
+          2
+        )
+        const tx = width / 2 - scale * (x0 + bw / 2)
+        const ty = height / 2 - scale * (y0 + bh / 2)
+
+        svgEl.transition()
+          .duration(750)
+          .call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale))
+      })
+    }
   }
 }
 
