@@ -4,6 +4,7 @@ E2E tests for LuckyPot game logic against a real StackCoin server.
 These tests import the REAL luckypot package and exercise its game logic,
 db module, and stk module against the live StackCoin test server.
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -14,8 +15,9 @@ from luckypot import db, game, stk
 
 @pytest.mark.asyncio
 class TestLuckyPotEntryFlow:
-
-    async def test_enter_pot_unregistered_user(self, luckypot_db, configure_luckypot_stk):
+    async def test_enter_pot_unregistered_user(
+        self, luckypot_db, configure_luckypot_stk
+    ):
         """Unregistered Discord user should get an error."""
         result = await game.enter_pot(
             discord_id="999999999",
@@ -24,7 +26,9 @@ class TestLuckyPotEntryFlow:
         assert result["status"] == "error"
 
     @patch("luckypot.game.random.random", return_value=0.99)
-    async def test_enter_pot_success(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
+    async def test_enter_pot_success(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
         """Registered user enters the pot -- creates a payment request on StackCoin."""
         result = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
@@ -44,7 +48,9 @@ class TestLuckyPotEntryFlow:
             conn.close()
 
     @patch("luckypot.game.random.random", return_value=0.99)
-    async def test_enter_pot_duplicate_blocked(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
+    async def test_enter_pot_duplicate_blocked(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
         """Second entry attempt for same user in same pot should be rejected."""
         result1 = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
@@ -59,7 +65,9 @@ class TestLuckyPotEntryFlow:
         assert result2["status"] == "already_entered"
 
     @patch("luckypot.game.random.random", return_value=0.99)
-    async def test_multiple_users_enter_same_pot(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
+    async def test_multiple_users_enter_same_pot(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
         """Multiple users can enter the same pot (no instant win)."""
         result1 = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
@@ -73,7 +81,9 @@ class TestLuckyPotEntryFlow:
         assert result2["status"] == "pending"
 
     @patch("luckypot.game.random.random", return_value=0.99)
-    async def test_separate_guilds_separate_pots(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
+    async def test_separate_guilds_separate_pots(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
         """Same user can enter pots in different guilds."""
         result1 = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
@@ -92,7 +102,9 @@ class TestLuckyPotInstantWin:
     """Tests for the instant win path -- random.random is mocked to always trigger it."""
 
     @patch("luckypot.game.random.random", return_value=0.001)
-    async def test_instant_win_on_empty_pot_gives_free_entry(self, _mock_random, luckypot_db, configure_luckypot_stk, test_context):
+    async def test_instant_win_on_empty_pot_gives_free_entry(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
         """An instant win on an empty pot gives a free confirmed entry (no payment)."""
         result = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
@@ -114,7 +126,9 @@ class TestLuckyPotInstantWin:
         finally:
             conn.close()
 
-    async def test_instant_win_with_pot_pays_out_and_ends(self, luckypot_db, configure_luckypot_stk, test_context):
+    async def test_instant_win_with_pot_pays_out_and_ends(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
         """An instant win on a pot with confirmed entries pays out immediately and ends the pot."""
         # First, user1 enters normally and confirms
         with patch("luckypot.game.random.random", return_value=0.99):
@@ -126,8 +140,10 @@ class TestLuckyPotInstantWin:
 
         # Confirm user1's entry
         event_data = RequestAcceptedData(
-            request_id=int(result1["request_id"]), status="accepted",
-            transaction_id=0, amount=0,
+            request_id=int(result1["request_id"]),
+            status="accepted",
+            transaction_id=0,
+            amount=0,
         )
         await game.on_request_accepted(event_data)
 
@@ -147,7 +163,9 @@ class TestLuckyPotInstantWin:
         finally:
             conn.close()
 
-    async def test_new_pot_starts_after_instant_win(self, luckypot_db, configure_luckypot_stk, test_context):
+    async def test_new_pot_starts_after_instant_win(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
         """After an instant win ends a pot, a new pot can be started."""
         # User1 enters and confirms
         with patch("luckypot.game.random.random", return_value=0.99):
@@ -157,8 +175,10 @@ class TestLuckyPotInstantWin:
             )
         assert result1["status"] == "pending"
         event_data = RequestAcceptedData(
-            request_id=int(result1["request_id"]), status="accepted",
-            transaction_id=0, amount=0,
+            request_id=int(result1["request_id"]),
+            status="accepted",
+            transaction_id=0,
+            amount=0,
         )
         await game.on_request_accepted(event_data)
 
@@ -195,8 +215,10 @@ class TestLuckyPotMultiGuildIsolation:
             )
         assert result_a1["status"] == "pending"
         event_data = RequestAcceptedData(
-            request_id=int(result_a1["request_id"]), status="accepted",
-            transaction_id=0, amount=0,
+            request_id=int(result_a1["request_id"]),
+            status="accepted",
+            transaction_id=0,
+            amount=0,
         )
         await game.on_request_accepted(event_data)
 
@@ -269,7 +291,8 @@ class TestLuckyPotMultiGuildIsolation:
 
         # Deny guild_A entry
         event_data = RequestDeniedData(
-            request_id=int(result_a["request_id"]), status="denied",
+            request_id=int(result_a["request_id"]),
+            status="denied",
         )
         await game.on_request_denied(event_data)
 
@@ -304,8 +327,10 @@ class TestLuckyPotMultiGuildIsolation:
         # Confirm both entries via accepted events
         for result in [result_a, result_b]:
             event_data = RequestAcceptedData(
-                request_id=int(result["request_id"]), status="accepted",
-                transaction_id=0, amount=0,
+                request_id=int(result["request_id"]),
+                status="accepted",
+                transaction_id=0,
+                amount=0,
             )
             await game.on_request_accepted(event_data)
 
@@ -334,7 +359,6 @@ class TestLuckyPotMultiGuildIsolation:
 
 @pytest.mark.asyncio
 class TestLuckyPotPayout:
-
     async def test_send_winnings_success(self, configure_luckypot_stk, test_context):
         """Bot can send winnings to a user."""
         # Look up the user's STK ID
@@ -342,14 +366,18 @@ class TestLuckyPotPayout:
         assert stk_user is not None
 
         success = await game.send_winnings_to_user(
-            test_context["user1_discord_id"], 10,
+            test_context["user1_discord_id"],
+            10,
         )
         assert success is True
 
-    async def test_send_winnings_insufficient_balance(self, configure_luckypot_stk, test_context):
+    async def test_send_winnings_insufficient_balance(
+        self, configure_luckypot_stk, test_context
+    ):
         """Payout fails gracefully when bot balance is too low."""
         success = await game.send_winnings_to_user(
-            test_context["user1_discord_id"], 999999,
+            test_context["user1_discord_id"],
+            999999,
         )
         assert success is False
 
@@ -395,11 +423,61 @@ class TestLuckyPotDb:
             conn.close()
 
 
+class TestLuckyPotBanDb:
+    """Test LuckyPot's ban-related DB operations."""
+
+    def test_ban_user_creates_record(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.ban_user(conn, "user1", "guild1", "payment_denied", 48)
+            ban = db.get_active_ban(conn, "user1", "guild1")
+            assert ban is not None
+            assert ban["discord_id"] == "user1"
+            assert ban["guild_id"] == "guild1"
+            assert ban["reason"] == "payment_denied"
+        finally:
+            conn.close()
+
+    def test_get_active_ban_returns_none_when_no_ban(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            ban = db.get_active_ban(conn, "user1", "guild1")
+            assert ban is None
+        finally:
+            conn.close()
+
+    def test_expired_ban_not_returned(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            # Insert an already-expired ban
+            conn.execute(
+                """INSERT INTO user_bans (discord_id, guild_id, reason, expires_at)
+                   VALUES (?, ?, ?, datetime('now', '-1 hours'))""",
+                ("user1", "guild1", "payment_denied"),
+            )
+            conn.commit()
+            ban = db.get_active_ban(conn, "user1", "guild1")
+            assert ban is None
+        finally:
+            conn.close()
+
+    def test_ban_is_guild_scoped(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.ban_user(conn, "user1", "guild_A", "payment_denied", 48)
+            assert db.get_active_ban(conn, "user1", "guild_A") is not None
+            assert db.get_active_ban(conn, "user1", "guild_B") is None
+        finally:
+            conn.close()
+
+
 @pytest.mark.asyncio
 class TestLuckyPotEventHandlers:
     """Test the event handlers that will be wired to the WebSocket gateway."""
 
-    async def test_on_request_accepted_confirms_entry(self, luckypot_db, configure_luckypot_stk):
+    async def test_on_request_accepted_confirms_entry(
+        self, luckypot_db, configure_luckypot_stk
+    ):
         """Simulating a request.accepted event should confirm a pending entry."""
         request_id = 12345
         conn = db.get_connection()
@@ -410,7 +488,9 @@ class TestLuckyPotEventHandlers:
         finally:
             conn.close()
 
-        event_data = RequestAcceptedData(request_id=request_id, status="accepted", transaction_id=0, amount=0)
+        event_data = RequestAcceptedData(
+            request_id=request_id, status="accepted", transaction_id=0, amount=0
+        )
         await game.on_request_accepted(event_data)
 
         conn = db.get_connection()
@@ -420,7 +500,9 @@ class TestLuckyPotEventHandlers:
         finally:
             conn.close()
 
-    async def test_on_request_denied_denies_entry(self, luckypot_db, configure_luckypot_stk):
+    async def test_on_request_denied_denies_entry(
+        self, luckypot_db, configure_luckypot_stk
+    ):
         """Simulating a request.denied event should deny a pending entry."""
         request_id = 99999
         conn = db.get_connection()
@@ -438,5 +520,176 @@ class TestLuckyPotEventHandlers:
         try:
             entry = db.get_entry_by_id(conn, entry_id)
             assert entry["status"] == "denied"
+
+            # Ban should also have been created
+            ban = db.get_active_ban(conn, "user1", "guild1")
+            assert ban is not None
+            assert ban["reason"] == "payment_denied"
         finally:
             conn.close()
+
+
+@pytest.mark.asyncio
+class TestLuckyPotPaymentDenialBan:
+    """Tests for the payment denial ban system."""
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_denial_creates_ban(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Denying a payment request should create a ban record."""
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_guild_ban",
+        )
+        assert result["status"] == "pending"
+
+        event_data = RequestDeniedData(
+            request_id=int(result["request_id"]),
+            status="denied",
+        )
+        await game.on_request_denied(event_data)
+
+        conn = db.get_connection()
+        try:
+            ban = db.get_active_ban(
+                conn, test_context["user1_discord_id"], "test_guild_ban"
+            )
+            assert ban is not None
+            assert ban["reason"] == "payment_denied"
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_banned_user_cannot_enter_pot(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """A banned user should be rejected from entering any pot."""
+        # Enter and deny to get banned
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_guild_ban",
+        )
+        assert result["status"] == "pending"
+
+        event_data = RequestDeniedData(
+            request_id=int(result["request_id"]),
+            status="denied",
+        )
+        await game.on_request_denied(event_data)
+
+        # Try to enter again — should be banned
+        result2 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_guild_ban",
+        )
+        assert result2["status"] == "banned"
+        assert "expires_at" in result2
+
+    @patch("luckypot.game.random.random", return_value=0.001)
+    async def test_banned_user_cannot_roll_instant_win(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """A banned user should not get to roll for instant win — ban check comes first."""
+        # Manually create a ban
+        conn = db.get_connection()
+        try:
+            db.ban_user(
+                conn,
+                test_context["user1_discord_id"],
+                "test_guild_ban",
+                "payment_denied",
+                48,
+            )
+        finally:
+            conn.close()
+
+        # Even with instant win rigged, should be blocked
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_guild_ban",
+        )
+        assert result["status"] == "banned"
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_ban_is_guild_scoped(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """A ban in guild A should not block entry to guild B."""
+        # Get banned in guild A
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_A_ban",
+        )
+        assert result["status"] == "pending"
+        event_data = RequestDeniedData(
+            request_id=int(result["request_id"]),
+            status="denied",
+        )
+        await game.on_request_denied(event_data)
+
+        # Should be banned in guild A
+        result2 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_A_ban",
+        )
+        assert result2["status"] == "banned"
+
+        # Should be able to enter guild B
+        result3 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="guild_B_ban",
+        )
+        assert result3["status"] == "pending"
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_expired_ban_allows_entry(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """After a ban expires, the user should be able to enter again."""
+        # Create an already-expired ban
+        conn = db.get_connection()
+        try:
+            conn.execute(
+                """INSERT INTO user_bans (discord_id, guild_id, reason, expires_at)
+                   VALUES (?, ?, ?, datetime('now', '-1 hours'))""",
+                (
+                    test_context["user1_discord_id"],
+                    "test_guild_expired",
+                    "payment_denied",
+                ),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        # Should be allowed to enter (ban is expired)
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_guild_expired",
+        )
+        assert result["status"] == "pending"
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_other_user_not_affected_by_ban(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Banning user1 should not affect user2 in the same guild."""
+        # Ban user1
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_guild_other",
+        )
+        assert result["status"] == "pending"
+        event_data = RequestDeniedData(
+            request_id=int(result["request_id"]),
+            status="denied",
+        )
+        await game.on_request_denied(event_data)
+
+        # User2 should be able to enter the same guild
+        result2 = await game.enter_pot(
+            discord_id=test_context["user2_discord_id"],
+            guild_id="test_guild_other",
+        )
+        assert result2["status"] == "pending"
