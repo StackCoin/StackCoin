@@ -112,18 +112,20 @@ defmodule StackCoinWeb.UserLive do
           </.link>
         </p>
       </div>
+    </div>
 
-      <div :if={@has_transactions} class="mb-6">
-        <h2 class="text-lg font-bold mb-3">Balance History</h2>
-        <div class="border border-gray-200">
-          <img
-            src={~p"/graph/#{@user.id}?v=#{@graph_cache_buster}"}
-            alt={"#{@user.username}'s balance over time"}
-            class="w-full"
-          />
-        </div>
+    <div :if={@has_transactions} class="max-w-5xl mx-auto px-4 mb-6 w-full">
+      <h2 class="text-lg font-bold mb-3">Balance History</h2>
+      <div class="border border-gray-200">
+        <img
+          src={~p"/graph/#{@user.id}?v=#{@graph_cache_buster}"}
+          alt={"#{@user.username}'s balance over time"}
+          class="w-full"
+        />
       </div>
+    </div>
 
+    <div class="max-w-2xl mx-auto px-4 pb-6 w-full">
       <h2 class="text-lg font-bold mb-3">Recent Transactions</h2>
 
       <div class="border border-gray-200">

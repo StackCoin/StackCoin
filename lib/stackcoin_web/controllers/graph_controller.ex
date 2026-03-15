@@ -10,7 +10,7 @@ defmodule StackCoinWeb.GraphController do
       {:ok, png} ->
         conn
         |> put_resp_content_type("image/png")
-        |> put_resp_header("cache-control", "public, max-age=300")
+        |> put_resp_header("cache-control", "public, immutable, max-age=31536000")
         |> send_resp(200, png)
 
       {:error, :no_transactions} ->
