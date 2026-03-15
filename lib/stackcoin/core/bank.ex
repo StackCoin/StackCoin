@@ -371,6 +371,50 @@ defmodule StackCoin.Core.Bank do
     end
   end
 
+  @doc """
+  Returns the transaction network as nodes (users) and links (aggregated volume between pairs).
+  Each link represents the total STK transferred between two users in both directions.
+  """
+  def get_transaction_network do
+    nodes_query =
+      from(u in Schema.User,
+        left_join: b in Schema.BotUser,
+        on: b.user_id == u.id,
+        select: %{
+          id: u.id,
+          username: u.username,
+          balance: u.balance,
+          is_bot: not is_nil(b.id)
+        }
+      )
+
+    links_query =
+      from(t in Schema.Transaction,
+        select: %{
+          source: fragment("MIN(?, ?)", t.from_id, t.to_id),
+          target: fragment("MAX(?, ?)", t.from_id, t.to_id),
+          volume: sum(t.amount)
+        },
+        group_by: [
+          fragment("MIN(?, ?)", t.from_id, t.to_id),
+          fragment("MAX(?, ?)", t.from_id, t.to_id)
+        ]
+      )
+
+    nodes = Repo.all(nodes_query)
+    links = Repo.all(links_query)
+
+    # Only include nodes that appear in at least one transaction
+    linked_ids =
+      links
+      |> Enum.flat_map(fn l -> [l.source, l.target] end)
+      |> MapSet.new()
+
+    active_nodes = Enum.filter(nodes, fn n -> MapSet.member?(linked_ids, n.id) end)
+
+    {:ok, %{nodes: active_nodes, links: links}}
+  end
+
   defp create_transaction(from_user, to_user, amount, label) do
     new_from_balance = from_user.balance - amount
     new_to_balance = to_user.balance + amount

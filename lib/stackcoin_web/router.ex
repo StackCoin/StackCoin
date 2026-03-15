@@ -44,6 +44,7 @@ defmodule StackCoinWeb.Router do
       pipe_through(:browser)
 
       live("/", StackCoinWeb.HomeLive, :index)
+      live("/network", StackCoinWeb.NetworkLive, :index)
       live("/transactions", StackCoinWeb.TransactionsLive, :index)
       live("/requests", StackCoinWeb.RequestsLive, :index)
       live("/user/:id", StackCoinWeb.UserLive, :show)

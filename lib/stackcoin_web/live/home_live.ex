@@ -2,6 +2,7 @@ defmodule StackCoinWeb.HomeLive do
   use StackCoinWeb, :live_view
 
   alias StackCoin.Core.{User, Bank, Request}
+  alias StackCoin.NetworkCache
 
   @impl true
   def mount(_params, _session, socket) do
@@ -10,7 +11,9 @@ defmodule StackCoinWeb.HomeLive do
       Phoenix.PubSub.subscribe(StackCoin.PubSub, "requests")
     end
 
-    {:ok, socket}
+    {:ok, network_json} = NetworkCache.get_network_json()
+
+    {:ok, assign(socket, :network_json, network_json)}
   end
 
   @impl true
@@ -80,11 +83,13 @@ defmodule StackCoinWeb.HomeLive do
   def handle_info({:new_transaction, _transaction}, socket) do
     {:ok, users} = User.list_users_by_last_activity(socket.assigns.filter)
     {:ok, %{transactions: recent_transactions}} = Bank.search_transactions(limit: 5)
+    {:ok, network_json} = NetworkCache.get_network_json()
     pending_requests = load_pending_requests(socket.assigns[:current_user])
 
     {:noreply,
      socket
      |> assign(:users, users)
+     |> assign(:network_json, network_json)
      |> assign(:recent_transactions, recent_transactions)
      |> assign(:pending_requests, pending_requests)}
   end
@@ -167,6 +172,24 @@ defmodule StackCoinWeb.HomeLive do
           Bots
         </.link>
       </nav>
+
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold">Network</h2>
+          <.link navigate={~p"/network"} class="text-sm text-gray-500">
+            Full graph &rarr;
+          </.link>
+        </div>
+        <div
+          id="network-graph-preview"
+          phx-hook="NetworkGraph"
+          phx-update="ignore"
+          data-graph={@network_json}
+          data-compact="true"
+          class="border border-gray-200 w-full"
+        >
+        </div>
+      </div>
 
       <div :if={@pending_requests != []} class="mb-8">
         <div class="flex items-center justify-between mb-3">
