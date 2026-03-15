@@ -17,7 +17,8 @@ config :stackcoin,
 
 config :stackcoin,
   discord_application_id: env!("STACKCOIN_DISCORD_APPLICATION_ID", :integer, nil),
-  discord_token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil)
+  discord_token: env!("STACKCOIN_DISCORD_TOKEN", :string, nil),
+  discord_client_secret: env!("STACKCOIN_DISCORD_CLIENT_SECRET", :string, nil)
 
 # Dashboard basic auth — no password in dev means no auth prompt.
 # In prod, set DASHBOARD_USER and DASHBOARD_PASSWORD env vars.

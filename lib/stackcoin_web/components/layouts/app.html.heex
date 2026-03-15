@@ -1,5 +1,18 @@
-<header class="w-full flex items-center justify-center py-4">
-  <img src={~p"/images/stackcoin.png"} class="w-64" />
+<header class="w-full py-4">
+  <div class="flex items-center justify-center">
+    <img src={~p"/images/stackcoin.png"} class="w-64" />
+  </div>
+  <div class="text-center mt-2 text-sm">
+    <%= if assigns[:current_user] do %>
+      <span class="text-gray-500">
+        {@current_user.username}
+      </span>
+      <span class="text-gray-300 mx-1">&middot;</span>
+      <a href="/auth/logout" class="text-gray-500">Logout</a>
+    <% else %>
+      <a href="/auth/discord" class="text-gray-500">Login with Discord</a>
+    <% end %>
+  </div>
 </header>
 
 <main class="flex-1 flex flex-col">

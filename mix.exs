@@ -62,7 +62,8 @@ defmodule StackCoin.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:plug_cowboy, "~> 2.7"},
-      {:open_api_spex, "~> 3.22"}
+      {:open_api_spex, "~> 3.22"},
+      {:req, "~> 0.5"}
     ]
   end
 

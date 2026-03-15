@@ -149,6 +149,12 @@ defmodule StackCoinWeb.HomeLive do
             >
               BOT
             </span>
+            <span
+              :if={@current_user && @current_user.id == user.id}
+              class="text-xs uppercase tracking-wide text-gray-900 border border-black px-1"
+            >
+              YOU
+            </span>
           </.link>
           <div class="flex items-center gap-4">
             <span class="font-mono text-sm">{user.balance} STK</span>

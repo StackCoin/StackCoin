@@ -13,12 +13,21 @@ defmodule StackCoinWeb.Router do
     plug(:put_root_layout, html: {StackCoinWeb.Layouts, :root})
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
+    plug(StackCoinWeb.Plugs.UserAuth)
   end
 
   pipeline :api do
     plug(:accepts, ["json"])
 
     plug(OpenApiSpex.Plug.PutApiSpec, module: StackCoinWeb.ApiSpec)
+  end
+
+  scope "/auth" do
+    pipe_through(:browser)
+
+    get("/discord", StackCoinWeb.AuthController, :discord)
+    get("/discord/callback", StackCoinWeb.AuthController, :callback)
+    get("/logout", StackCoinWeb.AuthController, :logout)
   end
 
   scope "/" do
@@ -28,7 +37,9 @@ defmodule StackCoinWeb.Router do
     get("/graph/:user_id", StackCoinWeb.GraphController, :show)
   end
 
-  live_session :default, layout: {StackCoinWeb.Layouts, :app} do
+  live_session :default,
+    layout: {StackCoinWeb.Layouts, :app},
+    on_mount: [{StackCoinWeb.Live.UserAuthHook, :default}] do
     scope "/" do
       pipe_through(:browser)
 

@@ -137,6 +137,12 @@ defmodule StackCoinWeb.UserLive do
           >
             BOT
           </span>
+          <span
+            :if={@current_user && @current_user.id == @user.id}
+            class="text-xs uppercase tracking-wide text-gray-900 border border-black px-1 font-normal"
+          >
+            YOU
+          </span>
         </h1>
         <p class="text-lg font-mono mt-1">{@user.balance} STK</p>
         <p :if={@user.is_bot && @user.owner_username} class="text-sm text-gray-500 mt-1">
