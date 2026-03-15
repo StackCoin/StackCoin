@@ -101,41 +101,7 @@ defmodule StackCoinWeb.HomeLive do
         </.link>
       </nav>
 
-      <div class="border border-gray-200">
-        <div
-          :for={user <- @users}
-          class="flex items-center justify-between px-4 py-3 border-b border-gray-200 last:border-b-0"
-        >
-          <.link navigate={~p"/user/#{user.id}"} class="flex items-center gap-2 no-underline">
-            <span class="font-medium text-gray-900">{user.username}</span>
-            <span
-              :if={user.is_bot}
-              class="text-xs uppercase tracking-wide text-gray-500 border border-gray-300 px-1"
-            >
-              BOT
-            </span>
-          </.link>
-          <div class="flex items-center gap-4">
-            <span class="font-mono text-sm">{user.balance} STK</span>
-            <% {short, full} = format_time(user.last_active) %>
-            <time
-              :if={full}
-              datetime={NaiveDateTime.to_iso8601(user.last_active)}
-              title={full}
-              class="text-sm text-gray-500 w-16 text-right"
-            >
-              {short}
-            </time>
-            <span :if={!full} class="text-sm text-gray-500 w-16 text-right">{short}</span>
-          </div>
-        </div>
-
-        <div :if={@users == []} class="px-4 py-8 text-center text-gray-500">
-          No users found.
-        </div>
-      </div>
-
-      <div :if={@recent_transactions != []} class="mt-8">
+      <div :if={@recent_transactions != []} class="mb-8">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-bold">Recent Transactions</h2>
           <.link navigate={~p"/transactions"} class="text-sm text-gray-500">
@@ -167,6 +133,40 @@ defmodule StackCoinWeb.HomeLive do
             </time>
             <span :if={!full} class="text-sm text-gray-500">{short}</span>
           </div>
+        </div>
+      </div>
+
+      <div class="border border-gray-200">
+        <div
+          :for={user <- @users}
+          class="flex items-center justify-between px-4 py-3 border-b border-gray-200 last:border-b-0"
+        >
+          <.link navigate={~p"/user/#{user.id}"} class="flex items-center gap-2 no-underline">
+            <span class="font-medium text-gray-900">{user.username}</span>
+            <span
+              :if={user.is_bot}
+              class="text-xs uppercase tracking-wide text-gray-500 border border-gray-300 px-1"
+            >
+              BOT
+            </span>
+          </.link>
+          <div class="flex items-center gap-4">
+            <span class="font-mono text-sm">{user.balance} STK</span>
+            <% {short, full} = format_time(user.last_active) %>
+            <time
+              :if={full}
+              datetime={NaiveDateTime.to_iso8601(user.last_active)}
+              title={full}
+              class="text-sm text-gray-500 w-16 text-right"
+            >
+              {short}
+            </time>
+            <span :if={!full} class="text-sm text-gray-500 w-16 text-right">{short}</span>
+          </div>
+        </div>
+
+        <div :if={@users == []} class="px-4 py-8 text-center text-gray-500">
+          No users found.
         </div>
       </div>
     </div>
