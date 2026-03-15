@@ -25,6 +25,7 @@ defmodule StackCoinWeb.Router do
     pipe_through(:browser)
 
     get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, @swagger_ui_config)
+    get("/graph/:user_id", StackCoinWeb.GraphController, :show)
   end
 
   live_session :default, layout: {StackCoinWeb.Layouts, :app} do

@@ -20,6 +20,8 @@ defmodule StackCoinWeb.UserLive do
          socket
          |> assign(:user, user)
          |> assign(:transactions, transactions)
+         |> assign(:has_transactions, transactions != [])
+         |> assign(:graph_cache_buster, graph_cache_buster(transactions))
          |> assign(:page_title, "#{user.username} — StackCoin")}
 
       {:error, :user_not_found} ->
@@ -39,7 +41,9 @@ defmodule StackCoinWeb.UserLive do
         {:noreply,
          socket
          |> assign(:user, user)
-         |> assign(:transactions, transactions)}
+         |> assign(:transactions, transactions)
+         |> assign(:has_transactions, transactions != [])
+         |> assign(:graph_cache_buster, graph_cache_buster(transactions))}
 
       {:error, _} ->
         {:noreply, socket}
@@ -54,18 +58,32 @@ defmodule StackCoinWeb.UserLive do
     end
   end
 
-  defp time_ago(nil), do: "never"
+  defp graph_cache_buster([tx | _]), do: tx.id
+  defp graph_cache_buster([]), do: nil
 
-  defp time_ago(naive_datetime) do
+  defp format_time(nil), do: {"never", nil}
+
+  defp format_time(naive_datetime) do
     now = NaiveDateTime.utc_now()
     diff = NaiveDateTime.diff(now, naive_datetime, :second)
 
-    cond do
-      diff < 60 -> "#{diff}s ago"
-      diff < 3600 -> "#{div(diff, 60)}m ago"
-      diff < 86400 -> "#{div(diff, 3600)}h ago"
-      true -> "#{div(diff, 86400)}d ago"
-    end
+    short =
+      cond do
+        diff < 60 -> "#{diff}s ago"
+        diff < 3600 -> "#{div(diff, 60)}m ago"
+        diff < 86400 -> "#{div(diff, 3600)}h ago"
+        diff < 365 * 86400 -> "#{div(diff, 86400)}d ago"
+        true -> format_month_year(naive_datetime)
+      end
+
+    full = Calendar.strftime(naive_datetime, "%B %-d, %Y at %-I:%M %p UTC")
+    {short, full}
+  end
+
+  defp format_month_year(naive_datetime) do
+    month = Calendar.strftime(naive_datetime, "%b")
+    year = naive_datetime.year |> Integer.to_string() |> String.slice(-2..-1//1)
+    "#{month} '#{year}"
   end
 
   @impl true
@@ -95,6 +113,17 @@ defmodule StackCoinWeb.UserLive do
         </p>
       </div>
 
+      <div :if={@has_transactions} class="mb-6">
+        <h2 class="text-lg font-bold mb-3">Balance History</h2>
+        <div class="border border-gray-200">
+          <img
+            src={~p"/graph/#{@user.id}?v=#{@graph_cache_buster}"}
+            alt={"#{@user.username}'s balance over time"}
+            class="w-full"
+          />
+        </div>
+      </div>
+
       <h2 class="text-lg font-bold mb-3">Recent Transactions</h2>
 
       <div class="border border-gray-200">
@@ -110,7 +139,16 @@ defmodule StackCoinWeb.UserLive do
               <.link navigate={~p"/user/#{tx.to_id}"}>{tx.to_username}</.link>
             </span>
           </div>
-          <span class="text-sm text-gray-500">{time_ago(tx.time)}</span>
+          <% {short, full} = format_time(tx.time) %>
+          <time
+            :if={full}
+            datetime={NaiveDateTime.to_iso8601(tx.time)}
+            title={full}
+            class="text-sm text-gray-500"
+          >
+            {short}
+          </time>
+          <span :if={!full} class="text-sm text-gray-500">{short}</span>
         </div>
 
         <div :if={@transactions == []} class="px-4 py-8 text-center text-gray-500">
