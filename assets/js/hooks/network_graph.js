@@ -15,7 +15,6 @@ const NetworkGraph = {
     if (!raw) return
 
     const data = JSON.parse(raw)
-    const compact = container.dataset.compact === "true"
     this.showReserve = false
     this.fullData = data
     this.compact = compact
