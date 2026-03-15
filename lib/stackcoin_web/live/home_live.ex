@@ -200,6 +200,12 @@ defmodule StackCoinWeb.HomeLive do
         </div>
       </div>
 
+      <div :if={@current_user && @pending_requests == []} class="mb-8">
+        <.link navigate={~p"/requests"} class="text-sm text-gray-500">
+          Requests &rarr;
+        </.link>
+      </div>
+
       <div :if={@recent_transactions != []} class="mb-8">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-bold">Recent Transactions</h2>
