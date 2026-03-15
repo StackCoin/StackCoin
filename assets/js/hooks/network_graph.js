@@ -4,6 +4,13 @@ const NetworkGraph = {
     this.d3 = d3
 
     const container = this.el
+    const compact = container.dataset.compact === "true"
+
+    // Scroll the graph into view on the full /network page
+    if (!compact) {
+      container.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+
     const raw = container.dataset.graph
     if (!raw) return
 
