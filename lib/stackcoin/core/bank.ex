@@ -34,6 +34,13 @@ defmodule StackCoin.Core.Bank do
 
     case result do
       {:ok, transaction} ->
+        # Broadcast to global topic for LiveView real-time updates
+        Phoenix.PubSub.broadcast(
+          StackCoin.PubSub,
+          "transactions",
+          {:new_transaction, transaction}
+        )
+
         for {user_id, role} <- [{from_user_id, "sender"}, {to_user_id, "receiver"}] do
           Event.create_event("transfer.completed", user_id, %{
             transaction_id: transaction.id,
