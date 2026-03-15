@@ -74,4 +74,13 @@ export async function teardown(): Promise<void> {
       });
     });
   }
+
+  // Drop the test database so no stale data lingers on disk
+  try {
+    execSync("mix ecto.drop --quiet", {
+      env: mixEnv(),
+      cwd: STACKCOIN_ROOT,
+      stdio: "pipe",
+    });
+  } catch { /* DB may not exist */ }
 }

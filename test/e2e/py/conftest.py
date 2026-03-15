@@ -177,7 +177,7 @@ def stackcoin_server():
 
     yield {"base_url": base_url, "port": port, "process": proc}
 
-    # Cleanup
+    # Cleanup: stop server, then drop the test database
     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
     try:
         proc.wait(timeout=10)
@@ -188,6 +188,12 @@ def stackcoin_server():
             proc.stdout.close()
         if proc.stderr:
             proc.stderr.close()
+
+    subprocess.run(
+        ["mix", "ecto.drop", "--quiet"],
+        env=env, cwd=STACKCOIN_ROOT,
+        capture_output=True, timeout=30,
+    )
 
 
 # ---------------------------------------------------------------------------
