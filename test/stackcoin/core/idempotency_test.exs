@@ -4,6 +4,9 @@ defmodule StackCoin.Core.IdempotencyTest do
   alias StackCoin.Core.{Idempotency, User, Bot}
 
   setup do
+    # Clear any pre-existing idempotency keys so delete_expired counts are predictable
+    Repo.delete_all(StackCoin.Schema.IdempotencyKey)
+
     {:ok, _reserve} = User.create_user_account("1", "Reserve", balance: 1000)
     {:ok, _owner} = User.create_user_account("owner1", "Owner1")
     {:ok, bot1} = Bot.create_bot_user("owner1", "Bot1")
