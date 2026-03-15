@@ -4,6 +4,8 @@ defmodule StackCoinWeb.GraphController do
   alias StackCoin.GraphCache
 
   def show(conn, %{"user_id" => user_id}) do
+    user_id = String.to_integer(user_id)
+
     case GraphCache.get_graph_png(user_id) do
       {:ok, png} ->
         conn
