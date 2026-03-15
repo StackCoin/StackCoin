@@ -24,9 +24,16 @@ defmodule StackCoinWeb.Router do
   scope "/" do
     pipe_through(:browser)
 
-    get("/", StackCoinWeb.PageController, :home)
-
     get("/swaggerui", OpenApiSpex.Plug.SwaggerUI, @swagger_ui_config)
+  end
+
+  live_session :default, layout: {StackCoinWeb.Layouts, :app} do
+    scope "/" do
+      pipe_through(:browser)
+
+      live("/", StackCoinWeb.HomeLive, :index)
+      live("/user/:id", StackCoinWeb.UserLive, :show)
+    end
   end
 
   scope "/api" do

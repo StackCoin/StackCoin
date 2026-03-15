@@ -1,0 +1,113 @@
+defmodule StackCoinWeb.HomeLive do
+  use StackCoinWeb, :live_view
+
+  alias StackCoin.Core.User
+
+  @impl true
+  def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(StackCoin.PubSub, "transactions")
+    end
+
+    {:ok, socket}
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    filter = parse_filter(params["filter"])
+
+    {:ok, users} = User.list_users_by_last_activity(filter)
+
+    {:noreply,
+     socket
+     |> assign(:filter, filter)
+     |> assign(:users, users)
+     |> assign(:page_title, "StackCoin")}
+  end
+
+  @impl true
+  def handle_info({:new_transaction, _transaction}, socket) do
+    {:ok, users} = User.list_users_by_last_activity(socket.assigns.filter)
+    {:noreply, assign(socket, :users, users)}
+  end
+
+  defp parse_filter("bots"), do: :bots
+  defp parse_filter("users"), do: :users
+  defp parse_filter(_), do: :all
+
+  defp time_ago(nil), do: "never"
+
+  defp time_ago(naive_datetime) do
+    now = NaiveDateTime.utc_now()
+    diff = NaiveDateTime.diff(now, naive_datetime, :second)
+
+    cond do
+      diff < 60 -> "#{diff}s ago"
+      diff < 3600 -> "#{div(diff, 60)}m ago"
+      diff < 86400 -> "#{div(diff, 3600)}h ago"
+      true -> "#{div(diff, 86400)}d ago"
+    end
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="max-w-2xl mx-auto px-4 py-6 w-full">
+      <nav class="flex gap-6 mb-6 border-b border-gray-200">
+        <.link
+          patch={~p"/"}
+          class={[
+            "pb-2 text-sm",
+            @filter == :all && "border-b-2 border-black font-bold"
+          ]}
+        >
+          All
+        </.link>
+        <.link
+          patch={~p"/?filter=users"}
+          class={[
+            "pb-2 text-sm",
+            @filter == :users && "border-b-2 border-black font-bold"
+          ]}
+        >
+          Users
+        </.link>
+        <.link
+          patch={~p"/?filter=bots"}
+          class={[
+            "pb-2 text-sm",
+            @filter == :bots && "border-b-2 border-black font-bold"
+          ]}
+        >
+          Bots
+        </.link>
+      </nav>
+
+      <div class="border border-gray-200">
+        <div
+          :for={user <- @users}
+          class="flex items-center justify-between px-4 py-3 border-b border-gray-200 last:border-b-0"
+        >
+          <.link navigate={~p"/user/#{user.id}"} class="flex items-center gap-2 no-underline">
+            <span class="font-medium text-gray-900">{user.username}</span>
+            <span
+              :if={user.is_bot}
+              class="text-xs uppercase tracking-wide text-gray-500 border border-gray-300 px-1"
+            >
+              BOT
+            </span>
+          </.link>
+          <div class="flex items-center gap-4">
+            <span class="font-mono text-sm">{user.balance} STK</span>
+            <span class="text-sm text-gray-500 w-16 text-right">{time_ago(user.last_active)}</span>
+          </div>
+        </div>
+
+        <div :if={@users == []} class="px-4 py-8 text-center text-gray-500">
+          No users found.
+        </div>
+      </div>
+    </div>
+    """
+  end
+end
