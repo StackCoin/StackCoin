@@ -143,42 +143,10 @@ defmodule StackCoinWeb.HomeLive do
   def render(assigns) do
     ~H"""
     <div class="max-w-2xl mx-auto px-4 py-6 w-full">
-      <nav class="flex gap-6 mb-6 border-b border-gray-200">
-        <.link
-          patch={~p"/"}
-          class={[
-            "pb-2 text-sm",
-            @filter == :all && "border-b-2 border-black font-bold"
-          ]}
-        >
-          All
-        </.link>
-        <.link
-          patch={~p"/?filter=users"}
-          class={[
-            "pb-2 text-sm",
-            @filter == :users && "border-b-2 border-black font-bold"
-          ]}
-        >
-          Users
-        </.link>
-        <.link
-          patch={~p"/?filter=bots"}
-          class={[
-            "pb-2 text-sm",
-            @filter == :bots && "border-b-2 border-black font-bold"
-          ]}
-        >
-          Bots
-        </.link>
-      </nav>
-
-      <div class="mb-8">
+      <.link navigate={~p"/network"} class="block mb-8 no-underline">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-bold">Network</h2>
-          <.link navigate={~p"/network"} class="text-sm text-gray-500">
-            Full graph &rarr;
-          </.link>
+          <h2 class="text-lg font-bold text-gray-900">Network</h2>
+          <span class="text-sm text-gray-500">Full graph &rarr;</span>
         </div>
         <div
           id="network-graph-preview"
@@ -188,6 +156,41 @@ defmodule StackCoinWeb.HomeLive do
           data-compact="true"
           class="border border-gray-200 w-full"
         >
+        </div>
+      </.link>
+
+      <div :if={@recent_transactions != []} class="mb-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold">Recent Transactions</h2>
+          <.link navigate={~p"/transactions"} class="text-sm text-gray-500">
+            View all &rarr;
+          </.link>
+        </div>
+
+        <div class="border border-gray-200">
+          <div
+            :for={tx <- @recent_transactions}
+            class="flex items-center justify-between px-4 py-3 border-b border-gray-200 last:border-b-0"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-sm font-bold">{tx.amount} STK</span>
+              <span class="text-sm">
+                <.link navigate={~p"/user/#{tx.from_id}"}>{tx.from_username}</.link>
+                &rarr;
+                <.link navigate={~p"/user/#{tx.to_id}"}>{tx.to_username}</.link>
+              </span>
+            </div>
+            <% {short, full} = format_time(tx.time) %>
+            <time
+              :if={full}
+              datetime={NaiveDateTime.to_iso8601(tx.time)}
+              title={full}
+              class="text-sm text-gray-500"
+            >
+              {short}
+            </time>
+            <span :if={!full} class="text-sm text-gray-500">{short}</span>
+          </div>
         </div>
       </div>
 
@@ -237,40 +240,35 @@ defmodule StackCoinWeb.HomeLive do
         </.link>
       </div>
 
-      <div :if={@recent_transactions != []} class="mb-8">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-bold">Recent Transactions</h2>
-          <.link navigate={~p"/transactions"} class="text-sm text-gray-500">
-            View all &rarr;
-          </.link>
-        </div>
-
-        <div class="border border-gray-200">
-          <div
-            :for={tx <- @recent_transactions}
-            class="flex items-center justify-between px-4 py-3 border-b border-gray-200 last:border-b-0"
-          >
-            <div class="flex items-center gap-2">
-              <span class="font-mono text-sm font-bold">{tx.amount} STK</span>
-              <span class="text-sm">
-                <.link navigate={~p"/user/#{tx.from_id}"}>{tx.from_username}</.link>
-                &rarr;
-                <.link navigate={~p"/user/#{tx.to_id}"}>{tx.to_username}</.link>
-              </span>
-            </div>
-            <% {short, full} = format_time(tx.time) %>
-            <time
-              :if={full}
-              datetime={NaiveDateTime.to_iso8601(tx.time)}
-              title={full}
-              class="text-sm text-gray-500"
-            >
-              {short}
-            </time>
-            <span :if={!full} class="text-sm text-gray-500">{short}</span>
-          </div>
-        </div>
-      </div>
+      <nav class="flex gap-6 mb-6 border-b border-gray-200">
+        <.link
+          patch={~p"/"}
+          class={[
+            "pb-2 text-sm",
+            @filter == :all && "border-b-2 border-black font-bold"
+          ]}
+        >
+          All
+        </.link>
+        <.link
+          patch={~p"/?filter=users"}
+          class={[
+            "pb-2 text-sm",
+            @filter == :users && "border-b-2 border-black font-bold"
+          ]}
+        >
+          Users
+        </.link>
+        <.link
+          patch={~p"/?filter=bots"}
+          class={[
+            "pb-2 text-sm",
+            @filter == :bots && "border-b-2 border-black font-bold"
+          ]}
+        >
+          Bots
+        </.link>
+      </nav>
 
       <div class="border border-gray-200">
         <div
