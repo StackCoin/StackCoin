@@ -286,6 +286,34 @@ defmodule StackCoin.Core.User do
     {:ok, Repo.all(query)}
   end
 
+  @doc """
+  Gets full user detail including bot info (if applicable) and owner username.
+  """
+  def get_user_detail(user_id) do
+    query =
+      from(u in Schema.User,
+        left_join: b in Schema.BotUser,
+        on: b.user_id == u.id,
+        left_join: owner in Schema.User,
+        on: b.owner_id == owner.id,
+        where: u.id == ^user_id,
+        select: %{
+          id: u.id,
+          username: u.username,
+          balance: u.balance,
+          is_bot: not is_nil(b.id),
+          bot_name: b.name,
+          owner_id: b.owner_id,
+          owner_username: owner.username
+        }
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :user_not_found}
+      user -> {:ok, user}
+    end
+  end
+
   defp build_user_count_query(username, discord_id, banned, admin) do
     query = from(u in Schema.User)
 
