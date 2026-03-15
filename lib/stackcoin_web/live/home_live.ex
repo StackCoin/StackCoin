@@ -35,18 +35,29 @@ defmodule StackCoinWeb.HomeLive do
   defp parse_filter("users"), do: :users
   defp parse_filter(_), do: :all
 
-  defp time_ago(nil), do: "never"
+  defp format_time(nil), do: {"never", nil}
 
-  defp time_ago(naive_datetime) do
+  defp format_time(naive_datetime) do
     now = NaiveDateTime.utc_now()
     diff = NaiveDateTime.diff(now, naive_datetime, :second)
 
-    cond do
-      diff < 60 -> "#{diff}s ago"
-      diff < 3600 -> "#{div(diff, 60)}m ago"
-      diff < 86400 -> "#{div(diff, 3600)}h ago"
-      true -> "#{div(diff, 86400)}d ago"
-    end
+    short =
+      cond do
+        diff < 60 -> "#{diff}s ago"
+        diff < 3600 -> "#{div(diff, 60)}m ago"
+        diff < 86400 -> "#{div(diff, 3600)}h ago"
+        diff < 365 * 86400 -> "#{div(diff, 86400)}d ago"
+        true -> format_month_year(naive_datetime)
+      end
+
+    full = Calendar.strftime(naive_datetime, "%B %-d, %Y at %-I:%M %p UTC")
+    {short, full}
+  end
+
+  defp format_month_year(naive_datetime) do
+    month = Calendar.strftime(naive_datetime, "%b")
+    year = naive_datetime.year |> Integer.to_string() |> String.slice(-2..-1//1)
+    "#{month} '#{year}"
   end
 
   @impl true
@@ -99,7 +110,16 @@ defmodule StackCoinWeb.HomeLive do
           </.link>
           <div class="flex items-center gap-4">
             <span class="font-mono text-sm">{user.balance} STK</span>
-            <span class="text-sm text-gray-500 w-16 text-right">{time_ago(user.last_active)}</span>
+            <% {short, full} = format_time(user.last_active) %>
+            <time
+              :if={full}
+              datetime={NaiveDateTime.to_iso8601(user.last_active)}
+              title={full}
+              class="text-sm text-gray-500 w-16 text-right"
+            >
+              {short}
+            </time>
+            <span :if={!full} class="text-sm text-gray-500 w-16 text-right">{short}</span>
           </div>
         </div>
 
