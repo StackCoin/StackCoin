@@ -20,7 +20,7 @@ defmodule StackCoinWeb.Components.Pagination do
     assigns = assign(assigns, :pages, page_numbers(assigns.current_page, assigns.total_pages))
 
     ~H"""
-    <nav :if={@total_pages > 1} class="flex items-center gap-1 mt-4">
+    <nav :if={@total_pages > 1} class="flex items-center justify-center gap-1 mt-4">
       <.link
         :if={@current_page > 1}
         patch={@patch_url.(@current_page - 1)}
