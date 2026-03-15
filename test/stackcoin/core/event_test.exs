@@ -115,6 +115,7 @@ defmodule StackCoin.Core.EventTest do
     test "returns has_more=false when events fit in one page", %{user1: user1} do
       {:ok, _} =
         Event.create_event("request.denied", user1.id, %{
+          denied_by_id: user1.id,
           request_id: 1,
           status: "denied"
         })
@@ -127,6 +128,7 @@ defmodule StackCoin.Core.EventTest do
     test "returns has_more=true when more events exist beyond the limit", %{user1: user1} do
       for _ <- 1..4 do
         Event.create_event("request.denied", user1.id, %{
+          denied_by_id: user1.id,
           request_id: 1,
           status: "denied"
         })

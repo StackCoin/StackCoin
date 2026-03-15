@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Client, Gateway } from "stackcoin";
-import type { AnyEvent, TransferCompletedEvent } from "stackcoin";
+import type { AnyEvent, RequestDeniedEvent, TransferCompletedEvent } from "stackcoin";
 import { seedDatabase, type TestContext } from "./helpers.js";
 
 let ctx: TestContext;
@@ -114,6 +114,30 @@ describe("gateway", () => {
     for (let i = 1; i < eventIds.length; i++) {
       expect(eventIds[i]).toBeGreaterThan(eventIds[i - 1]);
     }
+
+    gateway.stop();
+    await connectPromise;
+  });
+
+  it("includes denied_by_id on request.denied events", async () => {
+    gateway = new Gateway({
+      token: ctx.botToken,
+      wsUrl: wsUrl(ctx.baseUrl),
+    });
+
+    const eventPromise = waitForEvent(gateway, "request.denied");
+    const connectPromise = gateway.connect();
+
+    await new Promise((r) => setTimeout(r, 1000));
+
+    const request = await client.createRequest(ctx.user1Id, 1, { label: "gateway deny test" });
+    await client.denyRequest(request.request_id);
+
+    const event = await eventPromise;
+    const data = (event as RequestDeniedEvent).data;
+
+    expect(data.request_id).toBe(request.request_id);
+    expect(data.denied_by_id).toBe(ctx.botUserId);
 
     gateway.stop();
     await connectPromise;

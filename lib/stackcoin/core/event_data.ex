@@ -40,5 +40,6 @@ defmodule StackCoin.Core.EventData do
   defevent "request.denied", RequestDenied do
     field(:request_id, :integer, required: true, description: "Request ID")
     field(:status, :string, required: true, description: "New request status")
+    field(:denied_by_id, :integer, required: true, description: "User ID that denied the request")
   end
 end

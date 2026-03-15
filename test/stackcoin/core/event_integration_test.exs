@@ -138,6 +138,7 @@ defmodule StackCoin.Core.EventIntegrationTest do
            "expected a request.denied event with request_id #{request.id} for responder"
 
     data = Jason.decode!(responder_event.data)
+    assert data["denied_by_id"] == bot.user.id
     assert data["request_id"] == request.id
     assert data["status"] == "denied"
 
@@ -151,5 +152,8 @@ defmodule StackCoin.Core.EventIntegrationTest do
 
     assert requester_event,
            "expected a request.denied event with request_id #{request.id} for requester"
+
+    requester_data = Jason.decode!(requester_event.data)
+    assert requester_data["denied_by_id"] == bot.user.id
   end
 end

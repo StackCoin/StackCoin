@@ -58,6 +58,7 @@ defmodule StackCoin.EventSchemaTest do
       fields = EventData.RequestDenied.__schema__(:fields)
       assert :request_id in fields
       assert :status in fields
+      assert :denied_by_id in fields
     end
   end
 
@@ -95,13 +96,20 @@ defmodule StackCoin.EventSchemaTest do
     end
 
     test "RequestDenied changeset validates required fields" do
-      changeset = EventData.RequestDenied.changeset(%{request_id: 1, status: "denied"})
+      changeset =
+        EventData.RequestDenied.changeset(%{
+          denied_by_id: 2,
+          request_id: 1,
+          status: "denied"
+        })
+
       assert changeset.valid?
     end
 
     test "RequestDenied changeset rejects missing required fields" do
       changeset = EventData.RequestDenied.changeset(%{})
       refute changeset.valid?
+      assert Keyword.has_key?(changeset.errors, :denied_by_id)
       assert Keyword.has_key?(changeset.errors, :request_id)
       assert Keyword.has_key?(changeset.errors, :status)
     end

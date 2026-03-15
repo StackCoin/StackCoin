@@ -260,6 +260,7 @@ defmodule StackCoin.Core.Request do
         {:ok, updated_request} ->
           for uid <- [request.requester_id, request.responder_id] do
             Event.create_event("request.denied", uid, %{
+              denied_by_id: user_id,
               request_id: request.id,
               status: "denied"
             })
