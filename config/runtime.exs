@@ -3,8 +3,13 @@ import Dotenvy
 
 source!([".env", System.get_env()])
 
-config :stackcoin, StackCoin.Repo,
-  database: env!("STACKCOIN_DATABASE", :string, "./data/stackcoin.db")
+# In test env, test.exs already sets the database path (./data/test.db).
+# Only apply the runtime default for non-test environments, or when
+# STACKCOIN_DATABASE is explicitly set (e.g. E2E tests).
+if config_env() != :test or System.get_env("STACKCOIN_DATABASE") do
+  config :stackcoin, StackCoin.Repo,
+    database: env!("STACKCOIN_DATABASE", :string, "./data/stackcoin.db")
+end
 
 config :stackcoin,
   test_guild_id: env!("STACKCOIN_TEST_GUILD_ID", :integer, nil),
