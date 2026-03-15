@@ -200,9 +200,9 @@ defmodule StackCoinWeb.HomeLive do
         </div>
       </div>
 
-      <div :if={@current_user && @pending_requests == []} class="mb-8">
+      <div :if={@current_user && @pending_requests == []} class="mb-8 text-right">
         <.link navigate={~p"/requests"} class="text-sm text-gray-500">
-          Requests &rarr;
+          Your Requests &rarr;
         </.link>
       </div>
 
