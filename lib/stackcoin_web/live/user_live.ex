@@ -19,7 +19,7 @@ defmodule StackCoinWeb.UserLive do
     page = parse_page(params["page"])
 
     case load_user_data(id, page) do
-      {:ok, user, transactions, total_count} ->
+      {:ok, user, transactions, total_count, graph_buster} ->
         total_pages = max(ceil(total_count / @per_page), 1)
 
         {:noreply,
@@ -29,7 +29,7 @@ defmodule StackCoinWeb.UserLive do
          |> assign(:has_transactions, total_count > 0)
          |> assign(:current_page, page)
          |> assign(:total_pages, total_pages)
-         |> assign(:graph_cache_buster, graph_cache_buster(transactions, page))
+         |> assign(:graph_cache_buster, graph_buster)
          |> assign(:page_title, "#{user.username} — StackCoin")}
 
       {:error, :user_not_found} ->
@@ -46,7 +46,7 @@ defmodule StackCoinWeb.UserLive do
     page = socket.assigns.current_page
 
     case load_user_data(user_id, page) do
-      {:ok, user, transactions, total_count} ->
+      {:ok, user, transactions, total_count, graph_buster} ->
         total_pages = max(ceil(total_count / @per_page), 1)
 
         {:noreply,
@@ -55,7 +55,7 @@ defmodule StackCoinWeb.UserLive do
          |> assign(:transactions, transactions)
          |> assign(:has_transactions, total_count > 0)
          |> assign(:total_pages, total_pages)
-         |> assign(:graph_cache_buster, graph_cache_buster(transactions, page))}
+         |> assign(:graph_cache_buster, graph_buster)}
 
       {:error, _} ->
         {:noreply, socket}
@@ -67,14 +67,18 @@ defmodule StackCoinWeb.UserLive do
 
     with {:ok, user} <- User.get_user_detail(user_id),
          {:ok, %{transactions: transactions, total_count: total_count}} <-
-           Bank.search_transactions(includes_user_id: user_id, limit: @per_page, offset: offset) do
-      {:ok, user, transactions, total_count}
+           Bank.search_transactions(includes_user_id: user_id, limit: @per_page, offset: offset),
+         {:ok, %{transactions: latest}} <-
+           Bank.search_transactions(includes_user_id: user_id, limit: 1) do
+      graph_buster =
+        case latest do
+          [tx | _] -> tx.id
+          [] -> 0
+        end
+
+      {:ok, user, transactions, total_count, graph_buster}
     end
   end
-
-  # Only use first page transactions for cache busting the graph
-  defp graph_cache_buster([tx | _], 1), do: tx.id
-  defp graph_cache_buster(_, _), do: nil
 
   defp parse_page(nil), do: 1
 
