@@ -3,6 +3,8 @@ defmodule StackCoinWeb.UserLive do
 
   alias StackCoin.Core.{User, Bank}
 
+  @per_page 20
+
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -13,15 +15,21 @@ defmodule StackCoinWeb.UserLive do
   end
 
   @impl true
-  def handle_params(%{"id" => id}, _uri, socket) do
-    case load_user_data(id) do
-      {:ok, user, transactions} ->
+  def handle_params(%{"id" => id} = params, _uri, socket) do
+    page = parse_page(params["page"])
+
+    case load_user_data(id, page) do
+      {:ok, user, transactions, total_count} ->
+        total_pages = max(ceil(total_count / @per_page), 1)
+
         {:noreply,
          socket
          |> assign(:user, user)
          |> assign(:transactions, transactions)
-         |> assign(:has_transactions, transactions != [])
-         |> assign(:graph_cache_buster, graph_cache_buster(transactions))
+         |> assign(:has_transactions, total_count > 0)
+         |> assign(:current_page, page)
+         |> assign(:total_pages, total_pages)
+         |> assign(:graph_cache_buster, graph_cache_buster(transactions, page))
          |> assign(:page_title, "#{user.username} — StackCoin")}
 
       {:error, :user_not_found} ->
@@ -35,31 +43,51 @@ defmodule StackCoinWeb.UserLive do
   @impl true
   def handle_info({:new_transaction, _transaction}, socket) do
     user_id = socket.assigns.user.id
+    page = socket.assigns.current_page
 
-    case load_user_data(user_id) do
-      {:ok, user, transactions} ->
+    case load_user_data(user_id, page) do
+      {:ok, user, transactions, total_count} ->
+        total_pages = max(ceil(total_count / @per_page), 1)
+
         {:noreply,
          socket
          |> assign(:user, user)
          |> assign(:transactions, transactions)
-         |> assign(:has_transactions, transactions != [])
-         |> assign(:graph_cache_buster, graph_cache_buster(transactions))}
+         |> assign(:has_transactions, total_count > 0)
+         |> assign(:total_pages, total_pages)
+         |> assign(:graph_cache_buster, graph_cache_buster(transactions, page))}
 
       {:error, _} ->
         {:noreply, socket}
     end
   end
 
-  defp load_user_data(user_id) do
+  defp load_user_data(user_id, page) do
+    offset = (page - 1) * @per_page
+
     with {:ok, user} <- User.get_user_detail(user_id),
-         {:ok, %{transactions: transactions}} <-
-           Bank.search_transactions(includes_user_id: user_id, limit: 20) do
-      {:ok, user, transactions}
+         {:ok, %{transactions: transactions, total_count: total_count}} <-
+           Bank.search_transactions(includes_user_id: user_id, limit: @per_page, offset: offset) do
+      {:ok, user, transactions, total_count}
     end
   end
 
-  defp graph_cache_buster([tx | _]), do: tx.id
-  defp graph_cache_buster([]), do: nil
+  # Only use first page transactions for cache busting the graph
+  defp graph_cache_buster([tx | _], 1), do: tx.id
+  defp graph_cache_buster(_, _), do: nil
+
+  defp parse_page(nil), do: 1
+
+  defp parse_page(str) do
+    case Integer.parse(str) do
+      {n, _} when n > 0 -> n
+      _ -> 1
+    end
+  end
+
+  defp patch_url(assigns) do
+    fn page -> ~p"/user/#{assigns.user.id}?page=#{page}" end
+  end
 
   defp format_time(nil), do: {"never", nil}
 
@@ -88,6 +116,8 @@ defmodule StackCoinWeb.UserLive do
 
   @impl true
   def render(assigns) do
+    assigns = assign(assigns, :patch_url_fn, patch_url(assigns))
+
     ~H"""
     <div class="max-w-2xl mx-auto px-4 py-6 w-full">
       <.link navigate={~p"/"} class="text-sm text-gray-500 mb-6 inline-block">
@@ -126,7 +156,15 @@ defmodule StackCoinWeb.UserLive do
     </div>
 
     <div class="max-w-2xl mx-auto px-4 pb-6 w-full">
-      <h2 class="text-lg font-bold mb-3">Recent Transactions</h2>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold">Transactions</h2>
+        <.link
+          navigate={~p"/transactions?user=#{@user.id}"}
+          class="text-sm text-gray-500"
+        >
+          View all &rarr;
+        </.link>
+      </div>
 
       <div class="border border-gray-200">
         <div
@@ -157,6 +195,12 @@ defmodule StackCoinWeb.UserLive do
           No transactions yet.
         </div>
       </div>
+
+      <.pagination
+        current_page={@current_page}
+        total_pages={@total_pages}
+        patch_url={@patch_url_fn}
+      />
     </div>
     """
   end

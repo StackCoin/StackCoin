@@ -84,6 +84,7 @@ defmodule StackCoinWeb do
       import Phoenix.HTML
       # Core UI components
       import StackCoinWeb.CoreComponents
+      import StackCoinWeb.Components.Pagination
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

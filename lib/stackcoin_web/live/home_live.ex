@@ -1,7 +1,7 @@
 defmodule StackCoinWeb.HomeLive do
   use StackCoinWeb, :live_view
 
-  alias StackCoin.Core.User
+  alias StackCoin.Core.{User, Bank}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,18 +17,25 @@ defmodule StackCoinWeb.HomeLive do
     filter = parse_filter(params["filter"])
 
     {:ok, users} = User.list_users_by_last_activity(filter)
+    {:ok, %{transactions: recent_transactions}} = Bank.search_transactions(limit: 5)
 
     {:noreply,
      socket
      |> assign(:filter, filter)
      |> assign(:users, users)
+     |> assign(:recent_transactions, recent_transactions)
      |> assign(:page_title, "StackCoin")}
   end
 
   @impl true
   def handle_info({:new_transaction, _transaction}, socket) do
     {:ok, users} = User.list_users_by_last_activity(socket.assigns.filter)
-    {:noreply, assign(socket, :users, users)}
+    {:ok, %{transactions: recent_transactions}} = Bank.search_transactions(limit: 5)
+
+    {:noreply,
+     socket
+     |> assign(:users, users)
+     |> assign(:recent_transactions, recent_transactions)}
   end
 
   defp parse_filter("bots"), do: :bots
@@ -125,6 +132,41 @@ defmodule StackCoinWeb.HomeLive do
 
         <div :if={@users == []} class="px-4 py-8 text-center text-gray-500">
           No users found.
+        </div>
+      </div>
+
+      <div :if={@recent_transactions != []} class="mt-8">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold">Recent Transactions</h2>
+          <.link navigate={~p"/transactions"} class="text-sm text-gray-500">
+            View all &rarr;
+          </.link>
+        </div>
+
+        <div class="border border-gray-200">
+          <div
+            :for={tx <- @recent_transactions}
+            class="flex items-center justify-between px-4 py-3 border-b border-gray-200 last:border-b-0"
+          >
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-sm font-bold">{tx.amount} STK</span>
+              <span class="text-sm">
+                <.link navigate={~p"/user/#{tx.from_id}"}>{tx.from_username}</.link>
+                &rarr;
+                <.link navigate={~p"/user/#{tx.to_id}"}>{tx.to_username}</.link>
+              </span>
+            </div>
+            <% {short, full} = format_time(tx.time) %>
+            <time
+              :if={full}
+              datetime={NaiveDateTime.to_iso8601(tx.time)}
+              title={full}
+              class="text-sm text-gray-500"
+            >
+              {short}
+            </time>
+            <span :if={!full} class="text-sm text-gray-500">{short}</span>
+          </div>
         </div>
       </div>
     </div>
