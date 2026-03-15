@@ -19,7 +19,8 @@ cover:
   MIX_ENV=test mix coveralls.html
   @echo "Report: cover/excoveralls.html"
 
-# Copy the production database to local dev
+# Copy the production database to local dev.
+# Stops the remote container first so SQLite checkpoints cleanly on shutdown.
 pull-db:
   @echo "Stopping stackcoin container on remote..."
   ssh {{ remote_host }} "cd {{ remote_compose_dir }} && docker compose stop stackcoin"
