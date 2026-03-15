@@ -32,6 +32,12 @@ defmodule StackCoin.Core.Request do
           preloaded_request = Repo.preload(request, [:requester, :responder])
           StackCoin.Bot.Discord.Request.send_request_notification(preloaded_request)
 
+          Phoenix.PubSub.broadcast(
+            StackCoin.PubSub,
+            "requests",
+            {:request_created, preloaded_request}
+          )
+
           for user_id <- [requester_id, responder_id] do
             Event.create_event("request.created", user_id, %{
               request_id: request.id,
@@ -221,6 +227,12 @@ defmodule StackCoin.Core.Request do
 
       case result do
         {:ok, {updated_request, transaction}} ->
+          Phoenix.PubSub.broadcast(
+            StackCoin.PubSub,
+            "requests",
+            {:request_accepted, updated_request}
+          )
+
           for user_id <- [request.requester_id, request.responder_id] do
             Event.create_event("request.accepted", user_id, %{
               request_id: request.id,
@@ -258,6 +270,14 @@ defmodule StackCoin.Core.Request do
            |> Schema.Request.changeset(request_attrs)
            |> Repo.update() do
         {:ok, updated_request} ->
+          preloaded = Repo.preload(updated_request, [:requester, :responder, :denied_by])
+
+          Phoenix.PubSub.broadcast(
+            StackCoin.PubSub,
+            "requests",
+            {:request_denied, preloaded}
+          )
+
           for uid <- [request.requester_id, request.responder_id] do
             Event.create_event("request.denied", uid, %{
               denied_by_id: user_id,
@@ -266,7 +286,7 @@ defmodule StackCoin.Core.Request do
             })
           end
 
-          {:ok, Repo.preload(updated_request, [:requester, :responder, :denied_by])}
+          {:ok, preloaded}
 
         {:error, changeset} ->
           {:error, changeset}

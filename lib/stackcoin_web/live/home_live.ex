@@ -7,6 +7,7 @@ defmodule StackCoinWeb.HomeLive do
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(StackCoin.PubSub, "transactions")
+      Phoenix.PubSub.subscribe(StackCoin.PubSub, "requests")
     end
 
     {:ok, socket}
@@ -66,6 +67,13 @@ defmodule StackCoinWeb.HomeLive do
     else
       {:noreply, socket}
     end
+  end
+
+  @impl true
+  def handle_info({event, _request}, socket)
+      when event in [:request_created, :request_accepted, :request_denied] do
+    pending_requests = load_pending_requests(socket.assigns[:current_user])
+    {:noreply, assign(socket, :pending_requests, pending_requests)}
   end
 
   @impl true

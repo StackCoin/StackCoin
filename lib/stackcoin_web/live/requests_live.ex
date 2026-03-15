@@ -9,6 +9,7 @@ defmodule StackCoinWeb.RequestsLive do
   def mount(_params, _session, socket) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(StackCoin.PubSub, "transactions")
+      Phoenix.PubSub.subscribe(StackCoin.PubSub, "requests")
     end
 
     {:ok, socket}
@@ -75,7 +76,8 @@ defmodule StackCoinWeb.RequestsLive do
   end
 
   @impl true
-  def handle_info({:new_transaction, _transaction}, socket) do
+  def handle_info({event, _}, socket)
+      when event in [:new_transaction, :request_created, :request_accepted, :request_denied] do
     {:noreply, reload_requests(socket)}
   end
 
