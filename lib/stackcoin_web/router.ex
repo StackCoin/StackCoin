@@ -45,6 +45,7 @@ defmodule StackCoinWeb.Router do
 
       live("/", StackCoinWeb.HomeLive, :index)
       live("/transactions", StackCoinWeb.TransactionsLive, :index)
+      live("/requests", StackCoinWeb.RequestsLive, :index)
       live("/user/:id", StackCoinWeb.UserLive, :show)
     end
   end

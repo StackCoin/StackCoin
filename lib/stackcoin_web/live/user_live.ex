@@ -22,6 +22,11 @@ defmodule StackCoinWeb.UserLive do
       {:ok, user, transactions, total_count, graph_buster} ->
         total_pages = max(ceil(total_count / @per_page), 1)
 
+        can_send =
+          socket.assigns[:current_user] != nil and
+            socket.assigns[:current_user].id != user.id and
+            not user.is_bot
+
         {:noreply,
          socket
          |> assign(:user, user)
@@ -30,6 +35,7 @@ defmodule StackCoinWeb.UserLive do
          |> assign(:current_page, page)
          |> assign(:total_pages, total_pages)
          |> assign(:graph_cache_buster, graph_buster)
+         |> assign(:can_send, can_send)
          |> assign(:page_title, "#{user.username} — StackCoin")}
 
       {:error, :user_not_found} ->
@@ -37,6 +43,30 @@ defmodule StackCoinWeb.UserLive do
          socket
          |> put_flash(:error, "User not found")
          |> push_navigate(to: ~p"/")}
+    end
+  end
+
+  @impl true
+  def handle_event("send_stk", %{"amount" => amount_str}, socket) do
+    current_user = socket.assigns.current_user
+
+    if current_user == nil do
+      {:noreply, put_flash(socket, :error, "You must be logged in to send STK.")}
+    else
+      case Integer.parse(amount_str) do
+        {amount, _} when amount > 0 ->
+          case Bank.transfer_between_users(current_user.id, socket.assigns.user.id, amount) do
+            {:ok, _transaction} ->
+              {:noreply,
+               put_flash(socket, :info, "Sent #{amount} STK to #{socket.assigns.user.username}")}
+
+            {:error, reason} ->
+              {:noreply, put_flash(socket, :error, format_error(reason))}
+          end
+
+        _ ->
+          {:noreply, put_flash(socket, :error, "Enter a valid amount.")}
+      end
     end
   end
 
@@ -92,6 +122,14 @@ defmodule StackCoinWeb.UserLive do
   defp patch_url(assigns) do
     fn page -> ~p"/user/#{assigns.user.id}?page=#{page}" end
   end
+
+  defp format_error(:insufficient_balance), do: "Insufficient balance."
+  defp format_error(:invalid_amount), do: "Invalid amount."
+  defp format_error(:self_transfer), do: "You can't send to yourself."
+  defp format_error(:user_banned), do: "Your account is banned."
+  defp format_error(:recipient_banned), do: "Recipient is banned."
+  defp format_error(reason) when is_binary(reason), do: reason
+  defp format_error(reason), do: "Transfer failed: #{inspect(reason)}"
 
   defp format_time(nil), do: {"never", nil}
 
@@ -151,6 +189,27 @@ defmodule StackCoinWeb.UserLive do
             {@user.owner_username}
           </.link>
         </p>
+      </div>
+
+      <div :if={@can_send} class="mb-6">
+        <h2 class="text-lg font-bold mb-3">Send STK</h2>
+        <form phx-submit="send_stk" class="flex items-center gap-2">
+          <input
+            type="number"
+            name="amount"
+            min="1"
+            placeholder="Amount"
+            required
+            class="border border-gray-200 px-3 py-2 text-sm w-32 font-mono"
+          />
+          <span class="text-sm text-gray-500">STK</span>
+          <button
+            type="submit"
+            class="border border-black px-4 py-2 text-sm font-bold"
+          >
+            Send
+          </button>
+        </form>
       </div>
     </div>
 
