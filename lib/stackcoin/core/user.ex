@@ -254,6 +254,38 @@ defmodule StackCoin.Core.User do
     {:ok, %{users: users, total_count: total_count}}
   end
 
+  @doc """
+  Lists users sorted by their most recent transaction time (as sender or receiver).
+  Filter options: :all (default), :users (non-bots only), :bots (bots only).
+  """
+  def list_users_by_last_activity(filter \\ :all) do
+    base_query =
+      from(u in Schema.User,
+        left_join: t in Schema.Transaction,
+        on: t.from_id == u.id or t.to_id == u.id,
+        left_join: b in Schema.BotUser,
+        on: b.user_id == u.id,
+        group_by: [u.id],
+        select: %{
+          id: u.id,
+          username: u.username,
+          balance: u.balance,
+          is_bot: not is_nil(b.id),
+          last_active: max(t.time)
+        },
+        order_by: [desc_nulls_last: max(t.time)]
+      )
+
+    query =
+      case filter do
+        :bots -> from([u, t, b] in base_query, where: not is_nil(b.id))
+        :users -> from([u, t, b] in base_query, where: is_nil(b.id))
+        _ -> base_query
+      end
+
+    {:ok, Repo.all(query)}
+  end
+
   defp build_user_count_query(username, discord_id, banned, admin) do
     query = from(u in Schema.User)
 
