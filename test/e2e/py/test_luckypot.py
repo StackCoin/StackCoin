@@ -738,7 +738,8 @@ class TestAutoEnterDb:
         try:
             db.set_auto_enter(conn, "user1", "guild1", True)
             db.set_auto_enter(conn, "user2", "guild1", True)
-            db.set_auto_enter(conn, "user3", "guild1", False)
+            db.set_auto_enter(conn, "user3", "guild1", True)  # opt in first
+            db.set_auto_enter(conn, "user3", "guild1", False)  # then opt out
             users = db.get_auto_enter_users(conn, "guild1")
             assert set(users) == {"user1", "user2"}
         finally:
