@@ -5,6 +5,7 @@ These tests import the REAL luckypot package and exercise its game logic,
 db module, and stk module against the live StackCoin test server.
 """
 
+import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -751,5 +752,151 @@ class TestAutoEnterDb:
             db.set_auto_enter(conn, "user1", "guild_A", True)
             assert db.get_auto_enter_status(conn, "user1", "guild_A") is True
             assert db.get_auto_enter_status(conn, "user1", "guild_B") is False
+        finally:
+            conn.close()
+
+
+@pytest.mark.asyncio
+class TestAutoEnterTrigger:
+    """Test that auto-enter fires correctly after a pot win."""
+
+    @patch("luckypot.game.AUTO_ENTER_DELAY_SECONDS", 0)
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_opted_in_user_is_entered_after_win(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """After a pot ends, opted-in users are automatically entered into the new pot."""
+        guild_id = "test_guild_ae"
+
+        # Opt user2 in to auto-enter
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, test_context["user2_discord_id"], guild_id, True)
+        finally:
+            conn.close()
+
+        # User1 enters and confirms
+        result1 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert result1["status"] == "pending"
+        await game.on_request_accepted(
+            RequestAcceptedData(
+                request_id=int(result1["request_id"]),
+                status="accepted",
+                transaction_id=0,
+                amount=0,
+            )
+        )
+
+        # Force draw — pot ends, user1 wins
+        with patch("luckypot.game.random.random", return_value=0.01):
+            task = asyncio.create_task(
+                game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
+            )
+            await task
+
+        # Give the auto-enter task a moment to run (delay is patched to 0)
+        await asyncio.sleep(0.1)
+
+        # User2 should now have a pending entry in the NEW pot
+        conn = db.get_connection()
+        try:
+            new_pot = db.get_active_pot(conn, guild_id)
+            assert new_pot is not None
+            assert (
+                db.has_user_entered(
+                    conn, new_pot["pot_id"], test_context["user2_discord_id"]
+                )
+                is True
+            )
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.AUTO_ENTER_DELAY_SECONDS", 0)
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_not_opted_in_user_is_not_entered(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Users not opted in are not auto-entered after a pot ends."""
+        guild_id = "test_guild_ae_no"
+
+        # User1 enters and confirms, no one opts in to auto-enter
+        result1 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert result1["status"] == "pending"
+        await game.on_request_accepted(
+            RequestAcceptedData(
+                request_id=int(result1["request_id"]),
+                status="accepted",
+                transaction_id=0,
+                amount=0,
+            )
+        )
+
+        with patch("luckypot.game.random.random", return_value=0.01):
+            await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
+
+        await asyncio.sleep(0.1)
+
+        # No new pot should exist yet (nobody entered to trigger ensure_active_pot)
+        conn = db.get_connection()
+        try:
+            assert db.get_active_pot(conn, guild_id) is None
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.AUTO_ENTER_DELAY_SECONDS", 0)
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_banned_user_skipped_by_auto_enter(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Auto-enter silently skips banned users."""
+        guild_id = "test_guild_ae_ban"
+
+        # Opt user2 in but also ban them
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, test_context["user2_discord_id"], guild_id, True)
+            db.ban_user(
+                conn, test_context["user2_discord_id"], guild_id, "payment_denied", 48
+            )
+        finally:
+            conn.close()
+
+        # User1 enters and confirms
+        result1 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert result1["status"] == "pending"
+        await game.on_request_accepted(
+            RequestAcceptedData(
+                request_id=int(result1["request_id"]),
+                status="accepted",
+                transaction_id=0,
+                amount=0,
+            )
+        )
+
+        with patch("luckypot.game.random.random", return_value=0.01):
+            await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
+
+        await asyncio.sleep(0.1)
+
+        # Banned user2 should not be in the new pot
+        conn = db.get_connection()
+        try:
+            new_pot = db.get_active_pot(conn, guild_id)
+            if new_pot:
+                assert (
+                    db.has_user_entered(
+                        conn, new_pot["pot_id"], test_context["user2_discord_id"]
+                    )
+                    is False
+                )
         finally:
             conn.close()
