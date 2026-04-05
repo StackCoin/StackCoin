@@ -792,13 +792,12 @@ class TestAutoEnterTrigger:
 
         # Force draw — pot ends, user1 wins
         with patch("luckypot.game.random.random", return_value=0.01):
-            task = asyncio.create_task(
-                game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
-            )
-            await task
+            await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
 
-        # Give the auto-enter task a moment to run (delay is patched to 0)
-        await asyncio.sleep(0.1)
+        # Drain all pending tasks (including the fire-and-forget _auto_enter_users task)
+        await asyncio.gather(
+            *[t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        )
 
         # User2 should now have a pending entry in the NEW pot
         conn = db.get_connection()
@@ -840,7 +839,10 @@ class TestAutoEnterTrigger:
         with patch("luckypot.game.random.random", return_value=0.01):
             await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
 
-        await asyncio.sleep(0.1)
+        # Drain all pending tasks (including the fire-and-forget _auto_enter_users task)
+        await asyncio.gather(
+            *[t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        )
 
         # No new pot should exist yet (nobody entered to trigger ensure_active_pot)
         conn = db.get_connection()
@@ -885,18 +887,23 @@ class TestAutoEnterTrigger:
         with patch("luckypot.game.random.random", return_value=0.01):
             await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
 
-        await asyncio.sleep(0.1)
+        # Drain all pending tasks (including the fire-and-forget _auto_enter_users task)
+        await asyncio.gather(
+            *[t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        )
 
         # Banned user2 should not be in the new pot
         conn = db.get_connection()
         try:
             new_pot = db.get_active_pot(conn, guild_id)
-            if new_pot:
-                assert (
-                    db.has_user_entered(
-                        conn, new_pot["pot_id"], test_context["user2_discord_id"]
-                    )
-                    is False
+            assert (
+                new_pot is not None
+            )  # ensure_active_pot creates it before the ban check fires
+            assert (
+                db.has_user_entered(
+                    conn, new_pot["pot_id"], test_context["user2_discord_id"]
                 )
+                is False
+            )
         finally:
             conn.close()
