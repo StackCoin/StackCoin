@@ -693,3 +693,62 @@ class TestLuckyPotPaymentDenialBan:
             guild_id="test_guild_other",
         )
         assert result2["status"] == "pending"
+
+
+class TestAutoEnterDb:
+    """Test auto_enter_users DB operations."""
+
+    def test_opt_in_creates_record(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, "user1", "guild1", True)
+            assert db.get_auto_enter_status(conn, "user1", "guild1") is True
+        finally:
+            conn.close()
+
+    def test_opt_out_removes_record(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, "user1", "guild1", True)
+            db.set_auto_enter(conn, "user1", "guild1", False)
+            assert db.get_auto_enter_status(conn, "user1", "guild1") is False
+        finally:
+            conn.close()
+
+    def test_opt_out_when_not_opted_in_is_safe(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, "user1", "guild1", False)
+            assert db.get_auto_enter_status(conn, "user1", "guild1") is False
+        finally:
+            conn.close()
+
+    def test_opt_in_twice_is_idempotent(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, "user1", "guild1", True)
+            db.set_auto_enter(conn, "user1", "guild1", True)
+            users = db.get_auto_enter_users(conn, "guild1")
+            assert users.count("user1") == 1
+        finally:
+            conn.close()
+
+    def test_get_auto_enter_users_returns_all_opted_in(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, "user1", "guild1", True)
+            db.set_auto_enter(conn, "user2", "guild1", True)
+            db.set_auto_enter(conn, "user3", "guild1", False)
+            users = db.get_auto_enter_users(conn, "guild1")
+            assert set(users) == {"user1", "user2"}
+        finally:
+            conn.close()
+
+    def test_auto_enter_is_guild_scoped(self, luckypot_db):
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, "user1", "guild_A", True)
+            assert db.get_auto_enter_status(conn, "user1", "guild_A") is True
+            assert db.get_auto_enter_status(conn, "user1", "guild_B") is False
+        finally:
+            conn.close()
