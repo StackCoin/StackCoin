@@ -294,6 +294,7 @@ class TestLuckyPotMultiGuildIsolation:
         event_data = RequestDeniedData(
             request_id=int(result_a["request_id"]),
             status="denied",
+            denied_by_id=0,
         )
         await game.on_request_denied(event_data)
 
@@ -514,7 +515,9 @@ class TestLuckyPotEventHandlers:
         finally:
             conn.close()
 
-        event_data = RequestDeniedData(request_id=request_id, status="denied")
+        event_data = RequestDeniedData(
+            request_id=request_id, status="denied", denied_by_id=0
+        )
         await game.on_request_denied(event_data)
 
         conn = db.get_connection()
@@ -548,6 +551,7 @@ class TestLuckyPotPaymentDenialBan:
         event_data = RequestDeniedData(
             request_id=int(result["request_id"]),
             status="denied",
+            denied_by_id=0,
         )
         await game.on_request_denied(event_data)
 
@@ -576,6 +580,7 @@ class TestLuckyPotPaymentDenialBan:
         event_data = RequestDeniedData(
             request_id=int(result["request_id"]),
             status="denied",
+            denied_by_id=0,
         )
         await game.on_request_denied(event_data)
 
@@ -626,6 +631,7 @@ class TestLuckyPotPaymentDenialBan:
         event_data = RequestDeniedData(
             request_id=int(result["request_id"]),
             status="denied",
+            denied_by_id=0,
         )
         await game.on_request_denied(event_data)
 
@@ -685,6 +691,7 @@ class TestLuckyPotPaymentDenialBan:
         event_data = RequestDeniedData(
             request_id=int(result["request_id"]),
             status="denied",
+            denied_by_id=0,
         )
         await game.on_request_denied(event_data)
 
