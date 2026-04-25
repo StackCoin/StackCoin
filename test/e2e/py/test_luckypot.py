@@ -6,12 +6,14 @@ db module, and stk module against the live StackCoin test server.
 """
 
 import asyncio
-from unittest.mock import patch
+import inspect
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from stackcoin import RequestAcceptedData, RequestDeniedData
 
 from luckypot import db, game, stk
+from luckypot.discord import commands
 
 
 @pytest.mark.asyncio
@@ -47,6 +49,28 @@ class TestLuckyPotEntryFlow:
             assert entry["stackcoin_request_id"] == result["request_id"]
         finally:
             conn.close()
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_enter_pot_local_insert_failure_does_not_leave_stackcoin_request(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """If local entry persistence fails, the remote StackCoin request should be cancelled."""
+        with patch("luckypot.game.db.add_entry", side_effect=RuntimeError("db write failed")):
+            result = await game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id="test_guild_insert_failure",
+            )
+
+        assert result["status"] == "error"
+
+        requests = await stk.get_client().get_requests(status="pending")
+        luckypot_requests = [
+            request
+            for request in requests
+            if request.label == "LuckyPot entry (pot #1)"
+            and request.responder.id == test_context["user1_id"]
+        ]
+        assert luckypot_requests == []
 
     @patch("luckypot.game.random.random", return_value=0.99)
     async def test_enter_pot_duplicate_blocked(
@@ -198,6 +222,51 @@ class TestLuckyPotInstantWin:
                 guild_id="test_guild_iw",
             )
         assert result3["status"] == "pending"
+
+    async def test_zero_amount_free_entries_keep_draw_weight(self):
+        """Instant-win free entries should be eligible to win later draws."""
+        participants = [
+            {"discord_id": "free_entry_user", "amount": 0},
+            {"discord_id": "paid_entry_user", "amount": game.POT_ENTRY_COST},
+        ]
+
+        with patch("luckypot.game.random.uniform", return_value=0.1):
+            winner = game.select_random_winner(participants)
+
+        assert winner["discord_id"] == "free_entry_user"
+
+    async def test_zero_amount_free_entries_do_not_increase_payout_value(
+        self, luckypot_db
+    ):
+        """Free entries should get draw weight without adding uncollected STK to payouts."""
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild_free_weight")
+            db.add_entry(conn, pot["pot_id"], "free_entry_user", 0, status="confirmed")
+            db.add_entry(
+                conn,
+                pot["pot_id"],
+                "paid_entry_user",
+                game.POT_ENTRY_COST,
+                "req_1",
+                status="confirmed",
+            )
+        finally:
+            conn.close()
+
+        send = AsyncMock(return_value=True)
+        with patch("luckypot.game.send_winnings_to_user", send):
+            won = await game.end_pot_with_winner("guild_free_weight")
+
+        assert won is True
+        assert send.await_args.args[1] == game.POT_ENTRY_COST
+
+        conn = db.get_connection()
+        try:
+            history = db.get_pot_history(conn, "guild_free_weight")
+            assert history[0]["winning_amount"] == game.POT_ENTRY_COST
+        finally:
+            conn.close()
 
 
 @pytest.mark.asyncio
@@ -502,6 +571,37 @@ class TestLuckyPotEventHandlers:
         finally:
             conn.close()
 
+    async def test_on_request_accepted_after_pot_ended_refunds_entry(
+        self, luckypot_db, configure_luckypot_stk
+    ):
+        """Accepting an old request after payout should refund instead of growing an ended pot."""
+        request_id = 12345
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild1")
+            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, str(request_id))
+            db.end_pot(conn, pot["pot_id"], "winner", 5, "DAILY DRAW")
+        finally:
+            conn.close()
+
+        event_data = RequestAcceptedData(
+            request_id=request_id, status="accepted", transaction_id=0, amount=5
+        )
+        refund = AsyncMock(return_value=True)
+        with patch("luckypot.game.send_winnings_to_user", refund):
+            await game.on_request_accepted(event_data)
+
+        refund.assert_awaited_once_with("user1", 5, idempotency_key="pot_refund:12345")
+
+        conn = db.get_connection()
+        try:
+            entry = db.get_entry_by_id(conn, entry_id)
+            history = db.get_pot_history(conn, "guild1")
+            assert entry["status"] == "denied"
+            assert history[0]["winning_amount"] == 5
+        finally:
+            conn.close()
+
     async def test_on_request_denied_denies_entry(
         self, luckypot_db, configure_luckypot_stk
     ):
@@ -533,6 +633,17 @@ class TestLuckyPotEventHandlers:
             conn.close()
 
 
+def test_enter_pot_command_defers_before_slow_stackcoin_work():
+    """/enter-pot should acknowledge Discord before slow StackCoin calls."""
+    source = inspect.getsource(commands.register_commands)
+    enter_start = source.index("class EnterPot")
+    pot_status_start = source.index("class PotStatus")
+    enter_source = source[enter_start:pot_status_start]
+
+    assert "ctx.defer" in enter_source
+    assert enter_source.index("ctx.defer") < enter_source.index("enter_pot(")
+
+
 @pytest.mark.asyncio
 class TestLuckyPotPaymentDenialBan:
     """Tests for the payment denial ban system."""
@@ -562,6 +673,52 @@ class TestLuckyPotPaymentDenialBan:
             )
             assert ban is not None
             assert ban["reason"] == "payment_denied"
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_reenter_after_denial_uses_a_new_stackcoin_request(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Retrying after a denied request should not reuse the denied StackCoin request."""
+        guild_id = "test_guild_retry_denied"
+        first = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert first["status"] == "pending"
+
+        await stk.get_client().deny_request(int(first["request_id"]))
+        await game.on_request_denied(
+            RequestDeniedData(
+                request_id=int(first["request_id"]),
+                status="denied",
+                denied_by_id=test_context["bot_user_id"],
+            )
+        )
+
+        conn = db.get_connection()
+        try:
+            conn.execute("DELETE FROM user_bans")
+            conn.commit()
+        finally:
+            conn.close()
+
+        second = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert second["status"] == "pending"
+        assert second["request_id"] != first["request_id"]
+
+        conn = db.get_connection()
+        try:
+            rows = conn.execute(
+                """SELECT stackcoin_request_id, status FROM pot_entries
+                   WHERE stackcoin_request_id = ?""",
+                (first["request_id"],),
+            ).fetchall()
+            assert len(rows) == 1
         finally:
             conn.close()
 
