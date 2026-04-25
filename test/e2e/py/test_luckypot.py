@@ -7,6 +7,7 @@ db module, and stk module against the live StackCoin test server.
 
 import asyncio
 import inspect
+import sqlite3
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -493,6 +494,41 @@ class TestLuckyPotDb:
         finally:
             conn.close()
 
+    def test_only_one_active_pot_per_guild_can_exist(self, luckypot_db):
+        """The DB should reject multiple active pots for the same guild."""
+        conn = db.get_connection()
+        try:
+            db.create_pot(conn, "guild1")
+            with pytest.raises(sqlite3.IntegrityError):
+                db.create_pot(conn, "guild1")
+        finally:
+            conn.close()
+
+    def test_stackcoin_request_id_is_unique(self, luckypot_db):
+        """A StackCoin request must map to at most one LuckyPot entry."""
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild1")
+            db.add_entry(conn, pot["pot_id"], "user1", 5, "req_1")
+            with pytest.raises(sqlite3.IntegrityError):
+                db.add_entry(conn, pot["pot_id"], "user2", 5, "req_1")
+        finally:
+            conn.close()
+
+    def test_denied_entry_allows_same_request_id_reuse(self, luckypot_db):
+        """After an entry is denied, its request_id can be reused by a new pending entry."""
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild1")
+            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, "req_1")
+            db.deny_entry(conn, entry_id)
+            # Should succeed -- the partial unique index only covers pending/confirmed
+            entry_id2 = db.add_entry(conn, pot["pot_id"], "user2", 5, "req_1")
+            assert entry_id2 is not None
+            assert entry_id2 != entry_id
+        finally:
+            conn.close()
+
 
 class TestLuckyPotBanDb:
     """Test LuckyPot's ban-related DB operations."""
@@ -599,6 +635,112 @@ class TestLuckyPotEventHandlers:
             history = db.get_pot_history(conn, "guild1")
             assert entry["status"] == "denied"
             assert history[0]["winning_amount"] == 5
+        finally:
+            conn.close()
+
+    async def test_payout_retry_after_local_end_failure_does_not_require_current_balance(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """A retry after payout succeeds but local pot end fails should still close the pot."""
+        guild_id = "guild_payout_retry"
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, guild_id)
+            db.add_entry(
+                conn,
+                pot["pot_id"],
+                test_context["user1_discord_id"],
+                5,
+                "req_1",
+                status="confirmed",
+            )
+        finally:
+            conn.close()
+
+        send = AsyncMock(return_value=True)
+        with patch("luckypot.game.send_winnings_to_user", send), patch(
+            "luckypot.game.db.end_pot", side_effect=RuntimeError("db end failed")
+        ):
+            with pytest.raises(RuntimeError):
+                await game.end_pot_with_winner(guild_id)
+
+        with patch("luckypot.game.stk.get_bot_balance", AsyncMock(return_value=0)), patch(
+            "luckypot.game.stk.get_user_by_discord_id",
+            AsyncMock(return_value={"id": test_context["user1_id"]}),
+        ), patch(
+            "luckypot.game.stk.send_stk",
+            AsyncMock(return_value={"success": True, "transaction_id": 1}),
+        ):
+            won = await game.end_pot_with_winner(guild_id)
+
+        assert won is True
+        conn = db.get_connection()
+        try:
+            assert db.get_active_pot(conn, guild_id) is None
+        finally:
+            conn.close()
+
+    async def test_payout_retry_with_multiple_participants_does_not_double_pay(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Retrying a draw with >1 participant must pay the same winner, not re-roll."""
+        guild_id = "guild_multi_retry"
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, guild_id)
+            db.add_entry(
+                conn,
+                pot["pot_id"],
+                test_context["user1_discord_id"],
+                5,
+                "req_a",
+                status="confirmed",
+            )
+            db.add_entry(
+                conn,
+                pot["pot_id"],
+                test_context["user2_discord_id"],
+                5,
+                "req_b",
+                status="confirmed",
+            )
+        finally:
+            conn.close()
+
+        send_calls = []
+
+        async def tracking_send(discord_id, amount, idempotency_key=None):
+            send_calls.append(
+                {"discord_id": discord_id, "amount": amount, "key": idempotency_key}
+            )
+            return True
+
+        # end_pot fails on first attempt, then succeeds on internal retry.
+        # process_pot_win should handle this without re-rolling the winner.
+        call_count = {"n": 0}
+        original_end_pot = db.end_pot
+
+        def end_pot_fail_once(conn, pot_id, winner, amount, win_type):
+            call_count["n"] += 1
+            if call_count["n"] == 1:
+                raise RuntimeError("db end failed")
+            return original_end_pot(conn, pot_id, winner, amount, win_type)
+
+        with patch("luckypot.game.send_winnings_to_user", side_effect=tracking_send), patch(
+            "luckypot.game.db.end_pot", side_effect=end_pot_fail_once
+        ):
+            won = await game.end_pot_with_winner(guild_id)
+
+        assert won is True
+        # Only one payout should have been made (not two to different winners)
+        assert len(send_calls) == 1
+
+        conn = db.get_connection()
+        try:
+            assert db.get_active_pot(conn, guild_id) is None
+            history = db.get_pot_history(conn, guild_id)
+            assert history[0]["winner_discord_id"] == send_calls[0]["discord_id"]
+            assert history[0]["winning_amount"] == 10
         finally:
             conn.close()
 
