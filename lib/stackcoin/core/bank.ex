@@ -130,10 +130,17 @@ defmodule StackCoin.Core.Bank do
   @doc """
   Gets a user's balance history over time based on their transactions.
   Returns a list of {timestamp, balance} tuples showing balance after each transaction.
+
+  Options:
+    - `:since` - a `NaiveDateTime` to filter transactions from. When provided,
+      only transactions at or after `since` are included, plus a synthetic anchor
+      point at the `since` timestamp showing the balance at that moment.
   """
-  def get_user_balance_history(user_id) do
+  def get_user_balance_history(user_id, opts \\ []) do
     with {:ok, user} <- User.get_user_by_id(user_id) do
-      query =
+      since = Keyword.get(opts, :since)
+
+      base_query =
         from(t in Schema.Transaction,
           where: t.from_id == ^user_id or t.to_id == ^user_id,
           order_by: [asc: t.time],
@@ -145,6 +152,13 @@ defmodule StackCoin.Core.Bank do
             to_new_balance: t.to_new_balance
           }
         )
+
+      query =
+        if since do
+          from(t in base_query, where: t.time >= ^since)
+        else
+          base_query
+        end
 
       transactions = Repo.all(query)
 
@@ -161,7 +175,16 @@ defmodule StackCoin.Core.Bank do
           {transaction.time, balance}
         end)
 
-      # Add current balance as the latest point if there are transactions
+      # When since is set, prepend a synthetic anchor point at the since timestamp
+      balance_history =
+        if since do
+          anchor_balance = get_anchor_balance(user_id, since, user.balance)
+          [{since, anchor_balance} | balance_history]
+        else
+          balance_history
+        end
+
+      # Add current balance as the latest point
       final_history =
         case balance_history do
           [] -> [{NaiveDateTime.utc_now(), user.balance}]
@@ -171,6 +194,34 @@ defmodule StackCoin.Core.Bank do
       {:ok, final_history}
     else
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  # Returns the user's balance from the last transaction before the given timestamp.
+  # Falls back to the user's current balance if no prior transaction exists.
+  defp get_anchor_balance(user_id, since, current_balance) do
+    query =
+      from(t in Schema.Transaction,
+        where: (t.from_id == ^user_id or t.to_id == ^user_id) and t.time < ^since,
+        order_by: [desc: t.time, desc: t.id],
+        limit: 1,
+        select: %{
+          from_id: t.from_id,
+          from_new_balance: t.from_new_balance,
+          to_new_balance: t.to_new_balance
+        }
+      )
+
+    case Repo.one(query) do
+      nil ->
+        current_balance
+
+      transaction ->
+        if transaction.from_id == user_id do
+          transaction.from_new_balance
+        else
+          transaction.to_new_balance
+        end
     end
   end
 
