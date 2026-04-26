@@ -51,7 +51,8 @@ defmodule StackCoin.Bot.Discord.Graph do
 
       with {:ok, history} <- Bank.get_user_balance_history(target_user.id, opts) do
         try do
-          png_binary = Graph.generate_balance_chart(history, target_user.username)
+          chart_opts = if since, do: [zoomed: true], else: []
+          png_binary = Graph.generate_balance_chart(history, target_user.username, chart_opts)
           send_graph_followup(interaction, png_binary, target_user.username, is_self)
         rescue
           error ->

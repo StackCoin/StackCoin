@@ -13,8 +13,22 @@ defmodule StackCoin.Graph do
   with vertical jumps at transaction times. Segments are colored
   green (balance went up), red (balance went down), or grey (unchanged).
   """
-  def generate_balance_chart(balance_history, username) do
+  def generate_balance_chart(balance_history, username, opts \\ []) do
     segments = build_segments(balance_history)
+    zoomed = Keyword.get(opts, :zoomed, false)
+
+    y_opts =
+      if zoomed do
+        balances = Enum.map(segments, & &1["balance"])
+        min_bal = Enum.min(balances, fn -> 0 end)
+        max_bal = Enum.max(balances, fn -> 0 end)
+        range = max(max_bal - min_bal, 1)
+        pad = round(range * 0.1)
+        [type: :quantitative, title: "Balance (STK)", axis: [grid: true],
+         scale: [domain: [max(min_bal - pad, 0), max_bal + pad]]]
+      else
+        [type: :quantitative, title: "Balance (STK)", axis: [grid: true]]
+      end
 
     vl =
       Vl.new(
@@ -30,11 +44,7 @@ defmodule StackCoin.Graph do
         title: "Time",
         axis: [grid: false]
       )
-      |> Vl.encode_field(:y, "balance",
-        type: :quantitative,
-        title: "Balance (STK)",
-        axis: [grid: true]
-      )
+      |> Vl.encode_field(:y, "balance", y_opts)
       |> Vl.encode_field(:color, "direction",
         type: :nominal,
         scale: [
