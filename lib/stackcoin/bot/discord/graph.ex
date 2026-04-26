@@ -6,7 +6,7 @@ defmodule StackCoin.Bot.Discord.Graph do
   alias StackCoin.Core.{Bank, User, DiscordGuild}
   alias StackCoin.Graph
   alias StackCoin.Bot.Discord.Commands
-  alias Nostrum.Api
+  alias Nostrum.Api.Interaction, as: ApiInteraction
   alias Nostrum.Constants.InteractionCallbackType
   alias Nostrum.Constants.ApplicationCommandOptionType
 
@@ -38,6 +38,11 @@ defmodule StackCoin.Bot.Discord.Graph do
   Handles the graph command interaction.
   """
   def handle(interaction) do
+    # Defer immediately -- chart generation is slow (VegaLite PNG render).
+    ApiInteraction.create_response(interaction, %{
+      type: InteractionCallbackType.deferred_channel_message_with_source()
+    })
+
     with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
          {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
          {:ok, {target_user, is_self}} <- get_target_user(interaction),
@@ -47,21 +52,24 @@ defmodule StackCoin.Bot.Discord.Graph do
       with {:ok, history} <- Bank.get_user_balance_history(target_user.id, opts) do
         try do
           png_binary = Graph.generate_balance_chart(history, target_user.username)
-          send_graph_response(interaction, png_binary, target_user.username, is_self)
+          send_graph_followup(interaction, png_binary, target_user.username, is_self)
         rescue
           error ->
-            Commands.send_error_response(
-              interaction,
-              "Error creating graph: #{inspect(error)}"
-            )
+            ApiInteraction.edit_response(interaction, %{
+              content: "Error creating graph: #{inspect(error)}"
+            })
         end
       else
         {:error, reason} ->
-          Commands.send_error_response(interaction, reason)
+          ApiInteraction.edit_response(interaction, %{
+            content: Commands.format_error(reason)
+          })
       end
     else
       {:error, reason} ->
-        Commands.send_error_response(interaction, reason)
+        ApiInteraction.edit_response(interaction, %{
+          content: Commands.format_error(reason)
+        })
     end
   end
 
@@ -102,7 +110,7 @@ defmodule StackCoin.Bot.Discord.Graph do
 
   defp get_user_option(interaction), do: get_option_value(interaction, "user")
 
-  defp send_graph_response(interaction, png_binary, username, is_self) do
+  defp send_graph_followup(interaction, png_binary, username, is_self) do
     title =
       if is_self do
         "#{Commands.stackcoin_emoji()} Your Balance Over Time"
@@ -110,25 +118,22 @@ defmodule StackCoin.Bot.Discord.Graph do
         "#{Commands.stackcoin_emoji()} #{username}'s Balance Over Time"
       end
 
-    Api.create_interaction_response(interaction, %{
-      type: InteractionCallbackType.channel_message_with_source(),
-      data: %{
-        embeds: [
-          %{
-            title: title,
-            color: Commands.stackcoin_color(),
-            image: %{
-              url: "attachment://balance_chart.png"
-            }
+    ApiInteraction.edit_response(interaction, %{
+      embeds: [
+        %{
+          title: title,
+          color: Commands.stackcoin_color(),
+          image: %{
+            url: "attachment://balance_chart.png"
           }
-        ],
-        files: [
-          %{
-            name: "balance_chart.png",
-            body: png_binary
-          }
-        ]
-      }
+        }
+      ],
+      files: [
+        %{
+          name: "balance_chart.png",
+          body: png_binary
+        }
+      ]
     })
   end
 

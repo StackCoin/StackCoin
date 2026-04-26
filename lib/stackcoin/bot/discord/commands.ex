@@ -160,9 +160,15 @@ defmodule StackCoin.Bot.Discord.Commands do
   @doc """
   Sends an ephemeral error response for common error cases.
   """
-  def send_error_response(interaction, error_type) do
-    content =
-      case error_type do
+  def format_error(error_type) do
+    case error_type do
+      reason when is_binary(reason) -> "❌ #{reason}"
+      reason -> error_message(reason)
+    end
+  end
+
+  defp error_message(error_type) do
+    case error_type do
         :guild_not_registered ->
           "❌ This server is not registered with StackCoin."
 
@@ -233,6 +239,10 @@ defmodule StackCoin.Bot.Discord.Commands do
         reason ->
           "❌ An error occurred: #{inspect(reason)}"
       end
+  end
+
+  def send_error_response(interaction, error_type) do
+    content = error_message(error_type)
 
     Api.create_interaction_response(interaction, %{
       type: InteractionCallbackType.channel_message_with_source(),
