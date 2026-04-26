@@ -10,7 +10,6 @@ defmodule StackCoin.Graph do
   Takes a list of {timestamp, balance} tuples and returns a PNG binary.
   """
   def generate_balance_chart(balance_history, username) do
-    # Convert data to the format VegaLite expects
     chart_data =
       balance_history
       |> Enum.map(fn {timestamp, balance} ->
@@ -28,7 +27,13 @@ defmodule StackCoin.Graph do
         title: "#{username}'s Balance Over Time"
       )
       |> Vl.data_from_values(chart_data)
-      |> Vl.mark(:line, point: true)
+      |> Vl.transform(window: [[op: "lag", field: "balance", param: 1, as: "prev_balance"]])
+      |> Vl.transform(
+        calculate:
+          "datum.prev_balance === null ? 'flat' : datum.balance > datum.prev_balance ? 'up' : datum.balance < datum.prev_balance ? 'down' : 'flat'",
+        as: "direction"
+      )
+      |> Vl.mark(:trail, interpolate: "step-after")
       |> Vl.encode_field(:x, "time",
         type: :temporal,
         title: "Time",
@@ -39,6 +44,15 @@ defmodule StackCoin.Graph do
         title: "Balance (STK)",
         axis: %{grid: true}
       )
+      |> Vl.encode_field(:color, "direction",
+        type: :nominal,
+        scale: %{
+          domain: ["up", "down", "flat"],
+          range: ["#26a641", "#da3633", "#8b949e"]
+        },
+        legend: nil
+      )
+      |> Vl.encode(:size, value: 3)
       |> Vl.encode(:tooltip, [
         [field: "balance", type: :quantitative, title: "Balance"],
         [field: "timestamp", type: :nominal, title: "Time"]
