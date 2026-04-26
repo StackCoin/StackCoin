@@ -23,6 +23,12 @@ defmodule StackCoin.Bot.Discord.Graph do
           name: "user",
           description: "User whose balance graph to view",
           required: false
+        },
+        %{
+          type: ApplicationCommandOptionType.string(),
+          name: "timerange",
+          description: "Time window to show, e.g. 10d, 1hr, 2w (default: all time)",
+          required: false
         }
       ]
     }
@@ -34,8 +40,11 @@ defmodule StackCoin.Bot.Discord.Graph do
   def handle(interaction) do
     with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
          {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id),
-         {:ok, {target_user, is_self}} <- get_target_user(interaction) do
-      with {:ok, history} <- Bank.get_user_balance_history(target_user.id) do
+         {:ok, {target_user, is_self}} <- get_target_user(interaction),
+         {:ok, since} <- parse_timerange(get_option_value(interaction, "timerange")) do
+      opts = if since, do: [since: since], else: []
+
+      with {:ok, history} <- Bank.get_user_balance_history(target_user.id, opts) do
         try do
           png_binary = Graph.generate_balance_chart(history, target_user.username)
           send_graph_response(interaction, png_binary, target_user.username, is_self)
@@ -81,17 +90,17 @@ defmodule StackCoin.Bot.Discord.Graph do
     end
   end
 
-  defp get_user_option(interaction) do
+  defp get_option_value(interaction, name) do
     case interaction.data.options do
-      nil ->
-        nil
-
+      nil -> nil
       options ->
         Enum.find_value(options, fn option ->
-          if option.name == "user", do: option.value, else: nil
+          if option.name == name, do: option.value, else: nil
         end)
     end
   end
+
+  defp get_user_option(interaction), do: get_option_value(interaction, "user")
 
   defp send_graph_response(interaction, png_binary, username, is_self) do
     title =
@@ -122,4 +131,26 @@ defmodule StackCoin.Bot.Discord.Graph do
       }
     })
   end
+
+  @timerange_regex ~r/^\s*(\d+)\s*(m|min|minutes?|h|hr|hours?|d|days?|w|weeks?)\s*$/i
+
+  defp parse_timerange(nil), do: {:ok, nil}
+
+  defp parse_timerange(input) do
+    case Regex.run(@timerange_regex, input) do
+      [_, amount_str, unit] ->
+        amount = String.to_integer(amount_str)
+        minutes = unit_to_minutes(String.downcase(unit)) * amount
+        since = NaiveDateTime.add(NaiveDateTime.utc_now(), -minutes * 60, :second)
+        {:ok, since}
+
+      nil ->
+        {:error, "Invalid time range \"#{input}\". Use formats like: 10d, 1hr, 2w, 30m"}
+    end
+  end
+
+  defp unit_to_minutes(u) when u in ["m", "min", "minute", "minutes"], do: 1
+  defp unit_to_minutes(u) when u in ["h", "hr", "hour", "hours"], do: 60
+  defp unit_to_minutes(u) when u in ["d", "day", "days"], do: 60 * 24
+  defp unit_to_minutes(u) when u in ["w", "week", "weeks"], do: 60 * 24 * 7
 end
