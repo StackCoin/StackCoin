@@ -30,6 +30,22 @@ defmodule StackCoin.Bot.Discord do
     handle_message_component(custom_id, interaction)
   end
 
+  def handle_event({:READY, _ready_data, _ws_state}) do
+    require Logger
+    Logger.info("Discord READY — syncing global commands...")
+
+    result = StackCoin.Bot.Discord.Commands.create_global_commands()
+
+    Logger.info(
+      "Command sync complete: #{length(result.successes)} created/updated, " <>
+        "#{length(result.deletions)} deleted, #{length(result.errors)} errors"
+    )
+
+    if result.errors != [] do
+      Logger.warning("Command sync errors: #{inspect(result.errors)}")
+    end
+  end
+
   def handle_event(_), do: :ok
 
   defp handle_slash_command("balance", interaction) do

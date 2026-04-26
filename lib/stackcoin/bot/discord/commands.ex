@@ -18,9 +18,11 @@ defmodule StackCoin.Bot.Discord.Commands do
   Ensures Nostrum is connected and ready before proceeding.
   """
   def ensure_ready do
+    require Logger
+
     case Nostrum.Cache.Me.get() do
       nil ->
-        Mix.shell().info("Waiting for Nostrum to connect...")
+        Logger.info("Waiting for Nostrum to connect...")
         :timer.sleep(1000)
         ensure_ready()
 
