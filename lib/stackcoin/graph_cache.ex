@@ -2,8 +2,8 @@ defmodule StackCoin.GraphCache do
   @moduledoc """
   Disk-based cache for user balance graphs.
   Cached PNGs are stored in /tmp/stackcoin/graphs/ and keyed by
-  {user_id, last_transaction_id} so they stay valid until a new
-  transaction involving that user occurs.
+  {user_id, last_transaction_id, timerange} so they stay valid until
+  a new transaction involving that user occurs.
   """
 
   alias StackCoin.Core.{Bank, User}
@@ -15,9 +15,9 @@ defmodule StackCoin.GraphCache do
   Returns the cached PNG binary for a user's balance graph,
   generating it if the cache is stale or missing.
   """
-  def get_graph_png(user_id) do
+  def get_graph_png(user_id, timerange_key \\ "all") do
     with {:ok, last_tx_id} <- get_last_transaction_id(user_id),
-         cache_path = cache_path(user_id, last_tx_id),
+         cache_path = cache_path(user_id, last_tx_id, timerange_key),
          {:ok, png} <- read_cached(cache_path) do
       {:ok, png}
     else
@@ -40,8 +40,9 @@ defmodule StackCoin.GraphCache do
     end
   end
 
-  defp cache_path(user_id, tx_id) do
-    Path.join(@cache_dir, "#{user_id}_#{tx_id}.png")
+  defp cache_path(user_id, tx_id, timerange_key) do
+    safe_key = String.replace(timerange_key, ~r/[^a-zA-Z0-9]/, "_")
+    Path.join(@cache_dir, "#{user_id}_#{tx_id}_#{safe_key}.png")
   end
 
   defp read_cached(path) do
