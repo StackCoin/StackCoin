@@ -35,6 +35,32 @@ defmodule StackCoin.Bot.Discord.Dole do
     end
   end
 
+  @doc """
+  Handles the legacy `s!dole` text command.
+  Reuses the same core logic but replies with a regular message.
+  """
+  def handle_legacy(msg) do
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(msg.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, msg.channel_id),
+         {:ok, user} <- get_or_create_user(msg.author),
+         {:ok, _banned_check} <- User.check_user_banned(user),
+         {:ok, _dole_banned_check} <- User.check_user_dole_banned(user),
+         {:ok, transaction} <- Reserve.transfer_dole_to_user(user.id) do
+      Nostrum.Api.Message.create(msg.channel_id,
+        embeds: [
+          %{
+            title: "#{Commands.stackcoin_emoji()} Received **#{transaction.amount} STK**",
+            description: "New Balance: **#{transaction.to_new_balance} STK**",
+            color: Commands.stackcoin_color()
+          }
+        ]
+      )
+    else
+      {:error, reason} ->
+        Nostrum.Api.Message.create(msg.channel_id, Commands.format_error(reason))
+    end
+  end
+
   defp get_or_create_user(discord_user) do
     case User.get_user_by_discord_id(discord_user.id) do
       {:ok, user} ->

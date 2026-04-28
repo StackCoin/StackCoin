@@ -30,6 +30,12 @@ defmodule StackCoin.Bot.Discord do
     handle_message_component(custom_id, interaction)
   end
 
+  def handle_event({:MESSAGE_CREATE, msg, _ws_state}) do
+    unless msg.author.bot do
+      handle_legacy_command(msg)
+    end
+  end
+
   def handle_event({:READY, _ready_data, _ws_state}) do
     require Logger
     Logger.info("Discord READY — syncing global commands...")
@@ -108,5 +114,12 @@ defmodule StackCoin.Bot.Discord do
     }
 
     Api.Interaction.create_response(interaction, response)
+  end
+
+  defp handle_legacy_command(%{content: content} = msg) do
+    case content |> String.trim() |> String.downcase() do
+      "s!dole" -> Dole.handle_legacy(msg)
+      _ -> :ignore
+    end
   end
 end

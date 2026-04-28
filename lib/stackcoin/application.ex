@@ -27,7 +27,7 @@ defmodule StackCoin.Application do
 
       bot_options = %{
         consumer: StackCoin.Bot.Discord,
-        intents: [:guilds],
+        intents: [:guilds, :guild_messages, :message_content],
         wrapped_token: fn -> token end
       }
 
