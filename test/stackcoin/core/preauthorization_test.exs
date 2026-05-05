@@ -180,4 +180,27 @@ defmodule StackCoin.Core.PreauthorizationTest do
       assert hd(preauths).user_id == user.id
     end
   end
+
+  describe "check_budget/2" do
+    test "returns ok with remaining when within budget", %{bot: bot, user: user} do
+      {:ok, preauth} = Preauthorization.create_preauth(bot.user.id, user.id, 10, 24)
+      {:ok, preauth} = Preauthorization.approve_preauth(preauth.id)
+
+      assert {:ok, 5} = Preauthorization.check_budget(preauth, 5)
+    end
+
+    test "returns ok with 0 remaining at exact max", %{bot: bot, user: user} do
+      {:ok, preauth} = Preauthorization.create_preauth(bot.user.id, user.id, 10, 24)
+      {:ok, preauth} = Preauthorization.approve_preauth(preauth.id)
+
+      assert {:ok, 0} = Preauthorization.check_budget(preauth, 10)
+    end
+
+    test "returns error when amount exceeds budget", %{bot: bot, user: user} do
+      {:ok, preauth} = Preauthorization.create_preauth(bot.user.id, user.id, 10, 24)
+      {:ok, preauth} = Preauthorization.approve_preauth(preauth.id)
+
+      assert {:error, :preauth_limit_exceeded} = Preauthorization.check_budget(preauth, 11)
+    end
+  end
 end
