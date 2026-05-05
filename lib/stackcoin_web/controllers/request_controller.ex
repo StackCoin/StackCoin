@@ -81,27 +81,46 @@ defmodule StackCoinWeb.RequestController do
   defp execute_create(conn, %{"user_id" => user_id_str, "amount" => amount} = params) do
     current_bot = conn.assigns.current_bot
     label = Map.get(params, "label")
+    use_preauth = Map.get(params, "use_preauth", false)
 
     with {:ok, responder_id} <- ApiHelpers.parse_user_id(user_id_str),
          {:ok, amount} <- ApiHelpers.validate_amount(amount) do
-      case Request.create_request(current_bot.user.id, responder_id, amount, label) do
+      request_fn =
+        if use_preauth do
+          &Request.create_request_with_preauth/4
+        else
+          &Request.create_request/4
+        end
+
+      case request_fn.(current_bot.user.id, responder_id, amount, label) do
         {:ok, request} ->
-          {200,
-           %{
-             success: true,
-             request_id: request.id,
-             amount: request.amount,
-             status: request.status,
-             requested_at: request.requested_at,
-             requester: %{
-               id: request.requester.id,
-               username: request.requester.username
-             },
-             responder: %{
-               id: request.responder.id,
-               username: request.responder.username
-             }
-           }}
+          response = %{
+            success: true,
+            request_id: request.id,
+            amount: request.amount,
+            status: request.status,
+            requested_at: request.requested_at,
+            requester: %{
+              id: request.requester.id,
+              username: request.requester.username
+            },
+            responder: %{
+              id: request.responder.id,
+              username: request.responder.username
+            }
+          }
+
+          response =
+            if request.transaction_id do
+              Map.put(response, :transaction_id, request.transaction_id)
+            else
+              response
+            end
+
+          {200, response}
+
+        {:error, :preauth_limit_exceeded} ->
+          {400, %{error: "preauth_limit_exceeded"}}
 
         {:error, reason} ->
           ApiHelpers.error_response_tuple(reason)

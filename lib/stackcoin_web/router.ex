@@ -82,6 +82,11 @@ defmodule StackCoinWeb.Router do
     post("/user/:user_id/send", StackCoinWeb.TransferController, :send_stk)
     post("/user/:user_id/request", StackCoinWeb.RequestController, :create)
 
+    # Preauthorization operations
+    post("/user/:user_id/preauth", StackCoinWeb.PreauthController, :create)
+    get("/preauths", StackCoinWeb.PreauthController, :index)
+    get("/preauth/:id", StackCoinWeb.PreauthController, :show)
+
     # Discord operations
     get("/discord/bot", StackCoinWeb.DiscordBotController, :show)
     get("/discord/guilds", StackCoinWeb.DiscordGuildController, :index)
