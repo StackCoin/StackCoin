@@ -33,6 +33,10 @@ defmodule StackCoin.Schema.Preauthorization do
     |> validate_number(:max_amount, greater_than: 0)
     |> validate_number(:window_hours, greater_than: 0)
     |> validate_different_users()
+    |> unique_constraint([:bot_user_id, :user_id],
+      name: :preauthorization_bot_user_active_unique,
+      message: "preauthorization already exists for this bot and user"
+    )
   end
 
   defp validate_different_users(changeset) do

@@ -8,7 +8,7 @@ defmodule StackCoin.Core.Preauthorization do
 
   alias StackCoin.Repo
   alias StackCoin.Schema
-  alias StackCoin.Core.Event
+  alias StackCoin.Core.{Event, User}
   import Ecto.Query
 
   @doc """
@@ -16,6 +16,7 @@ defmodule StackCoin.Core.Preauthorization do
   """
   def create_preauth(bot_user_id, user_id, max_amount, window_hours) do
     with {:ok, _bot} <- validate_is_bot(bot_user_id),
+         {:ok, _user} <- User.get_user_by_id(user_id),
          {:ok, _} <- validate_params(max_amount, window_hours),
          {:ok, _} <- check_no_existing_preauth(bot_user_id, user_id) do
       attrs = %{
@@ -43,10 +44,18 @@ defmodule StackCoin.Core.Preauthorization do
 
           StackCoin.Bot.Discord.Preauth.send_preauth_notification(preauth)
 
-          {:ok, preauth}
+           {:ok, preauth}
 
-        {:error, changeset} ->
-          {:error, changeset}
+        {:error, %Ecto.Changeset{} = changeset} ->
+          # Handle race condition: if two concurrent requests both pass the
+          # check_no_existing_preauth SELECT, one will hit the unique constraint.
+          if Enum.any?(changeset.errors, fn {_, {_, opts}} ->
+               Keyword.get(opts, :constraint) == :unique
+             end) do
+            {:error, :preauth_already_exists}
+          else
+            {:error, changeset}
+          end
       end
     end
   end

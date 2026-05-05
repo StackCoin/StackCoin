@@ -12,21 +12,29 @@ defmodule StackCoinWeb.PreauthController do
     with {:ok, user_id} <- ApiHelpers.parse_user_id(user_id_str),
          {:ok, max_amount} <- validate_positive_integer(max_amount, "max_amount"),
          {:ok, window_hours} <- validate_positive_integer(window_hours, "window_hours") do
-      case Preauthorization.create_preauth(current_bot.user.id, user_id, max_amount, window_hours) do
-        {:ok, preauth} ->
-          json(conn, format_preauth(preauth))
+      try do
+        case Preauthorization.create_preauth(current_bot.user.id, user_id, max_amount, window_hours) do
+          {:ok, preauth} ->
+            json(conn, format_preauth(preauth))
 
-        {:error, :preauth_already_exists} ->
+          {:error, :preauth_already_exists} ->
+            conn |> put_status(:conflict) |> json(%{error: "A preauthorization already exists for this user"})
+
+          {:error, :not_bot_user} ->
+            conn |> put_status(:forbidden) |> json(%{error: "Only bot users can create preauthorizations"})
+
+          {:error, :user_not_found} ->
+            conn |> put_status(:not_found) |> json(%{error: "User not found"})
+
+          {:error, %Ecto.Changeset{}} ->
+            conn |> put_status(:conflict) |> json(%{error: "A preauthorization already exists for this user"})
+
+          {:error, reason} ->
+            ApiHelpers.send_error_response(conn, reason)
+        end
+      rescue
+        Ecto.ConstraintError ->
           conn |> put_status(:conflict) |> json(%{error: "A preauthorization already exists for this user"})
-
-        {:error, :not_bot_user} ->
-          conn |> put_status(:forbidden) |> json(%{error: "Only bot users can create preauthorizations"})
-
-        {:error, :user_not_found} ->
-          conn |> put_status(:not_found) |> json(%{error: "User not found"})
-
-        {:error, reason} ->
-          ApiHelpers.send_error_response(conn, reason)
       end
     else
       {:error, msg} when is_binary(msg) ->
