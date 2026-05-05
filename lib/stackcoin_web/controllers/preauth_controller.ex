@@ -72,6 +72,39 @@ defmodule StackCoinWeb.PreauthController do
     end
   end
 
+  def revoke(conn, %{"id" => id_str}) do
+    current_bot = conn.assigns.current_bot
+
+    case ApiHelpers.parse_user_id(id_str) do
+      {:ok, id} ->
+        case Preauthorization.get_preauth(id) do
+          {:ok, preauth} ->
+            if preauth.bot_user_id != current_bot.user.id do
+              conn |> put_status(:forbidden) |> json(%{error: "Not your preauthorization"})
+            else
+              case Preauthorization.revoke_preauth(id) do
+                {:ok, revoked} ->
+                  json(conn, format_preauth(revoked))
+
+                {:error, :preauth_not_active} ->
+                  conn
+                  |> put_status(:bad_request)
+                  |> json(%{error: "Preauthorization is not active"})
+
+                {:error, reason} ->
+                  ApiHelpers.send_error_response(conn, reason)
+              end
+            end
+
+          {:error, :preauth_not_found} ->
+            conn |> put_status(:not_found) |> json(%{error: "Preauthorization not found"})
+        end
+
+      {:error, :invalid_user_id} ->
+        conn |> put_status(:bad_request) |> json(%{error: "Invalid preauthorization ID"})
+    end
+  end
+
   defp format_preauth(preauth) do
     %{
       id: preauth.id,
