@@ -149,6 +149,73 @@ defmodule StackCoinWebTest.PreauthControllerTest do
     end
   end
 
+  # Tests for POST /api/preauth/:id/revoke
+  describe "POST /api/preauth/:id/revoke" do
+    test "revokes an active preauth", %{
+      conn: conn,
+      bot: bot,
+      bot_token: bot_token,
+      recipient: recipient
+    } do
+      {:ok, preauth} = Preauthorization.create_preauth(bot.user.id, recipient.id, 10, 24)
+      {:ok, _} = Preauthorization.approve_preauth(preauth.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> post(~p"/api/preauth/#{preauth.id}/revoke")
+
+      response = json_response(conn, 200)
+      assert response["status"] == "revoked"
+      assert response["revoked_at"] != nil
+    end
+
+    test "rejects revoking non-active preauth", %{
+      conn: conn,
+      bot: bot,
+      bot_token: bot_token,
+      recipient: recipient
+    } do
+      {:ok, preauth} = Preauthorization.create_preauth(bot.user.id, recipient.id, 10, 24)
+      # Still pending, not active
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> post(~p"/api/preauth/#{preauth.id}/revoke")
+
+      assert json_response(conn, 400)["error"] =~ "not active"
+    end
+
+    test "returns 404 for non-existent preauth", %{conn: conn, bot_token: bot_token} do
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> post(~p"/api/preauth/99999/revoke")
+
+      assert json_response(conn, 404)["error"] =~ "not found"
+    end
+
+    test "rejects revoking another bot's preauth", %{
+      conn: conn,
+      bot_token: bot_token,
+      recipient: recipient
+    } do
+      {:ok, _other_owner} = User.create_user_account("777777", "OtherOwner", balance: 0)
+      {:ok, other_bot} = Bot.create_bot_user("777777", "OtherBot")
+
+      {:ok, preauth} = Preauthorization.create_preauth(other_bot.user.id, recipient.id, 10, 24)
+      {:ok, _} = Preauthorization.approve_preauth(preauth.id)
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> post(~p"/api/preauth/#{preauth.id}/revoke")
+
+      assert json_response(conn, 403)["error"] =~ "Not your"
+    end
+  end
+
   # Tests for use_preauth on POST /api/user/:user_id/request
   describe "POST /api/user/:user_id/request with use_preauth" do
     test "instant transfer with active preauth", %{

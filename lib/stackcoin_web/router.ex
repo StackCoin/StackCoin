@@ -86,6 +86,7 @@ defmodule StackCoinWeb.Router do
     post("/user/:user_id/preauth", StackCoinWeb.PreauthController, :create)
     get("/preauths", StackCoinWeb.PreauthController, :index)
     get("/preauth/:id", StackCoinWeb.PreauthController, :show)
+    post("/preauth/:id/revoke", StackCoinWeb.PreauthController, :revoke)
 
     # Discord operations
     get("/discord/bot", StackCoinWeb.DiscordBotController, :show)
