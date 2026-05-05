@@ -99,28 +99,15 @@ defmodule StackCoin.Bot.Discord.Preauths do
 
   defp send_list_response(interaction, preauths) do
     preauth_components =
-      Enum.flat_map(preauths, fn preauth ->
+      Enum.map(preauths, fn preauth ->
         bot_name = format_bot_name(preauth.bot_user)
         {:ok, remaining} = Preauthorization.get_remaining_budget(preauth.id)
 
-        [
-          %{
-            type: Components.text_display(),
-            content:
-              "**#{bot_name}**\nLimit: #{preauth.max_amount} STK / #{preauth.window_hours}hr\nRemaining: #{remaining}/#{preauth.max_amount} STK"
-          },
-          %{
-            type: Components.action_row(),
-            components: [
-              %{
-                type: Components.button(),
-                style: Components.button_style_danger(),
-                label: "Revoke",
-                custom_id: "preauth_revoke_#{preauth.id}"
-              }
-            ]
-          }
-        ]
+        %{
+          type: Components.text_display(),
+          content:
+            "**#{bot_name}**\nLimit: #{preauth.max_amount} STK / #{preauth.window_hours}hr\nRemaining: #{remaining}/#{preauth.max_amount} STK"
+        }
       end)
 
     header = %{
