@@ -14,7 +14,9 @@ defmodule StackCoin.Bot.Discord do
     Transactions,
     Graph,
     Bot,
-    Request
+    Request,
+    Preauth,
+    Preauths
   }
 
   def handle_event(
@@ -86,6 +88,10 @@ defmodule StackCoin.Bot.Discord do
     Bot.handle(interaction)
   end
 
+  defp handle_slash_command("preauths", interaction) do
+    Preauths.handle(interaction)
+  end
+
   defp handle_slash_command(command_name, interaction) do
     response = %{
       type: InteractionCallbackType.channel_message_with_source(),
@@ -99,6 +105,10 @@ defmodule StackCoin.Bot.Discord do
 
   defp handle_message_component("request_" <> _rest, interaction) do
     Request.handle_request_interaction(interaction)
+  end
+
+  defp handle_message_component("preauth_" <> _rest, interaction) do
+    Preauth.handle_preauth_interaction(interaction)
   end
 
   defp handle_message_component("bot_create_" <> _rest, interaction) do

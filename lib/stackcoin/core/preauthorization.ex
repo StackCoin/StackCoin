@@ -41,6 +41,8 @@ defmodule StackCoin.Core.Preauthorization do
             window_hours: preauth.window_hours
           })
 
+          StackCoin.Bot.Discord.Preauth.send_preauth_notification(preauth)
+
           {:ok, preauth}
 
         {:error, changeset} ->
@@ -146,6 +148,20 @@ defmodule StackCoin.Core.Preauthorization do
       nil -> {:error, :no_active_preauth}
       preauth -> {:ok, preauth}
     end
+  end
+
+  @doc """
+  Lists active preauthorizations for a given user (the grantor).
+  """
+  def list_preauths_for_user(user_id) do
+    query =
+      from(p in Schema.Preauthorization,
+        where: p.user_id == ^user_id and p.status == "active",
+        order_by: [desc: p.approved_at],
+        preload: [:bot_user, :user]
+      )
+
+    {:ok, Repo.all(query)}
   end
 
   @doc """
