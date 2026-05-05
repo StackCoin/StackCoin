@@ -190,7 +190,7 @@ defmodule StackCoin.Core.Preauthorization do
     if used + amount <= preauth.max_amount do
       {:ok, preauth.max_amount - used - amount}
     else
-      {:error, :budget_exceeded}
+      {:error, :preauth_limit_exceeded}
     end
   end
 
