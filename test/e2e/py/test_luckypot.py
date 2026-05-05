@@ -1213,3 +1213,119 @@ class TestAutoEnterTrigger:
             )
         finally:
             conn.close()
+
+
+@pytest.mark.asyncio
+class TestPreauthFlow:
+    """Tests for preauthorization-enhanced pot entry."""
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_enter_pot_with_preauth_instant_confirm(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """With active preauth, enter_pot confirms entry immediately."""
+        # Create and approve preauth for user1
+        preauth = await stk.create_preauth(
+            user_id=test_context["user1_id"],
+            max_amount=10,
+            window_hours=24,
+        )
+        assert preauth is not None
+        approve_preauth(preauth["id"])
+
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_preauth_guild",
+        )
+        assert result["status"] == "confirmed"
+        assert "entry_id" in result
+
+        # Verify entry is confirmed in LuckyPot DB
+        conn = db.get_connection()
+        try:
+            entry = db.get_entry_by_id(conn, result["entry_id"])
+            assert entry is not None
+            assert entry["status"] == "confirmed"
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_enter_pot_without_preauth_falls_back(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Without preauth, enter_pot creates a pending request as usual."""
+        result = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_no_preauth_guild",
+        )
+        assert result["status"] == "pending"
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_enter_pot_preauth_budget_exceeded_skips_no_ban(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """When preauth budget is exceeded, entry is skipped without ban."""
+        # Create preauth with budget of 5 (one entry only)
+        preauth = await stk.create_preauth(
+            user_id=test_context["user1_id"],
+            max_amount=5,
+            window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # First entry uses full budget
+        result1 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_budget_guild",
+        )
+        assert result1["status"] == "confirmed"
+
+        # End the pot so user can enter a new one
+        conn = db.get_connection()
+        try:
+            pot = db.get_active_pot(conn, "test_budget_guild")
+            db.end_pot(conn, pot["pot_id"], test_context["user1_discord_id"], 5, "TEST")
+        finally:
+            conn.close()
+
+        # Second entry exceeds budget — should be skipped
+        result2 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_budget_guild",
+        )
+        assert result2["status"] == "skipped"
+
+        # Verify no ban was applied
+        conn = db.get_connection()
+        try:
+            ban = db.get_active_ban(conn, test_context["user1_discord_id"], "test_budget_guild")
+            assert ban is None
+        finally:
+            conn.close()
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_preauth_and_normal_entry_in_same_pot(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """User with preauth gets instant entry, user without gets pending."""
+        # User 1 has preauth
+        preauth = await stk.create_preauth(
+            user_id=test_context["user1_id"],
+            max_amount=10,
+            window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # User 1 enters — instant confirm
+        result1 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id="test_mixed_guild",
+        )
+        assert result1["status"] == "confirmed"
+
+        # User 2 enters — pending (no preauth)
+        result2 = await game.enter_pot(
+            discord_id=test_context["user2_discord_id"],
+            guild_id="test_mixed_guild",
+        )
+        assert result2["status"] == "pending"
