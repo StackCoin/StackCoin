@@ -5,7 +5,7 @@ defmodule StackCoin.Core.Request do
 
   alias StackCoin.Repo
   alias StackCoin.Schema
-  alias StackCoin.Core.{User, Bank, Event}
+  alias StackCoin.Core.{User, Bank, Event, Preauthorization}
   import Ecto.Query
 
   @max_limit 100
@@ -55,6 +55,27 @@ defmodule StackCoin.Core.Request do
       end
     else
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  @doc """
+  Creates a request using preauth if available. If the bot has an active preauth
+  with budget remaining, does an atomic transfer (request created as "accepted").
+  Otherwise falls back to a normal pending request.
+  """
+  def create_request_with_preauth(requester_id, responder_id, amount, label \\ nil) do
+    case Preauthorization.get_active_preauth(requester_id, responder_id) do
+      {:ok, preauth} ->
+        case Preauthorization.check_budget(preauth, amount) do
+          {:ok, _remaining} ->
+            execute_preauth_transfer(preauth, requester_id, responder_id, amount, label)
+
+          {:error, :preauth_limit_exceeded} ->
+            {:error, :preauth_limit_exceeded}
+        end
+
+      {:error, :no_active_preauth} ->
+        create_request(requester_id, responder_id, amount, label)
     end
   end
 
@@ -311,6 +332,58 @@ defmodule StackCoin.Core.Request do
       |> Repo.update_all(set: [status: "cancelled", resolved_at: now])
 
     {:ok, count}
+  end
+
+  defp execute_preauth_transfer(preauth, requester_id, responder_id, amount, label) do
+    result =
+      Repo.transaction(fn ->
+        # Transfer funds: responder (user) pays requester (bot)
+        case Bank.transfer_between_users(responder_id, requester_id, amount, label) do
+          {:ok, transaction} ->
+            request_attrs = %{
+              requester_id: requester_id,
+              responder_id: responder_id,
+              status: "accepted",
+              amount: amount,
+              requested_at: NaiveDateTime.utc_now(),
+              resolved_at: NaiveDateTime.utc_now(),
+              transaction_id: transaction.id,
+              preauthorization_id: preauth.id,
+              label: label
+            }
+
+            case Repo.insert(Schema.Request.changeset(%Schema.Request{}, request_attrs)) do
+              {:ok, request} ->
+                {request, transaction}
+
+              {:error, changeset} ->
+                Repo.rollback(changeset)
+            end
+
+          {:error, reason} ->
+            Repo.rollback(reason)
+        end
+      end)
+
+    case result do
+      {:ok, {request, transaction}} ->
+        preloaded =
+          Repo.preload(request, [:requester, :responder, :transaction, :preauthorization])
+
+        for user_id <- [requester_id, responder_id] do
+          Event.create_event("request.accepted", user_id, %{
+            request_id: request.id,
+            status: "accepted",
+            transaction_id: transaction.id,
+            amount: amount
+          })
+        end
+
+        {:ok, preloaded}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp validate_request_responder(request, responder_id) do
