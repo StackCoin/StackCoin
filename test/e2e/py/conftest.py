@@ -30,6 +30,7 @@ _ALL_TABLES = [
     "events",
     "idempotency_keys",
     "request",
+    "preauthorization",
     "pump",
     "transaction",
     "bot_user",
@@ -234,6 +235,29 @@ def auth_headers(seed_data):
         "Authorization": f"Bearer {seed_data['BOT_TOKEN']}",
         "Content-Type": "application/json",
     }
+
+
+def _approve_preauth_in_db(port: int, preauth_id: int):
+    """Directly approve a preauth in the test database (simulates Discord accept)."""
+    db_file = _db_path(port)
+    conn = sqlite3.connect(db_file, timeout=10)
+    try:
+        conn.execute("PRAGMA busy_timeout = 5000")
+        conn.execute(
+            "UPDATE preauthorization SET status = 'active', approved_at = datetime('now') WHERE id = ?",
+            (preauth_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+@pytest.fixture
+def approve_preauth(stackcoin_server):
+    """Returns a function that directly approves a preauth in the test DB."""
+    def _approve(preauth_id: int):
+        _approve_preauth_in_db(stackcoin_server["port"], preauth_id)
+    return _approve
 
 
 # ---------------------------------------------------------------------------
