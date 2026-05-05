@@ -6,7 +6,7 @@ defmodule StackCoin.Bot.Discord.Commands do
   alias Nostrum.Api.ApplicationCommand
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
-  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions, Graph, Bot}
+  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions, Graph, Bot, Preauths}
 
   @stackcoin_emoji "<:stackcoin:1401621482026827908>"
   @stackcoin_color 0xFFFD5D
@@ -43,7 +43,8 @@ defmodule StackCoin.Bot.Discord.Commands do
       Leaderboard.definition(),
       Transactions.definition(),
       Graph.definition(),
-      Bot.definition()
+      Bot.definition(),
+      Preauths.definition()
     ]
   end
 
@@ -237,6 +238,21 @@ defmodule StackCoin.Bot.Discord.Commands do
 
         :no_subcommand ->
           "❌ No subcommand specified."
+
+        :preauth_limit_exceeded ->
+          "❌ Preauthorization limit exceeded for this time window."
+
+        :preauth_already_exists ->
+          "❌ A preauthorization already exists for this bot and user."
+
+        :preauth_not_found ->
+          "❌ Preauthorization not found."
+
+        :no_active_preauth ->
+          "❌ No active preauthorization found."
+
+        :not_bot_user ->
+          "❌ Only bot users can create preauthorizations."
 
         reason ->
           "❌ An error occurred: #{inspect(reason)}"
