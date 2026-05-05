@@ -10,7 +10,7 @@ defmodule StackCoin.EventSchemaTest do
       assert "request.created" in types
       assert "request.accepted" in types
       assert "request.denied" in types
-      assert length(types) == 4
+      assert length(types) == 7
     end
   end
 
@@ -165,7 +165,7 @@ defmodule StackCoin.EventSchemaTest do
     test "Event discriminated union schema exists" do
       schema = StackCoinWeb.Schemas.Event.schema()
       assert schema.title == "Event"
-      assert length(schema.oneOf) == 4
+      assert length(schema.oneOf) == 7
       assert schema.discriminator.propertyName == "type"
       assert Map.has_key?(schema.discriminator.mapping, "transfer.completed")
     end
