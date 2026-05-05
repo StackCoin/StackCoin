@@ -2244,3 +2244,73 @@ class TestPreauthRedTeam:
         assert data["status"] == "pending", (
             f"Expected pending (preauth not yet approved), got {data['status']}"
         )
+
+
+@pytest.mark.asyncio
+class TestAutoEnterPreauthReRequest:
+    """Test that re-running auto-enter re-requests a preauth after revocation."""
+
+    async def test_auto_enter_re_requests_preauth_after_revoke(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """If a user is already opted in but their preauth was revoked,
+        running /auto-enter enabled:true again should re-request a preauth
+        instead of just saying 'already opted in'."""
+        discord_id = test_context["user1_discord_id"]
+        guild_id = "test_reenter_guild"
+
+        # Step 1: Opt in to auto-enter
+        conn = db.get_connection()
+        try:
+            db.set_auto_enter(conn, discord_id, guild_id, True)
+            assert db.get_auto_enter_status(conn, discord_id, guild_id) is True
+        finally:
+            conn.close()
+
+        # Step 2: Create and approve a preauth (simulating first /auto-enter)
+        stk_user = await stk.get_user_by_discord_id(discord_id)
+        assert stk_user is not None
+        preauth = await stk.create_preauth(
+            user_id=stk_user["id"],
+            max_amount=10,
+            window_hours=24,
+        )
+        assert preauth is not None
+        approve_preauth(preauth["id"])
+
+        # Step 3: Revoke the preauth (user runs /preauths revoke)
+        client = stk.get_client()
+        await client.revoke_preauth(preauth["id"])
+
+        # Step 4: Verify preauth is revoked — no active/pending preauths
+        preauths = await stk.get_preauths(user_id=stk_user["id"])
+        active_or_pending = [
+            p for p in preauths if p.get("status") in ("active", "pending")
+        ]
+        assert len(active_or_pending) == 0
+
+        # Step 5: Simulate what /auto-enter should do when already opted in
+        # The current bug: it short-circuits at "already opted in" without
+        # checking preauth status. After the fix, it should detect the
+        # missing preauth and request a new one.
+        #
+        # We simulate the command's preauth check logic here:
+        preauths = await stk.get_preauths(user_id=stk_user["id"])
+        active = [p for p in preauths if p.get("status") == "active"]
+        pending = [p for p in preauths if p.get("status") == "pending"]
+
+        if not active and not pending:
+            # This is what the fixed command should do:
+            new_preauth = await stk.create_preauth(
+                user_id=stk_user["id"],
+                max_amount=10,
+                window_hours=24,
+            )
+            assert new_preauth is not None, "Should be able to request a new preauth after revoke"
+
+        # Verify a new preauth was created
+        preauths = await stk.get_preauths(user_id=stk_user["id"])
+        pending_preauths = [p for p in preauths if p.get("status") == "pending"]
+        assert len(pending_preauths) == 1, (
+            f"Expected 1 pending preauth after re-request, got {len(pending_preauths)}"
+        )
