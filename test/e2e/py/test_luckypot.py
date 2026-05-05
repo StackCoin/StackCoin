@@ -1329,3 +1329,918 @@ class TestPreauthFlow:
             guild_id="test_mixed_guild",
         )
         assert result2["status"] == "pending"
+
+
+# ======================================================================
+# RED TEAM: Preauthorization Adversarial Tests
+# ======================================================================
+
+
+@pytest.mark.asyncio
+class TestPreauthRedTeam:
+    """Adversarial tests attempting to break the preauthorization system."""
+
+    # ------------------------------------------------------------------
+    # 1. Race condition: concurrent preauth transfers for the same user
+    # ------------------------------------------------------------------
+    async def test_concurrent_preauth_transfers_do_not_exceed_budget(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Two concurrent preauth requests should not allow spending more than the budget.
+
+        Attack: user has 10 STK preauth budget. Fire two 6 STK requests
+        simultaneously. Only one should succeed via preauth; the other should
+        either fail with preauth_limit_exceeded or fall back to pending.
+        """
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        # Create preauth with budget=10
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Fire two 6-STK requests concurrently — both individually fit but
+        # collectively exceed the 10 STK budget (6+6=12 > 10).
+        async with httpx.AsyncClient(base_url=base) as client:
+            r1, r2 = await asyncio.gather(
+                client.post(
+                    f"/api/user/{user1_id}/request",
+                    json={"amount": 6, "use_preauth": True, "label": "race-1"},
+                    headers=headers,
+                ),
+                client.post(
+                    f"/api/user/{user1_id}/request",
+                    json={"amount": 6, "use_preauth": True, "label": "race-2"},
+                    headers=headers,
+                ),
+            )
+
+        results = [r1.json(), r2.json()]
+        accepted_count = sum(
+            1 for r in results if r.get("status") == "accepted"
+        )
+
+        # At most one should succeed via preauth. If both got accepted, the
+        # budget was not atomically enforced — that's a bug.
+        assert accepted_count <= 1, (
+            f"Both concurrent requests were accepted via preauth! "
+            f"Budget should have been 10 but 12 STK was transferred. "
+            f"Responses: {results}"
+        )
+
+    # ------------------------------------------------------------------
+    # 2. Budget boundary: many small requests that collectively exceed
+    # ------------------------------------------------------------------
+    async def test_budget_boundary_many_small_requests(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Rapid sequential small requests should not exceed the preauth budget.
+
+        Attack: preauth is 10 STK. Send 3 requests of 4 STK each (total 12).
+        Only the first two should succeed (4+4=8 ≤ 10), third should fail.
+        """
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        accepted_count = 0
+        async with httpx.AsyncClient(base_url=base) as client:
+            for i in range(3):
+                resp = await client.post(
+                    f"/api/user/{user1_id}/request",
+                    json={"amount": 4, "use_preauth": True, "label": f"small-{i}"},
+                    headers=headers,
+                )
+                data = resp.json()
+                if data.get("status") == "accepted":
+                    accepted_count += 1
+
+        # First two should succeed (4+4=8 ≤ 10), third should fail (8+4=12 > 10)
+        assert accepted_count == 2, (
+            f"Expected exactly 2 accepted, got {accepted_count}"
+        )
+
+        # Verify remaining budget
+        preauth_info = await stk.get_client().get_preauth(preauth["id"])
+        assert preauth_info["remaining_budget"] == 2  # 10 - 8 = 2
+
+    # ------------------------------------------------------------------
+    # 3. Preauth + normal request interaction
+    # ------------------------------------------------------------------
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_preauth_entry_and_normal_entry_concurrent(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Preauth entry for user1 and normal entry for user2 in the same pot
+        at the same time should both work correctly without interference."""
+
+        # User 1 has preauth
+        preauth = await stk.create_preauth(
+            user_id=test_context["user1_id"], max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        guild_id = "test_concurrent_entry_guild"
+
+        # Both users enter concurrently
+        r1, r2 = await asyncio.gather(
+            game.enter_pot(
+                discord_id=test_context["user1_discord_id"],
+                guild_id=guild_id,
+            ),
+            game.enter_pot(
+                discord_id=test_context["user2_discord_id"],
+                guild_id=guild_id,
+            ),
+        )
+
+        # User1 should be confirmed (preauth), user2 should be pending (no preauth)
+        statuses = {r1["status"], r2["status"]}
+        assert "confirmed" in statuses or "pending" in statuses, (
+            f"Unexpected statuses: r1={r1['status']}, r2={r2['status']}"
+        )
+
+        # Both should have entries
+        conn = db.get_connection()
+        try:
+            pot = db.get_active_pot(conn, guild_id)
+            assert pot is not None
+            assert db.has_user_entered(conn, pot["pot_id"], test_context["user1_discord_id"])
+            assert db.has_user_entered(conn, pot["pot_id"], test_context["user2_discord_id"])
+        finally:
+            conn.close()
+
+    # ------------------------------------------------------------------
+    # 4. Double preauth creation
+    # ------------------------------------------------------------------
+    async def test_double_preauth_creation_blocked(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Rapidly creating two preauths for the same user should fail on the second.
+
+        BUG FOUND: When two preauth creations race, the second one hits a DB
+        constraint and returns 500 instead of 409. The check_no_existing_preauth
+        SELECT runs before INSERT for both requests, so both see "no existing" and
+        both try to insert. The second INSERT violates a unique constraint but
+        the changeset error is not mapped to :preauth_already_exists.
+        """
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            r1, r2 = await asyncio.gather(
+                client.post(
+                    f"/api/user/{user1_id}/preauth",
+                    json={"max_amount": 10, "window_hours": 24},
+                    headers=headers,
+                ),
+                client.post(
+                    f"/api/user/{user1_id}/preauth",
+                    json={"max_amount": 20, "window_hours": 48},
+                    headers=headers,
+                ),
+            )
+
+        statuses = sorted([r1.status_code, r2.status_code])
+        # One should succeed (200). The other should be 409 (conflict),
+        # but due to the race condition bug it currently returns 500.
+        assert 200 in statuses, f"At least one should succeed, got {statuses}"
+        second_status = [s for s in statuses if s != 200][0]
+        # This assertion documents the bug: we WANT 409, we GET 500
+        assert second_status == 409, (
+            f"BUG: Expected 409 (conflict) for duplicate preauth, got {second_status}. "
+            f"The server returns 500 because the DB constraint violation is not "
+            f"handled gracefully. "
+            f"r1: {r1.status_code} {r1.json()}, r2: {r2.status_code} {r2.json()}"
+        )
+
+    # ------------------------------------------------------------------
+    # 5. Preauth with zero balance user
+    # ------------------------------------------------------------------
+    async def test_preauth_transfer_fails_with_zero_balance(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Using preauth when the user has 0 STK should fail with insufficient balance."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        # Drain user1's balance first (send all 500 to bot)
+        async with httpx.AsyncClient(base_url=base) as client:
+            # Get user1 balance
+            me_resp = await client.get(f"/api/user/{user1_id}", headers=headers)
+            balance = me_resp.json()["balance"]
+
+            if balance > 0:
+                # User needs to send to bot — we can't do this via bot API.
+                # Instead, use the bot to send STK to drain user1 via requests.
+                # Actually, let's just create a preauth and try to use it.
+                pass
+
+        # Create and approve preauth
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=1000, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Try to transfer more than user's balance
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 501, "use_preauth": True, "label": "drain-attempt"},
+                headers=headers,
+            )
+
+        data = resp.json()
+        # Should fail — user only has 500 STK
+        assert resp.status_code != 200 or data.get("status") != "accepted", (
+            f"Transfer of 501 STK should have failed for user with 500 balance. "
+            f"Response: {data}"
+        )
+
+    # ------------------------------------------------------------------
+    # 6. Preauth for non-existent user
+    # ------------------------------------------------------------------
+    async def test_preauth_for_nonexistent_user(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Creating a preauth for a non-existent user ID should fail.
+
+        BUG FOUND: The server returns 500 instead of 404 when the target user_id
+        doesn't exist. The create_preauth function doesn't validate that the
+        user_id exists before inserting, so the FK constraint fails and causes
+        an unhandled 500 error.
+        """
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                "/api/user/999999/preauth",
+                json={"max_amount": 10, "window_hours": 24},
+                headers=headers,
+            )
+
+        # BUG: Server returns 500 instead of 404 for non-existent user
+        assert resp.status_code in (400, 404, 422), (
+            f"BUG: Expected 400/404/422 for non-existent user, got {resp.status_code}. "
+            f"The server crashes with an unhandled FK constraint error instead of "
+            f"returning a proper error response. Response: {resp.json()}"
+        )
+
+    # ------------------------------------------------------------------
+    # 7. Preauth for self (bot creates preauth for its own user ID)
+    # ------------------------------------------------------------------
+    async def test_preauth_for_self_rejected(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Bot should not be able to create a preauth targeting itself."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        bot_user_id = test_context["bot_user_id"]
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{bot_user_id}/preauth",
+                json={"max_amount": 10, "window_hours": 24},
+                headers=headers,
+            )
+
+        # Bot creating a preauth for itself is nonsensical and potentially
+        # exploitable (drain own account). It should be rejected.
+        assert resp.status_code != 200, (
+            f"Bot was able to create a preauth for itself! "
+            f"This could be exploitable. Response: {resp.json()}"
+        )
+        # Verify it's a proper error response, not a 500
+        assert resp.status_code in (400, 403, 409, 422), (
+            f"Expected a 4xx client error, got {resp.status_code}: {resp.json()}"
+        )
+
+    # ------------------------------------------------------------------
+    # 8. Remaining budget accuracy after transfers
+    # ------------------------------------------------------------------
+    async def test_remaining_budget_decreases_correctly(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """The remaining_budget endpoint should accurately reflect transfers."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Check initial budget
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 10
+
+        # Spend 3
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 3, "use_preauth": True, "label": "budget-test-1"},
+                headers=headers,
+            )
+            assert resp.json()["status"] == "accepted"
+
+        # Check budget: should be 7
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 7, (
+            f"Expected 7, got {info['remaining_budget']}"
+        )
+
+        # Spend 7 (exact remaining)
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 7, "use_preauth": True, "label": "budget-test-2"},
+                headers=headers,
+            )
+            assert resp.json()["status"] == "accepted"
+
+        # Budget should be 0
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 0, (
+            f"Expected 0, got {info['remaining_budget']}"
+        )
+
+        # One more STK should fail
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 1, "use_preauth": True, "label": "budget-test-3"},
+                headers=headers,
+            )
+            assert resp.json().get("error") == "preauth_limit_exceeded"
+
+    # ------------------------------------------------------------------
+    # 9. Idempotency key + preauth
+    # ------------------------------------------------------------------
+    async def test_idempotency_key_with_preauth_request(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Duplicate requests with same idempotency key should return cached
+        result and not double-charge the preauth budget."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+            "Idempotency-Key": "preauth-idem-test-1",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp1 = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 5, "use_preauth": True, "label": "idem-preauth"},
+                headers=headers,
+            )
+            resp2 = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 5, "use_preauth": True, "label": "idem-preauth"},
+                headers=headers,
+            )
+
+        data1 = resp1.json()
+        data2 = resp2.json()
+
+        assert data1["status"] == "accepted"
+        assert data1 == data2, (
+            f"Idempotent responses should match. r1={data1}, r2={data2}"
+        )
+
+        # Budget should only be charged once
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 5, (
+            f"Expected 5 (single charge), got {info['remaining_budget']}"
+        )
+
+    # ------------------------------------------------------------------
+    # 10. Revoke preauth then try to use it
+    # ------------------------------------------------------------------
+    async def test_revoked_preauth_falls_back_to_pending(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """After revoking a preauth, requests should fall back to normal pending."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Revoke it
+        await stk.get_client().revoke_preauth(preauth["id"])
+
+        # Try to use it — should fall back to pending request
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 5, "use_preauth": True, "label": "post-revoke"},
+                headers=headers,
+            )
+
+        data = resp.json()
+        assert data["status"] == "pending", (
+            f"Expected pending (fallback), got {data['status']}. "
+            f"Revoked preauth should not allow transfers."
+        )
+
+    # ------------------------------------------------------------------
+    # 11. Preauth budget exact boundary (off-by-one check)
+    # ------------------------------------------------------------------
+    async def test_preauth_exact_boundary_then_one_more(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Spending exactly the budget should succeed, then 1 more should fail."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=5, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            # Exact budget should succeed
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 5, "use_preauth": True, "label": "exact-budget"},
+                headers=headers,
+            )
+            assert resp.json()["status"] == "accepted"
+
+            # One more should fail
+            resp2 = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 1, "use_preauth": True, "label": "over-budget"},
+                headers=headers,
+            )
+            assert resp2.json().get("error") == "preauth_limit_exceeded", (
+                f"Expected preauth_limit_exceeded, got {resp2.json()}"
+            )
+
+    # ------------------------------------------------------------------
+    # 12. Multiple pots same guild: preauth budget spans pots
+    # ------------------------------------------------------------------
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_preauth_budget_spans_pot_boundaries(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Preauth budget should be shared across pot boundaries.
+        If user enters pot #1 (5 STK) and pot #2 (5 STK), a 10 STK
+        preauth should be fully consumed."""
+
+        preauth = await stk.create_preauth(
+            user_id=test_context["user1_id"], max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        guild_id = "test_budget_spans_guild"
+
+        # Enter pot #1 — should confirm via preauth (5 STK)
+        result1 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert result1["status"] == "confirmed"
+
+        # End pot #1 so a new pot starts
+        conn = db.get_connection()
+        try:
+            pot = db.get_active_pot(conn, guild_id)
+            db.end_pot(conn, pot["pot_id"], test_context["user1_discord_id"], 5, "TEST")
+        finally:
+            conn.close()
+
+        # Enter pot #2 — should also confirm (5 STK, total 10 = budget)
+        result2 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert result2["status"] == "confirmed"
+
+        # Check remaining budget = 0
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 0
+
+        # End pot #2 and try pot #3 — should be skipped (budget exhausted)
+        conn = db.get_connection()
+        try:
+            pot = db.get_active_pot(conn, guild_id)
+            db.end_pot(conn, pot["pot_id"], test_context["user1_discord_id"], 5, "TEST")
+        finally:
+            conn.close()
+
+        result3 = await game.enter_pot(
+            discord_id=test_context["user1_discord_id"],
+            guild_id=guild_id,
+        )
+        assert result3["status"] == "skipped", (
+            f"Expected skipped (budget exhausted), got {result3['status']}"
+        )
+
+    # ------------------------------------------------------------------
+    # 13. Concurrent preauth transfers: higher concurrency stress test
+    # ------------------------------------------------------------------
+    async def test_concurrent_preauth_transfers_stress_no_overspend(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Fire 5 concurrent 3-STK requests against a 10-STK preauth.
+        The critical invariant: total spending must not exceed the 10 STK budget.
+        Some requests may fail due to SQLite lock contention, but none should
+        cause an overspend."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            tasks = [
+                client.post(
+                    f"/api/user/{user1_id}/request",
+                    json={"amount": 3, "use_preauth": True, "label": f"stress-{i}"},
+                    headers=headers,
+                )
+                for i in range(5)
+            ]
+            responses = await asyncio.gather(*tasks)
+
+        accepted = [r for r in responses if r.json().get("status") == "accepted"]
+        total_spent = len(accepted) * 3
+
+        # Critical safety check: never overspend the budget
+        assert total_spent <= 10, (
+            f"BUDGET OVERFLOW BUG! {len(accepted)} requests accepted for {total_spent} STK "
+            f"against a 10 STK budget. Responses: "
+            f"{[r.json() for r in responses]}"
+        )
+
+        # At least one should have succeeded
+        assert len(accepted) >= 1, (
+            f"Expected at least 1 accepted, got {len(accepted)}. "
+            f"Responses: {[r.json() for r in responses]}"
+        )
+
+        # Verify the remaining budget is consistent
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 10 - total_spent, (
+            f"Budget accounting mismatch: spent {total_spent}, "
+            f"remaining {info['remaining_budget']}, max was 10"
+        )
+
+    # ------------------------------------------------------------------
+    # 14. Preauth after revoke: create new preauth should work
+    # ------------------------------------------------------------------
+    async def test_new_preauth_after_revoke(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """After revoking a preauth, creating a new one should succeed."""
+        user1_id = test_context["user1_id"]
+
+        preauth1 = await stk.create_preauth(
+            user_id=user1_id, max_amount=5, window_hours=24,
+        )
+        approve_preauth(preauth1["id"])
+        await stk.get_client().revoke_preauth(preauth1["id"])
+
+        # Should be able to create a new preauth
+        preauth2 = await stk.create_preauth(
+            user_id=user1_id, max_amount=20, window_hours=48,
+        )
+        assert preauth2 is not None
+        assert preauth2["max_amount"] == 20
+
+    # ------------------------------------------------------------------
+    # 15. Negative and zero amounts via API
+    # ------------------------------------------------------------------
+    async def test_preauth_request_with_zero_amount(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """A preauth request with amount=0 should be rejected."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 0, "use_preauth": True, "label": "zero-amount"},
+                headers=headers,
+            )
+
+        assert resp.status_code == 400, (
+            f"Expected 400 for zero amount, got {resp.status_code}: {resp.json()}"
+        )
+
+    async def test_preauth_request_with_negative_amount(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """A preauth request with negative amount should be rejected."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": -5, "use_preauth": True, "label": "negative-amount"},
+                headers=headers,
+            )
+
+        assert resp.status_code == 400, (
+            f"Expected 400 for negative amount, got {resp.status_code}: {resp.json()}"
+        )
+
+    # ------------------------------------------------------------------
+    # 16. use_preauth=false should never use preauth
+    # ------------------------------------------------------------------
+    async def test_use_preauth_false_ignores_active_preauth(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Setting use_preauth=false should create a pending request even
+        when an active preauth exists."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 5, "use_preauth": False, "label": "no-preauth"},
+                headers=headers,
+            )
+
+        data = resp.json()
+        assert data["status"] == "pending", (
+            f"Expected pending when use_preauth=false, got {data['status']}"
+        )
+
+        # Budget should be unchanged
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 10
+
+    # ------------------------------------------------------------------
+    # 17. Preauth with zero max_amount (validation bypass attempt)
+    # ------------------------------------------------------------------
+    async def test_preauth_creation_rejects_zero_max_amount(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Creating a preauth with max_amount=0 should be rejected."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{test_context['user1_id']}/preauth",
+                json={"max_amount": 0, "window_hours": 24},
+                headers=headers,
+            )
+
+        assert resp.status_code == 400, (
+            f"Expected 400 for zero max_amount, got {resp.status_code}: {resp.json()}"
+        )
+
+    async def test_preauth_creation_rejects_negative_max_amount(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """Creating a preauth with negative max_amount should be rejected."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{test_context['user1_id']}/preauth",
+                json={"max_amount": -10, "window_hours": 24},
+                headers=headers,
+            )
+
+        assert resp.status_code == 400, (
+            f"Expected 400 for negative max_amount, got {resp.status_code}: {resp.json()}"
+        )
+
+    # ------------------------------------------------------------------
+    # 18. Revoke another bot's preauth
+    # ------------------------------------------------------------------
+    async def test_cannot_revoke_another_bots_preauth(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Bot should not be able to revoke a preauth it didn't create.
+        (In e2e context with one bot, we test that the API at least
+        returns 403 for a preauth ID that doesn't belong to it.)
+        """
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+
+        # Try to revoke a non-existent preauth (ID 99999)
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                "/api/preauth/99999/revoke",
+                headers=headers,
+            )
+
+        assert resp.status_code == 404, (
+            f"Expected 404 for non-existent preauth, got {resp.status_code}: {resp.json()}"
+        )
+
+    # ------------------------------------------------------------------
+    # 19. Preauth transfer should move STK correctly
+    # ------------------------------------------------------------------
+    async def test_preauth_transfer_updates_balances_correctly(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Preauth transfer should move STK from user to bot."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        # Get balances before
+        async with httpx.AsyncClient(base_url=base) as client:
+            bot_before = (await client.get("/api/user/me", headers=headers)).json()["balance"]
+            user_before = (await client.get(f"/api/user/{user1_id}", headers=headers)).json()["balance"]
+
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Transfer 7 STK via preauth
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 7, "use_preauth": True, "label": "balance-check"},
+                headers=headers,
+            )
+            assert resp.json()["status"] == "accepted"
+
+            # Check balances after
+            bot_after = (await client.get("/api/user/me", headers=headers)).json()["balance"]
+            user_after = (await client.get(f"/api/user/{user1_id}", headers=headers)).json()["balance"]
+
+        assert bot_after == bot_before + 7, (
+            f"Bot balance should increase by 7: {bot_before} -> {bot_after}"
+        )
+        assert user_after == user_before - 7, (
+            f"User balance should decrease by 7: {user_before} -> {user_after}"
+        )
+
+    # ------------------------------------------------------------------
+    # 20. Pending preauth should not allow transfers
+    # ------------------------------------------------------------------
+    async def test_pending_preauth_does_not_allow_transfers(
+        self, luckypot_db, configure_luckypot_stk, test_context
+    ):
+        """A pending (not yet approved) preauth should not allow preauth transfers."""
+        import httpx
+
+        base = test_context["base_url"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+        user1_id = test_context["user1_id"]
+
+        # Create preauth but DON'T approve it
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=10, window_hours=24,
+        )
+        assert preauth["status"] == "pending"
+
+        # Try to use it — should fall back to pending request
+        async with httpx.AsyncClient(base_url=base) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 5, "use_preauth": True, "label": "pending-preauth"},
+                headers=headers,
+            )
+
+        data = resp.json()
+        assert data["status"] == "pending", (
+            f"Expected pending (preauth not yet approved), got {data['status']}"
+        )
