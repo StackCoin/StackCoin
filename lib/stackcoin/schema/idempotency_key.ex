@@ -13,7 +13,7 @@ defmodule StackCoin.Schema.IdempotencyKey do
   def changeset(record, attrs) do
     record
     |> cast(attrs, [:key, :bot_id, :response_code, :response_body])
-    |> validate_required([:key, :bot_id, :response_code, :response_body])
+    |> validate_required([:key, :bot_id])
     |> unique_constraint([:bot_id, :key])
     |> foreign_key_constraint(:bot_id)
   end

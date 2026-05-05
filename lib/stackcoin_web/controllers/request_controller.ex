@@ -50,31 +50,17 @@ defmodule StackCoinWeb.RequestController do
   def create(conn, params) do
     idempotency_key = get_req_header(conn, "idempotency-key") |> List.first()
 
-    if idempotency_key do
-      bot = conn.assigns.current_bot
-
-      case Idempotency.check(bot.id, idempotency_key) do
-        {:hit, code, body} ->
-          conn
-          |> put_status(code)
-          |> json(Jason.decode!(body))
-
-        :miss ->
-          {status, response_body} = execute_create(conn, params)
-          encoded = Jason.encode!(response_body)
-          Idempotency.store(bot.id, idempotency_key, status, encoded)
-
-          conn
-          |> put_status(status)
-          |> json(response_body)
+    {status, response_body} =
+      if idempotency_key do
+        bot = conn.assigns.current_bot
+        Idempotency.execute(bot.id, idempotency_key, fn -> execute_create(conn, params) end)
+      else
+        execute_create(conn, params)
       end
-    else
-      {status, response_body} = execute_create(conn, params)
 
-      conn
-      |> put_status(status)
-      |> json(response_body)
-    end
+    conn
+    |> put_status(status)
+    |> json(response_body)
   end
 
   # Returns {status_code, response_map} without sending the response.
