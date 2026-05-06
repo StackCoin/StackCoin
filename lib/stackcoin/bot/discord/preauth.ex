@@ -194,13 +194,32 @@ defmodule StackCoin.Bot.Discord.Preauth do
     end
   end
 
-  defp handle_preauth_action(:accept, preauth_id, interaction) do
-    case Preauthorization.approve_preauth(preauth_id) do
-      {:ok, preauth} ->
-        send_accept_success_response(interaction, preauth)
-
+  defp handle_preauth_action(action, preauth_id, interaction) do
+    with {:ok, preauth} <- Preauthorization.get_preauth(preauth_id),
+         :ok <- validate_preauth_owner(preauth, interaction) do
+      execute_preauth_action(action, preauth, interaction)
+    else
       {:error, :preauth_not_found} ->
         send_error_response(interaction, "Preauthorization not found.")
+
+      {:error, :not_preauth_owner} ->
+        send_error_response(interaction, "You are not authorized to manage this preauthorization.")
+    end
+  end
+
+  defp validate_preauth_owner(preauth, interaction) do
+    discord_id = interaction.user.id
+
+    case User.get_user_by_discord_id(discord_id) do
+      {:ok, user} when user.id == preauth.user_id -> :ok
+      _ -> {:error, :not_preauth_owner}
+    end
+  end
+
+  defp execute_preauth_action(:accept, preauth, interaction) do
+    case Preauthorization.approve_preauth(preauth.id) do
+      {:ok, approved} ->
+        send_accept_success_response(interaction, approved)
 
       {:error, :preauth_not_pending} ->
         send_error_response(interaction, "This preauthorization is no longer pending.")
@@ -210,13 +229,10 @@ defmodule StackCoin.Bot.Discord.Preauth do
     end
   end
 
-  defp handle_preauth_action(:deny, preauth_id, interaction) do
-    case Preauthorization.delete_preauth(preauth_id) do
+  defp execute_preauth_action(:deny, preauth, interaction) do
+    case Preauthorization.delete_preauth(preauth.id) do
       {:ok, _preauth} ->
         send_deny_success_response(interaction)
-
-      {:error, :preauth_not_found} ->
-        send_error_response(interaction, "Preauthorization not found.")
 
       {:error, :preauth_not_pending} ->
         send_error_response(interaction, "This preauthorization is no longer pending.")
@@ -226,13 +242,10 @@ defmodule StackCoin.Bot.Discord.Preauth do
     end
   end
 
-  defp handle_preauth_action(:revoke, preauth_id, interaction) do
-    case Preauthorization.revoke_preauth(preauth_id) do
+  defp execute_preauth_action(:revoke, preauth, interaction) do
+    case Preauthorization.revoke_preauth(preauth.id) do
       {:ok, _preauth} ->
         send_revoke_success_response(interaction)
-
-      {:error, :preauth_not_found} ->
-        send_error_response(interaction, "Preauthorization not found.")
 
       {:error, :preauth_not_active} ->
         send_error_response(interaction, "This preauthorization is not active.")
