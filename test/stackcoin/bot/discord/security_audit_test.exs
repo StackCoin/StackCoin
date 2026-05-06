@@ -202,8 +202,8 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
   # provided), there is NO ban check on the requesting user (line 87-90).
   # A banned user can use /balance @someone to view others' balances.
 
-  describe "FINDING-3: banned user can view other users' balances via /balance @user" do
-    test "banned user can still check another user's balance" do
+  describe "FINDING-3: banned user cannot view other users' balances via /balance @user" do
+    test "banned user cannot check other users' balances" do
       guild_id = 123_456_789
       channel_id = 987_654_321
       admin_user_id = 999_999_999
@@ -227,11 +227,9 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
          [
            create_interaction_response: fn _interaction, response ->
              assert response.type == 4
-             # This SUCCEEDS — banned user can see other users' balances
-             assert response.data.embeds != nil
-             embed = hd(response.data.embeds)
-             assert String.contains?(embed.title, "TargetUser")
-             assert String.contains?(embed.title, "42 STK")
+             # Now correctly blocked — banned user cannot see other users' balances
+             assert response.data.content != nil
+             assert String.contains?(response.data.content, "banned")
              {:ok}
            end
          ]}

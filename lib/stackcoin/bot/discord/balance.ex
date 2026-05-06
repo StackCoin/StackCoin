@@ -83,18 +83,30 @@ defmodule StackCoin.Bot.Discord.Balance do
         {:error, :both_user_and_bot_specified}
 
       user_option ->
-        # User specified, check their balance
-        case User.get_user_by_discord_id(user_option) do
-          {:ok, user} -> {:ok, {user, :user, false}}
-          {:error, :user_not_found} -> {:error, :other_user_not_found}
+        # User specified, check their balance (requesting user must not be banned)
+        with {:ok, requesting_user} <- User.get_user_by_discord_id(interaction.user.id),
+             {:ok, :not_banned} <- User.check_user_banned(requesting_user) do
+          case User.get_user_by_discord_id(user_option) do
+            {:ok, user} -> {:ok, {user, :user, false}}
+            {:error, :user_not_found} -> {:error, :other_user_not_found}
+            {:error, reason} -> {:error, reason}
+          end
+        else
+          {:error, :user_banned} -> {:error, :user_banned}
           {:error, reason} -> {:error, reason}
         end
 
       bot_option ->
-        # Bot specified, check their balance
-        case Bot.get_bot_by_name(bot_option) do
-          {:ok, bot} -> {:ok, {bot, :bot, false}}
-          {:error, :bot_not_found} -> {:error, :bot_not_found}
+        # Bot specified, check their balance (requesting user must not be banned)
+        with {:ok, requesting_user} <- User.get_user_by_discord_id(interaction.user.id),
+             {:ok, :not_banned} <- User.check_user_banned(requesting_user) do
+          case Bot.get_bot_by_name(bot_option) do
+            {:ok, bot} -> {:ok, {bot, :bot, false}}
+            {:error, :bot_not_found} -> {:error, :bot_not_found}
+            {:error, reason} -> {:error, reason}
+          end
+        else
+          {:error, :user_banned} -> {:error, :user_banned}
           {:error, reason} -> {:error, reason}
         end
 
