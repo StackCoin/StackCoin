@@ -410,6 +410,13 @@ defmodule StackCoin.Bot.Discord.Bot do
     end
   end
 
+  # SECURITY NOTE: requester_snowflake is parsed from the button custom_id, which
+  # is client-modifiable. A compromised admin client could alter the snowflake to
+  # assign the bot to an arbitrary user. This is a known limitation — mitigated by:
+  #   1. Only admins can approve (is_admin? check above)
+  #   2. create_bot_user requires the snowflake to map to an existing StackCoin user
+  # A full fix would require server-side storage of pending bot requests, which is
+  # not warranted given the admin-trust model.
   defp handle_bot_creation_accept(requester_snowflake, bot_name, interaction) do
     case Bot.create_bot_user(requester_snowflake, bot_name) do
       {:ok, bot} ->
