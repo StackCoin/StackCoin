@@ -166,26 +166,35 @@ defmodule StackCoinWeb.TransactionController do
   end
 
   def show(conn, %{"transaction_id" => transaction_id_str}) do
+    current_bot = conn.assigns.current_bot
+
     case ApiHelpers.parse_user_id(transaction_id_str) do
       {:ok, transaction_id} ->
         case Bank.get_transaction_by_id(transaction_id) do
           {:ok, transaction} ->
-            formatted_transaction = %{
-              id: transaction.id,
-              from: %{
-                id: transaction.from_id,
-                username: transaction.from_username
-              },
-              to: %{
-                id: transaction.to_id,
-                username: transaction.to_username
-              },
-              amount: transaction.amount,
-              time: transaction.time,
-              label: transaction.label
-            }
+            if current_bot.user.id != transaction.from_id and
+                 current_bot.user.id != transaction.to_id do
+              conn
+              |> put_status(:forbidden)
+              |> json(%{error: "not_involved_in_transaction"})
+            else
+              formatted_transaction = %{
+                id: transaction.id,
+                from: %{
+                  id: transaction.from_id,
+                  username: transaction.from_username
+                },
+                to: %{
+                  id: transaction.to_id,
+                  username: transaction.to_username
+                },
+                amount: transaction.amount,
+                time: transaction.time,
+                label: transaction.label
+              }
 
-            json(conn, formatted_transaction)
+              json(conn, formatted_transaction)
+            end
 
           {:error, :transaction_not_found} ->
             conn

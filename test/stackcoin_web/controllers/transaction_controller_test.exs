@@ -376,14 +376,13 @@ defmodule StackCoinWebTest.TransactionControllerTest do
       recipient: recipient,
       owner: owner
     } do
-      # Test different from/to combinations
-      test_cases = [
+      # Test combinations where the bot is involved (should return 200)
+      involved_cases = [
         {bot.user.id, recipient.id, "Bot to Recipient"},
-        {recipient.id, bot.user.id, "Recipient to Bot"},
-        {owner.id, recipient.id, "Owner to Recipient"}
+        {recipient.id, bot.user.id, "Recipient to Bot"}
       ]
 
-      Enum.each(test_cases, fn {from_id, to_id, label} ->
+      Enum.each(involved_cases, fn {from_id, to_id, label} ->
         {:ok, transaction} = Bank.transfer_between_users(from_id, to_id, 25, label)
 
         conn =
@@ -399,6 +398,17 @@ defmodule StackCoinWebTest.TransactionControllerTest do
         assert response["label"] == label
         assert response["amount"] == 25
       end)
+
+      # Test combination where bot is NOT involved (should return 403)
+      {:ok, uninvolved_txn} =
+        Bank.transfer_between_users(owner.id, recipient.id, 25, "Owner to Recipient")
+
+      conn =
+        conn
+        |> put_req_header("authorization", "Bearer #{bot_token}")
+        |> get(~p"/api/transaction/#{uninvolved_txn.id}")
+
+      assert json_response(conn, 403)["error"] == "not_involved_in_transaction"
     end
 
     test "returns transaction created from setup", %{
