@@ -280,8 +280,8 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
   # should be able to manage their own preauths from anywhere), but it's
   # inconsistent with /balance, /send, /dole which all enforce guild+channel.
 
-  describe "FINDING-4: /preauths works without guild/channel validation" do
-    test "preauths list works from nil guild context (DMs)" do
+  describe "FINDING-4: /preauths now requires guild/channel validation" do
+    test "preauths list is rejected from nil guild context (DMs)" do
       admin_user_id = 999_999_999
       user_id = 888_888_888
 
@@ -305,8 +305,9 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
          [
            create_interaction_response: fn _interaction, response ->
              assert response.type == 4
-             # Succeeds in DMs — no guild/channel check
-             assert response.data.components != nil
+             # Now correctly blocked — guild/channel validation required
+             assert response.data.content != nil
+             assert String.contains?(response.data.content, "not registered")
              {:ok}
            end
          ]}

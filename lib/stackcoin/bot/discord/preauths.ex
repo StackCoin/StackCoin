@@ -4,7 +4,7 @@ defmodule StackCoin.Bot.Discord.Preauths do
   Subcommands: list, revoke.
   """
 
-  alias StackCoin.Core.{User, Bot, Preauthorization}
+  alias StackCoin.Core.{User, Bot, Preauthorization, DiscordGuild}
   alias StackCoin.Bot.Discord.{Commands, Components}
   alias Nostrum.Api
   alias Nostrum.Constants.{ApplicationCommandOptionType, InteractionCallbackType}
@@ -37,21 +37,26 @@ defmodule StackCoin.Bot.Discord.Preauths do
   end
 
   def handle(interaction) do
-    discord_id =
-      case interaction do
-        %{member: %{user: %{id: id}}} when not is_nil(id) -> id
-        %{user: %{id: id}} -> id
+    with {:ok, guild} <- DiscordGuild.get_guild_by_discord_id(interaction.guild_id),
+         {:ok, _channel_check} <- DiscordGuild.validate_channel(guild, interaction.channel_id) do
+      discord_id =
+        case interaction do
+          %{member: %{user: %{id: id}}} when not is_nil(id) -> id
+          %{user: %{id: id}} -> id
+        end
+
+      case get_subcommand(interaction) do
+        {:ok, "list"} ->
+          handle_list(discord_id, interaction)
+
+        {:ok, "revoke"} ->
+          handle_revoke(discord_id, interaction)
+
+        {:error, :no_subcommand} ->
+          Commands.send_error_response(interaction, :no_subcommand)
       end
-
-    case get_subcommand(interaction) do
-      {:ok, "list"} ->
-        handle_list(discord_id, interaction)
-
-      {:ok, "revoke"} ->
-        handle_revoke(discord_id, interaction)
-
-      {:error, :no_subcommand} ->
-        Commands.send_error_response(interaction, :no_subcommand)
+    else
+      {:error, reason} -> Commands.send_error_response(interaction, reason)
     end
   end
 
