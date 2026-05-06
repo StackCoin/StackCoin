@@ -100,6 +100,12 @@ defmodule StackCoin.Bot.Discord.Admin do
 
   @doc """
   Handles the admin command interaction.
+
+  Admin subcommands intentionally skip guild/channel validation.
+  Admin operations (pump, ban, unban, dole-ban, dole-unban) are global and may
+  be used from DMs. Only `register` requires guild context since it binds a
+  channel to a guild. Authorization is enforced by check_admin_permissions in
+  the core layer.
   """
   def handle(interaction) do
     with {:ok, subcommand} <- get_subcommand(interaction) do
