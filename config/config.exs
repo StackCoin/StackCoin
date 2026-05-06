@@ -3,6 +3,10 @@ import Config
 config :stackcoin,
   ecto_repos: [StackCoin.Repo]
 
+config :stackcoin, StackCoin.Repo,
+  busy_timeout: 5000,
+  journal_mode: :wal
+
 config :stackcoin, env: Mix.env()
 
 config :stackcoin, StackCoinWeb.Endpoint,
