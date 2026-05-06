@@ -223,22 +223,30 @@ defmodule StackCoin.Core.Request do
                  request.label
                ) do
             {:ok, transaction} ->
-              request_attrs = %{
-                status: "accepted",
-                resolved_at: NaiveDateTime.utc_now(),
-                transaction_id: transaction.id
-              }
+              # Atomic status check: only update if still "pending" to prevent
+              # double-accept race conditions from double-charging the responder.
+              {count, _} =
+                from(r in Schema.Request,
+                  where: r.id == ^request.id and r.status == "pending"
+                )
+                |> Repo.update_all(
+                  set: [
+                    status: "accepted",
+                    resolved_at: NaiveDateTime.utc_now(),
+                    transaction_id: transaction.id
+                  ]
+                )
 
-              case request
-                   |> Schema.Request.changeset(request_attrs)
-                   |> Repo.update() do
-                {:ok, updated_request} ->
-                  {Repo.preload(updated_request, [:requester, :responder, :transaction],
-                     force: true
-                   ), transaction}
+              if count == 0 do
+                # Another concurrent call already accepted/denied this request.
+                # Rollback to undo the transfer.
+                Repo.rollback(:request_not_pending)
+              else
+                updated_request =
+                  Repo.get!(Schema.Request, request.id)
+                  |> Repo.preload([:requester, :responder, :transaction], force: true)
 
-                {:error, changeset} ->
-                  Repo.rollback(changeset)
+                {updated_request, transaction}
               end
 
             {:error, reason} ->
@@ -281,36 +289,42 @@ defmodule StackCoin.Core.Request do
     with {:ok, request} <- get_request_by_id(request_id),
          :ok <- validate_request_participant(request, user_id),
          :ok <- validate_request_pending(request) do
-      request_attrs = %{
-        status: "denied",
-        resolved_at: NaiveDateTime.utc_now(),
-        denied_by_id: user_id
-      }
+      # Atomic status check: only update if still "pending" to prevent
+      # concurrent deny/accept race conditions.
+      {count, _} =
+        from(r in Schema.Request,
+          where: r.id == ^request.id and r.status == "pending"
+        )
+        |> Repo.update_all(
+          set: [
+            status: "denied",
+            resolved_at: NaiveDateTime.utc_now(),
+            denied_by_id: user_id
+          ]
+        )
 
-      case request
-           |> Schema.Request.changeset(request_attrs)
-           |> Repo.update() do
-        {:ok, updated_request} ->
-          preloaded = Repo.preload(updated_request, [:requester, :responder, :denied_by])
+      if count == 0 do
+        {:error, :request_not_pending}
+      else
+        preloaded =
+          Repo.get!(Schema.Request, request.id)
+          |> Repo.preload([:requester, :responder, :denied_by], force: true)
 
-          Phoenix.PubSub.broadcast(
-            StackCoin.PubSub,
-            "requests",
-            {:request_denied, preloaded}
-          )
+        Phoenix.PubSub.broadcast(
+          StackCoin.PubSub,
+          "requests",
+          {:request_denied, preloaded}
+        )
 
-          for uid <- [request.requester_id, request.responder_id] do
-            Event.create_event("request.denied", uid, %{
-              denied_by_id: user_id,
-              request_id: request.id,
-              status: "denied"
-            })
-          end
+        for uid <- [request.requester_id, request.responder_id] do
+          Event.create_event("request.denied", uid, %{
+            denied_by_id: user_id,
+            request_id: request.id,
+            status: "denied"
+          })
+        end
 
-          {:ok, preloaded}
-
-        {:error, changeset} ->
-          {:error, changeset}
+        {:ok, preloaded}
       end
     else
       {:error, reason} -> {:error, reason}
