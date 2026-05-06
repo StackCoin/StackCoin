@@ -279,14 +279,33 @@ defmodule StackCoin.Bot.Discord.Bot do
   """
   def handle_bot_creation_interaction(interaction) do
     case parse_bot_creation_custom_id(interaction.data.custom_id) do
-      {:ok, {:accept, requester_snowflake, bot_name}} ->
-        handle_bot_creation_accept(requester_snowflake, bot_name, interaction)
-
-      {:ok, {:reject, requester_snowflake, bot_name}} ->
-        handle_bot_creation_reject(requester_snowflake, bot_name, interaction)
+      {:ok, {action, requester_snowflake, bot_name}} ->
+        if is_admin?(interaction.user.id) do
+          case action do
+            :accept -> handle_bot_creation_accept(requester_snowflake, bot_name, interaction)
+            :reject -> handle_bot_creation_reject(requester_snowflake, bot_name, interaction)
+          end
+        else
+          send_update_message(interaction, 0xFF6B6B, "❌ Only admins can approve or reject bot creation requests.")
+        end
 
       {:error, :invalid_custom_id} ->
         send_update_message(interaction, 0xFF6B6B, "❌ Invalid bot creation action.")
+    end
+  end
+
+  defp is_admin?(discord_user_id) do
+    admin_user_id_str = Application.get_env(:stackcoin, :admin_user_id)
+
+    if admin_user_id_str do
+      admin_id =
+        if is_binary(admin_user_id_str),
+          do: String.to_integer(admin_user_id_str),
+          else: admin_user_id_str
+
+      discord_user_id == admin_id
+    else
+      false
     end
   end
 
