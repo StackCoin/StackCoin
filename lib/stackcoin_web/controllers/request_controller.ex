@@ -317,29 +317,38 @@ defmodule StackCoinWeb.RequestController do
   end
 
   def show(conn, %{"request_id" => request_id_str}) do
+    current_bot = conn.assigns.current_bot
+
     case ApiHelpers.parse_user_id(request_id_str) do
       {:ok, request_id} ->
         case Request.get_request_by_id(request_id) do
           {:ok, request} ->
-            formatted_request = %{
-              id: request.id,
-              amount: request.amount,
-              status: request.status,
-              requested_at: request.requested_at,
-              resolved_at: request.resolved_at,
-              label: request.label,
-              requester: %{
-                id: request.requester.id,
-                username: request.requester.username
-              },
-              responder: %{
-                id: request.responder.id,
-                username: request.responder.username
-              },
-              transaction_id: if(request.transaction, do: request.transaction.id, else: nil)
-            }
+            if current_bot.user.id != request.requester_id and
+                 current_bot.user.id != request.responder_id do
+              conn
+              |> put_status(:forbidden)
+              |> json(%{error: "not_involved_in_request"})
+            else
+              formatted_request = %{
+                id: request.id,
+                amount: request.amount,
+                status: request.status,
+                requested_at: request.requested_at,
+                resolved_at: request.resolved_at,
+                label: request.label,
+                requester: %{
+                  id: request.requester.id,
+                  username: request.requester.username
+                },
+                responder: %{
+                  id: request.responder.id,
+                  username: request.responder.username
+                },
+                transaction_id: if(request.transaction, do: request.transaction.id, else: nil)
+              }
 
-            json(conn, formatted_request)
+              json(conn, formatted_request)
+            end
 
           {:error, :request_not_found} ->
             conn
