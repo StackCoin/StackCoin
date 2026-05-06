@@ -2678,32 +2678,17 @@ class TestAPIRedTeam:
             if r.status_code != 200 and r.json().get("error") == "request_not_pending"
         ]
 
-        # BUG FOUND: Multiple concurrent deny calls can succeed.
-        # The validate_request_pending check in request.ex:405-411 does a
-        # non-atomic read of the status field. Two concurrent requests both see
-        # "pending" before either writes "denied". The Ecto Repo.update at
-        # request.ex:290-292 uses optimistic concurrency without a WHERE status='pending'
-        # clause, so both updates succeed.
-        #
-        # For deny, this is LOW severity (idempotent — denying twice doesn't move money).
-        # For accept, this would be CRITICAL (double-charge), but accept has the
-        # same pattern. SQLite's transaction serialization may help, but this test
-        # proves it doesn't fully prevent the race.
-        #
-        # We assert at least 1 succeeds (functional correctness) and that the
-        # request ends in "denied" state (data consistency).
-        assert len(successes) >= 1, (
-            f"Expected at least 1 successful deny, got {len(successes)}. "
+        # With the atomic status check (WHERE status = 'pending' in the UPDATE),
+        # exactly 1 concurrent deny should succeed and the rest should get
+        # request_not_pending.
+        assert len(successes) == 1, (
+            f"Expected exactly 1 successful deny, got {len(successes)}. "
             f"Responses: {[r.json() for r in responses]}"
         )
-
-        # Document the race condition finding
-        if len(successes) > 1:
-            pytest.xfail(
-                f"RACE CONDITION BUG: {len(successes)} concurrent denies succeeded "
-                f"(expected 1). request.ex:405 validate_request_pending is not atomic. "
-                f"Severity: LOW for deny (idempotent), CRITICAL if same pattern in accept."
-            )
+        assert len(request_not_pending) == 4, (
+            f"Expected 4 request_not_pending errors, got {len(request_not_pending)}. "
+            f"Responses: {[r.json() for r in responses]}"
+        )
 
     async def test_concurrent_preauth_transfers_budget_enforcement(
         self, test_context, approve_preauth
@@ -2903,25 +2888,10 @@ class TestAPIRedTeam:
             responses = await asyncio.gather(*tasks)
 
         successes = [r for r in responses if r.status_code == 200]
-        errors_500 = [r for r in responses if r.status_code == 500]
         txn_ids = {r.json()["transaction_id"] for r in successes}
 
-        # BUG FOUND: Concurrent transfers with different idempotency keys cause
-        # 500 Internal Server Errors due to SQLite lock contention. When multiple
-        # writes hit SQLite concurrently, the DB returns SQLITE_BUSY. The Ecto
-        # transaction in bank.ex:19 does not retry on busy, causing unhandled errors
-        # that bubble up as 500s.
-        #
-        # Severity: HIGH — legitimate concurrent API requests from different clients
-        # get 500 errors instead of proper retries or 503 Service Unavailable.
-        if errors_500:
-            pytest.xfail(
-                f"SQLITE CONTENTION BUG: {len(errors_500)} of {len(responses)} requests "
-                f"returned 500 due to SQLite lock contention. Only {len(successes)} succeeded. "
-                f"Severity: HIGH — concurrent writes cause unhandled 500 errors. "
-                f"Fix: add retry logic for SQLITE_BUSY or use WAL mode with busy_timeout."
-            )
-
+        # With busy_timeout configured, SQLite retries internally on SQLITE_BUSY
+        # instead of returning 500 errors. All 3 requests should succeed.
         assert len(successes) == 3, (
             f"All 3 should succeed with different keys: {[r.json() for r in responses]}"
         )
