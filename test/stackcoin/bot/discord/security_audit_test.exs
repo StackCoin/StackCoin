@@ -305,9 +305,9 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
          [
            create_interaction_response: fn _interaction, response ->
              assert response.type == 4
-             # Now correctly blocked — guild/channel validation required
-             assert response.data.content != nil
-             assert String.contains?(response.data.content, "not registered")
+              # Now correctly blocked — guild/channel validation required
+              assert response.data.content != nil
+              assert String.contains?(response.data.content, "only be used in a server")
              {:ok}
            end
          ]}
@@ -447,16 +447,16 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
   end
 
   # ─── FINDING 8: /balance and /graph nil guild_id crash path ──────────────
-  # Severity: MEDIUM
+  # Severity: MEDIUM (FIXED)
   # File: lib/stackcoin/bot/discord/balance.ex:54
   #        lib/stackcoin/bot/discord/graph.ex:46
-  # If guild_id is nil (DM context), get_guild_by_discord_id("nil") is called.
-  # This returns {:error, :guild_not_registered}, so it doesn't crash, but it
-  # exposes a misleading error message. The user sees "This server is not
-  # registered with StackCoin" when they're actually in a DM.
+  # Previously, nil guild_id (DM context) passed through to_string(nil) = "nil"
+  # and produced a misleading "server not registered" error. Now
+  # get_guild_by_discord_id(nil) returns {:error, :not_in_guild} which maps to
+  # a clear "This command can only be used in a server, not in DMs." message.
 
-  describe "FINDING-8: commands in DMs produce misleading error messages" do
-    test "/balance in DMs says 'server not registered' instead of 'use in a server'" do
+  describe "FINDING-8: commands in DMs produce clear error messages" do
+    test "/balance in DMs says 'only be used in a server'" do
       user_id = 888_888_888
       admin_user_id = 999_999_999
 
@@ -473,8 +473,7 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
            create_interaction_response: fn _interaction, response ->
              assert response.type == 4
              assert response.data.content != nil
-             # The error says "not registered" when the real issue is DM context
-             assert String.contains?(response.data.content, "not registered")
+             assert String.contains?(response.data.content, "only be used in a server")
              {:ok}
            end
          ]}
@@ -483,7 +482,7 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
       end
     end
 
-    test "/send in DMs produces 'not registered' error" do
+    test "/send in DMs produces 'only be used in a server' error" do
       user_id = 888_888_888
       admin_user_id = 999_999_999
 
@@ -504,7 +503,7 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
            create_interaction_response: fn _interaction, response ->
              assert response.type == 4
              assert response.data.content != nil
-             assert String.contains?(response.data.content, "not registered")
+             assert String.contains?(response.data.content, "only be used in a server")
              {:ok}
            end
          ]}

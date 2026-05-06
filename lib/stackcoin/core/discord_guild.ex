@@ -79,7 +79,10 @@ defmodule StackCoin.Core.DiscordGuild do
 
   @doc """
   Gets a guild by its Discord snowflake ID.
+  Returns `{:error, :not_in_guild}` when called from a DM context (nil guild_id).
   """
+  def get_guild_by_discord_id(nil), do: {:error, :not_in_guild}
+
   def get_guild_by_discord_id(guild_snowflake) do
     case Repo.get_by(Schema.DiscordGuild, snowflake: to_string(guild_snowflake)) do
       nil -> {:error, :guild_not_registered}

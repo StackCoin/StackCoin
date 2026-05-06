@@ -172,6 +172,9 @@ defmodule StackCoin.Bot.Discord.Commands do
 
   defp error_message(error_type) do
     case error_type do
+        :not_in_guild ->
+          "❌ This command can only be used in a server, not in DMs."
+
         :guild_not_registered ->
           "❌ This server is not registered with StackCoin."
 
