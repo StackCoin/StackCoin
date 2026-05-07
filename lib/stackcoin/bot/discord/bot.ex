@@ -312,12 +312,6 @@ defmodule StackCoin.Bot.Discord.Bot do
   defp send_bot_creation_request(bot_name, interaction) do
     requester_snowflake = interaction.user.id
 
-    requester_display =
-      case StackCoin.Core.User.get_user_by_discord_id(requester_snowflake) do
-        {:ok, user} -> user.username
-        _ -> "#{requester_snowflake}"
-      end
-
     # Send channel reply to the requester
     Api.create_interaction_response(interaction, %{
       type: InteractionCallbackType.channel_message_with_source(),
@@ -334,6 +328,21 @@ defmodule StackCoin.Bot.Discord.Bot do
     })
 
     # DM the admin with Accept/Reject buttons
+    send_bot_creation_request_dm(requester_snowflake, bot_name)
+  end
+
+  @doc """
+  Sends a DM to the admin with Accept/Reject buttons for a bot creation request.
+  Called from both the Discord bot and the web UI.
+  Returns :ok or :error.
+  """
+  def send_bot_creation_request_dm(requester_snowflake, bot_name) do
+    requester_display =
+      case StackCoin.Core.User.get_user_by_discord_id(requester_snowflake) do
+        {:ok, user} -> user.username
+        _ -> "#{requester_snowflake}"
+      end
+
     admin_user_id_str = Application.get_env(:stackcoin, :admin_user_id)
 
     if admin_user_id_str do
@@ -378,6 +387,8 @@ defmodule StackCoin.Bot.Discord.Bot do
             ]
           })
 
+          :ok
+
         {:error, reason} ->
           Logger.error(
             "Failed to DM admin for bot creation request '#{bot_name}': #{inspect(reason)}"
@@ -385,6 +396,8 @@ defmodule StackCoin.Bot.Discord.Bot do
 
           :error
       end
+    else
+      :error
     end
   end
 
@@ -496,7 +509,11 @@ defmodule StackCoin.Bot.Discord.Bot do
     })
   end
 
-  defp send_bot_token_dm(user_id, bot) do
+  @doc """
+  Sends a DM to the given Discord user ID with the bot's token.
+  Called from both the Discord bot and the web UI.
+  """
+  def send_bot_token_dm(user_id, bot) do
     Api.User.create_dm(user_id)
     |> case do
       {:ok, dm_channel} ->
