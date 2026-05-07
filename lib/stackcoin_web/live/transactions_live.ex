@@ -20,11 +20,12 @@ defmodule StackCoinWeb.TransactionsLive do
   def handle_params(params, _uri, socket) do
     page = parse_page(params["page"])
     user_id = parse_user_id(params["user"])
+    dir = parse_dir(params["dir"])
     offset = (page - 1) * @per_page
 
     opts =
       [limit: @per_page, offset: offset]
-      |> maybe_add_user_filter(user_id)
+      |> maybe_add_user_filter(user_id, dir)
 
     {:ok, %{transactions: transactions, total_count: total_count}} =
       Bank.search_transactions(opts)
@@ -38,6 +39,7 @@ defmodule StackCoinWeb.TransactionsLive do
      |> assign(:total_pages, total_pages)
      |> assign(:total_count, total_count)
      |> assign(:filter_user_id, user_id)
+     |> assign(:filter_dir, dir)
      |> assign(:page_title, "Transactions — StackCoin")}
   end
 
@@ -46,7 +48,7 @@ defmodule StackCoinWeb.TransactionsLive do
     if socket.assigns.current_page == 1 do
       opts =
         [limit: @per_page, offset: 0]
-        |> maybe_add_user_filter(socket.assigns.filter_user_id)
+        |> maybe_add_user_filter(socket.assigns.filter_user_id, socket.assigns.filter_dir)
 
       {:ok, %{transactions: transactions, total_count: total_count}} =
         Bank.search_transactions(opts)
@@ -68,8 +70,16 @@ defmodule StackCoinWeb.TransactionsLive do
     {:noreply, push_patch(socket, to: ~p"/transactions")}
   end
 
-  def handle_event("filter_user", %{"user_id" => user_id}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/transactions?user=#{user_id}")}
+  def handle_event("filter_user", %{"user_id" => user_id} = params, socket) do
+    dir = params["dir"]
+
+    path =
+      case dir do
+        d when d in ["from", "to"] -> ~p"/transactions?user=#{user_id}&dir=#{d}"
+        _ -> ~p"/transactions?user=#{user_id}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   defp parse_page(nil), do: 1
@@ -90,14 +100,27 @@ defmodule StackCoinWeb.TransactionsLive do
     end
   end
 
-  defp maybe_add_user_filter(opts, nil), do: opts
-  defp maybe_add_user_filter(opts, user_id), do: Keyword.put(opts, :includes_user_id, user_id)
+  defp parse_dir("from"), do: "from"
+  defp parse_dir("to"), do: "to"
+  defp parse_dir(_), do: nil
+
+  defp maybe_add_user_filter(opts, nil, _dir), do: opts
+
+  defp maybe_add_user_filter(opts, user_id, "from"),
+    do: Keyword.put(opts, :from_user_id, user_id)
+
+  defp maybe_add_user_filter(opts, user_id, "to"),
+    do: Keyword.put(opts, :to_user_id, user_id)
+
+  defp maybe_add_user_filter(opts, user_id, _),
+    do: Keyword.put(opts, :includes_user_id, user_id)
 
   defp patch_url(assigns) do
     fn page ->
-      case assigns.filter_user_id do
-        nil -> ~p"/transactions?page=#{page}"
-        uid -> ~p"/transactions?user=#{uid}&page=#{page}"
+      case {assigns.filter_user_id, assigns.filter_dir} do
+        {nil, _} -> ~p"/transactions?page=#{page}"
+        {uid, nil} -> ~p"/transactions?user=#{uid}&page=#{page}"
+        {uid, dir} -> ~p"/transactions?user=#{uid}&dir=#{dir}&page=#{page}"
       end
     end
   end
@@ -140,20 +163,35 @@ defmodule StackCoinWeb.TransactionsLive do
       <h1 class="text-2xl font-bold mb-4">Transactions</h1>
 
       <form phx-change="filter_user" class="mb-6">
-        <label class="block text-sm text-gray-500 mb-1">Involving</label>
-        <select
-          name="user_id"
-          class="w-full border border-gray-200 px-3 py-2 text-sm bg-white"
-        >
-          <option value="">All users</option>
-          <option
-            :for={user <- @all_users}
-            value={user.id}
-            selected={user.id == @filter_user_id}
-          >
-            {user.username}
-          </option>
-        </select>
+        <div class="flex gap-4">
+          <div class="flex-1">
+            <label class="block text-sm text-gray-500 mb-1">User</label>
+            <select
+              name="user_id"
+              class="w-full border border-gray-200 px-3 py-2 text-sm bg-white"
+            >
+              <option value="">All users</option>
+              <option
+                :for={user <- @all_users}
+                value={user.id}
+                selected={user.id == @filter_user_id}
+              >
+                {user.username}
+              </option>
+            </select>
+          </div>
+          <div :if={@filter_user_id} class="w-40">
+            <label class="block text-sm text-gray-500 mb-1">Direction</label>
+            <select
+              name="dir"
+              class="w-full border border-gray-200 px-3 py-2 text-sm bg-white"
+            >
+              <option value="" selected={@filter_dir == nil}>Involving</option>
+              <option value="from" selected={@filter_dir == "from"}>From</option>
+              <option value="to" selected={@filter_dir == "to"}>To</option>
+            </select>
+          </div>
+        </div>
       </form>
 
       <div class="border border-gray-200">

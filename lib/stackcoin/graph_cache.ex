@@ -15,14 +15,14 @@ defmodule StackCoin.GraphCache do
   Returns the cached PNG binary for a user's balance graph,
   generating it if the cache is stale or missing.
   """
-  def get_graph_png(user_id, timerange_key \\ "all") do
+  def get_graph_png(user_id, timerange_key \\ "all", since \\ nil) do
     with {:ok, last_tx_id} <- get_last_transaction_id(user_id),
          cache_path = cache_path(user_id, last_tx_id, timerange_key),
          {:ok, png} <- read_cached(cache_path) do
       {:ok, png}
     else
       {:miss, cache_path} ->
-        generate_and_cache(user_id, cache_path)
+        generate_and_cache(user_id, cache_path, since)
 
       {:error, :no_transactions} ->
         {:error, :no_transactions}
@@ -52,10 +52,13 @@ defmodule StackCoin.GraphCache do
     end
   end
 
-  defp generate_and_cache(user_id, cache_path) do
+  defp generate_and_cache(user_id, cache_path, since) do
+    opts = if since, do: [since: since], else: []
+    chart_opts = if since, do: [zoomed: true], else: []
+
     with {:ok, user} <- User.get_user_by_id(user_id),
-         {:ok, history} <- Bank.get_user_balance_history(user_id),
-         png <- Graph.generate_balance_chart(history, user.username) do
+         {:ok, history} <- Bank.get_user_balance_history(user_id, opts),
+         png <- Graph.generate_balance_chart(history, user.username, chart_opts) do
       File.mkdir_p!(Path.dirname(cache_path))
       cleanup_old_files(user_id)
       File.write!(cache_path, png)

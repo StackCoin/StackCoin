@@ -92,6 +92,8 @@ defmodule StackCoin.Core.Preauthorization do
             user_id: updated.user_id
           })
 
+          Phoenix.PubSub.broadcast(StackCoin.PubSub, "preauths", {:preauth_approved, updated})
+
           {:ok, updated}
 
         {:error, changeset} ->
@@ -121,6 +123,8 @@ defmodule StackCoin.Core.Preauthorization do
             bot_user_id: updated.bot_user_id,
             user_id: updated.user_id
           })
+
+          Phoenix.PubSub.broadcast(StackCoin.PubSub, "preauths", {:preauth_revoked, updated})
 
           {:ok, updated}
 

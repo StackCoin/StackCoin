@@ -4,6 +4,7 @@ defmodule StackCoinWeb.UserLive do
   alias StackCoin.Core.{User, Bank}
 
   @per_page 20
+  @valid_ranges ~w(1w 1m 3m 1y)
 
   @impl true
   def mount(_params, _session, socket) do
@@ -17,6 +18,7 @@ defmodule StackCoinWeb.UserLive do
   @impl true
   def handle_params(%{"id" => id} = params, _uri, socket) do
     page = parse_page(params["page"])
+    range = parse_range(params["range"])
 
     case load_user_data(id, page) do
       {:ok, user, transactions, total_count, graph_buster} ->
@@ -36,6 +38,7 @@ defmodule StackCoinWeb.UserLive do
          |> assign(:total_pages, total_pages)
          |> assign(:graph_cache_buster, graph_buster)
          |> assign(:can_send, can_send)
+         |> assign(:range, range)
          |> assign(:page_title, "#{user.username} — StackCoin")}
 
       {:error, :user_not_found} ->
@@ -119,8 +122,20 @@ defmodule StackCoinWeb.UserLive do
     end
   end
 
+  defp parse_range(nil), do: nil
+  defp parse_range(r) when r in @valid_ranges, do: r
+  defp parse_range(_), do: nil
+
+  defp graph_src(user_id, cache_buster, nil), do: ~p"/graph/#{user_id}?v=#{cache_buster}"
+  defp graph_src(user_id, cache_buster, range), do: ~p"/graph/#{user_id}?v=#{cache_buster}&range=#{range}"
+
   defp patch_url(assigns) do
-    fn page -> ~p"/user/#{assigns.user.id}?page=#{page}" end
+    fn page ->
+      case assigns.range do
+        nil -> ~p"/user/#{assigns.user.id}?page=#{page}"
+        range -> ~p"/user/#{assigns.user.id}?page=#{page}&range=#{range}"
+      end
+    end
   end
 
   defp format_error(:insufficient_balance), do: "Insufficient balance."
@@ -215,9 +230,24 @@ defmodule StackCoinWeb.UserLive do
 
     <div :if={@has_transactions} class="max-w-5xl mx-auto px-4 mb-6 w-full">
       <h2 class="text-lg font-bold mb-3">Balance History</h2>
+      <nav class="flex gap-6 mb-4 border-b border-gray-200">
+        <.link
+          patch={~p"/user/#{@user.id}"}
+          class={["pb-2 text-sm", @range == nil && "border-b-2 border-black font-bold"]}
+        >
+          All
+        </.link>
+        <.link
+          :for={r <- ~w(1w 1m 3m 1y)}
+          patch={~p"/user/#{@user.id}?range=#{r}"}
+          class={["pb-2 text-sm", @range == r && "border-b-2 border-black font-bold"]}
+        >
+          {r}
+        </.link>
+      </nav>
       <div class="border border-gray-200">
         <img
-          src={~p"/graph/#{@user.id}?v=#{@graph_cache_buster}"}
+          src={graph_src(@user.id, @graph_cache_buster, @range)}
           alt={"#{@user.username}'s balance over time"}
           class="w-full"
         />

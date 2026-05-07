@@ -3,10 +3,25 @@ defmodule StackCoinWeb.GraphController do
 
   alias StackCoin.GraphCache
 
-  def show(conn, %{"user_id" => user_id}) do
-    user_id = String.to_integer(user_id)
+  @valid_ranges %{
+    "1w" => 7,
+    "1m" => 30,
+    "3m" => 90,
+    "1y" => 365
+  }
 
-    case GraphCache.get_graph_png(user_id) do
+  def show(conn, params) do
+    user_id = String.to_integer(params["user_id"])
+    range = params["range"]
+    timerange_key = if range in Map.keys(@valid_ranges), do: range, else: "all"
+
+    since =
+      case Map.get(@valid_ranges, range) do
+        nil -> nil
+        days -> NaiveDateTime.add(NaiveDateTime.utc_now(), -days * 86400, :second)
+      end
+
+    case GraphCache.get_graph_png(user_id, timerange_key, since) do
       {:ok, png} ->
         conn
         |> put_resp_content_type("image/png")
@@ -14,12 +29,10 @@ defmodule StackCoinWeb.GraphController do
         |> send_resp(200, png)
 
       {:error, :no_transactions} ->
-        conn
-        |> send_resp(404, "No transactions")
+        conn |> send_resp(404, "No transactions")
 
       {:error, _} ->
-        conn
-        |> send_resp(500, "Error generating graph")
+        conn |> send_resp(500, "Error generating graph")
     end
   end
 end

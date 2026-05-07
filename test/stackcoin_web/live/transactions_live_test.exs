@@ -49,5 +49,31 @@ defmodule StackCoinWebTest.TransactionsLiveTest do
 
       assert html =~ "alice"
     end
+
+    test "direction filter hidden when no user selected", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/transactions")
+
+      refute html =~ "Direction"
+    end
+
+    test "direction filter shows when user is selected", %{conn: conn, alice: alice} do
+      {:ok, _view, html} = live(conn, ~p"/transactions?user=#{alice.id}")
+
+      assert html =~ "Direction"
+    end
+
+    test "from direction filter works via URL", %{conn: conn, alice: alice} do
+      {:ok, _view, html} = live(conn, ~p"/transactions?user=#{alice.id}&dir=from")
+
+      # Alice sent 100 to bob ("Payment"), so this should appear
+      assert html =~ "alice"
+    end
+
+    test "to direction filter works via URL", %{conn: conn, alice: alice} do
+      {:ok, _view, html} = live(conn, ~p"/transactions?user=#{alice.id}&dir=to")
+
+      # Alice received 500 from reserve
+      assert html =~ "alice"
+    end
   end
 end

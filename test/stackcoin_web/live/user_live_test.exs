@@ -108,6 +108,33 @@ defmodule StackCoinWebTest.UserLiveTest do
     end
   end
 
+  describe "balance graph time range" do
+    test "renders time range tabs", %{conn: conn, alice: alice} do
+      {:ok, view, _html} = live(conn, ~p"/user/#{alice.id}")
+
+      assert has_element?(view, "a", "All")
+      assert has_element?(view, "a", "1w")
+      assert has_element?(view, "a", "1m")
+      assert has_element?(view, "a", "3m")
+      assert has_element?(view, "a", "1y")
+    end
+
+    test "time range tab updates graph src", %{conn: conn, alice: alice} do
+      {:ok, view, _html} = live(conn, ~p"/user/#{alice.id}")
+
+      html = view |> element("a", "1w") |> render_click()
+      assert html =~ "range=1w"
+    end
+
+    test "all tab clears range from graph src", %{conn: conn, alice: alice} do
+      {:ok, view, _html} = live(conn, ~p"/user/#{alice.id}?range=1w")
+
+      view |> element("a", "All") |> render_click()
+      img_html = view |> element("img") |> render()
+      refute img_html =~ "range="
+    end
+  end
+
   describe "YOU badge" do
     test "shows YOU badge on own page", %{conn: conn, alice: alice} do
       {:ok, _view, html} = conn |> login(alice) |> live(~p"/user/#{alice.id}")
