@@ -35,8 +35,16 @@ defmodule StackCoin.Core.Idempotency do
     case claim_key(bot_id, key) do
       :claimed ->
         {status, response_body} = fun.()
-        encoded = Jason.encode!(response_body)
-        finalize_key(bot_id, key, status, encoded)
+
+        # Only cache successful responses. Error responses (4xx/5xx) may be
+        # transient (e.g., preauth budget recovers, balance refilled).
+        # The placeholder row (response_code=0) is treated as :miss by check/2
+        # and cleaned up by delete_expired/0.
+        if status >= 200 and status < 300 do
+          encoded = Jason.encode!(response_body)
+          finalize_key(bot_id, key, status, encoded)
+        end
+
         {status, response_body}
 
       {:already_done, code, body} ->
@@ -48,12 +56,14 @@ defmodule StackCoin.Core.Idempotency do
             {code, Jason.decode!(body)}
 
           :timeout ->
-            # Other request likely crashed — claim expired. Execute as fallback
-            # and update the existing row.
             Logger.warning("Idempotency poll timeout for bot_id=#{bot_id} key=#{key}, executing as fallback")
             {status, response_body} = fun.()
-            encoded = Jason.encode!(response_body)
-            finalize_key(bot_id, key, status, encoded)
+
+            if status >= 200 and status < 300 do
+              encoded = Jason.encode!(response_body)
+              finalize_key(bot_id, key, status, encoded)
+            end
+
             {status, response_body}
         end
     end
