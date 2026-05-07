@@ -1371,7 +1371,7 @@ class TestPreauthRedTeam:
 
         # Fire two 6-STK requests concurrently — both individually fit but
         # collectively exceed the 10 STK budget (6+6=12 > 10).
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             r1, r2 = await asyncio.gather(
                 client.post(
                     f"/api/user/{user1_id}/request",
@@ -1424,7 +1424,7 @@ class TestPreauthRedTeam:
         approve_preauth(preauth["id"])
 
         accepted_count = 0
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             for i in range(3):
                 resp = await client.post(
                     f"/api/user/{user1_id}/request",
@@ -1513,7 +1513,7 @@ class TestPreauthRedTeam:
         }
         user1_id = test_context["user1_id"]
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             r1, r2 = await asyncio.gather(
                 client.post(
                     f"/api/user/{user1_id}/preauth",
@@ -1557,7 +1557,7 @@ class TestPreauthRedTeam:
         user1_id = test_context["user1_id"]
 
         # Drain user1's balance first (send all 500 to bot)
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             # Get user1 balance
             me_resp = await client.get(f"/api/user/{user1_id}", headers=headers)
             balance = me_resp.json()["balance"]
@@ -1575,7 +1575,7 @@ class TestPreauthRedTeam:
         approve_preauth(preauth["id"])
 
         # Try to transfer more than user's balance
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 501, "use_preauth": True, "label": "drain-attempt"},
@@ -1610,7 +1610,7 @@ class TestPreauthRedTeam:
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 "/api/user/999999/preauth",
                 json={"max_amount": 10, "window_hours": 24},
@@ -1640,7 +1640,7 @@ class TestPreauthRedTeam:
         }
         bot_user_id = test_context["bot_user_id"]
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{bot_user_id}/preauth",
                 json={"max_amount": 10, "window_hours": 24},
@@ -1684,7 +1684,7 @@ class TestPreauthRedTeam:
         assert info["remaining_budget"] == 10
 
         # Spend 3
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 3, "use_preauth": True, "label": "budget-test-1"},
@@ -1699,7 +1699,7 @@ class TestPreauthRedTeam:
         )
 
         # Spend 7 (exact remaining)
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 7, "use_preauth": True, "label": "budget-test-2"},
@@ -1714,7 +1714,7 @@ class TestPreauthRedTeam:
         )
 
         # One more STK should fail
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 1, "use_preauth": True, "label": "budget-test-3"},
@@ -1745,7 +1745,7 @@ class TestPreauthRedTeam:
         )
         approve_preauth(preauth["id"])
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp1 = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 5, "use_preauth": True, "label": "idem-preauth"},
@@ -1796,7 +1796,7 @@ class TestPreauthRedTeam:
         await stk.get_client().revoke_preauth(preauth["id"])
 
         # Try to use it — should fall back to pending request
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 5, "use_preauth": True, "label": "post-revoke"},
@@ -1830,7 +1830,7 @@ class TestPreauthRedTeam:
         )
         approve_preauth(preauth["id"])
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             # Exact budget should succeed
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
@@ -1933,7 +1933,7 @@ class TestPreauthRedTeam:
         )
         approve_preauth(preauth["id"])
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             tasks = [
                 client.post(
                     f"/api/user/{user1_id}/request",
@@ -2010,7 +2010,7 @@ class TestPreauthRedTeam:
         )
         approve_preauth(preauth["id"])
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 0, "use_preauth": True, "label": "zero-amount"},
@@ -2039,7 +2039,7 @@ class TestPreauthRedTeam:
         )
         approve_preauth(preauth["id"])
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": -5, "use_preauth": True, "label": "negative-amount"},
@@ -2072,7 +2072,7 @@ class TestPreauthRedTeam:
         )
         approve_preauth(preauth["id"])
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 5, "use_preauth": False, "label": "no-preauth"},
@@ -2103,7 +2103,7 @@ class TestPreauthRedTeam:
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{test_context['user1_id']}/preauth",
                 json={"max_amount": 0, "window_hours": 24},
@@ -2126,7 +2126,7 @@ class TestPreauthRedTeam:
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{test_context['user1_id']}/preauth",
                 json={"max_amount": -10, "window_hours": 24},
@@ -2156,7 +2156,7 @@ class TestPreauthRedTeam:
         }
 
         # Try to revoke a non-existent preauth (ID 99999)
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 "/api/preauth/99999/revoke",
                 headers=headers,
@@ -2183,7 +2183,7 @@ class TestPreauthRedTeam:
         user1_id = test_context["user1_id"]
 
         # Get balances before
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             bot_before = (await client.get("/api/user/me", headers=headers)).json()["balance"]
             user_before = (await client.get(f"/api/user/{user1_id}", headers=headers)).json()["balance"]
 
@@ -2193,7 +2193,7 @@ class TestPreauthRedTeam:
         approve_preauth(preauth["id"])
 
         # Transfer 7 STK via preauth
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 7, "use_preauth": True, "label": "balance-check"},
@@ -2235,7 +2235,7 @@ class TestPreauthRedTeam:
         assert preauth["status"] == "pending"
 
         # Try to use it — should fall back to pending request
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 5, "use_preauth": True, "label": "pending-preauth"},
@@ -2273,7 +2273,7 @@ class TestAPIRedTeam:
         base = stackcoin_server["base_url"]
         headers = {"Authorization": "Bearer bogus_token_12345"}
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.get("/api/user/me", headers=headers)
 
         assert resp.status_code == 401, (
@@ -2284,7 +2284,7 @@ class TestAPIRedTeam:
         """Requests with no Authorization header should be rejected with 401."""
         base = stackcoin_server["base_url"]
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.get("/api/user/me")
 
         assert resp.status_code == 401, (
@@ -2296,7 +2296,7 @@ class TestAPIRedTeam:
         base = stackcoin_server["base_url"]
         headers = {"Authorization": "Token some_value"}
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.get("/api/user/me", headers=headers)
 
         assert resp.status_code == 401, (
@@ -2327,7 +2327,7 @@ class TestAPIRedTeam:
         user1_id = test_context["user1_id"]
 
         # Create a request FROM the bot TO user1 (user1 is the responder)
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             create_resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 1, "label": "authz-test-accept"},
@@ -2373,7 +2373,7 @@ class TestAPIRedTeam:
             "Content-Type": "application/json",
         }
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 "/api/requests/999999/deny",
                 headers=headers,
@@ -2446,7 +2446,7 @@ class TestAPIRedTeam:
         user1_id = test_context["user1_id"]
 
         # Create a request
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             create_resp = await client.post(
                 f"/api/user/{user1_id}/request",
                 json={"amount": 1, "label": "show-test"},
@@ -2485,7 +2485,7 @@ class TestAPIRedTeam:
         user1_id = test_context["user1_id"]
 
         # Create a transaction (bot sends to user1)
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             send_resp = await client.post(
                 f"/api/user/{user1_id}/send",
                 json={"amount": 1, "label": "txn-show-test"},
@@ -2526,14 +2526,14 @@ class TestAPIRedTeam:
         user2_id = test_context["user2_id"]
 
         # First check bot balance
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             me_resp = await client.get("/api/user/me", headers=headers)
             bot_balance = me_resp.json()["balance"]
 
         # Drain bot to ~100 by sending to user1
         drain_amount = bot_balance - 100
         if drain_amount > 0:
-            async with httpx.AsyncClient(base_url=base) as client:
+            async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
                 drain_resp = await client.post(
                     f"/api/user/{user1_id}/send",
                     json={"amount": drain_amount, "label": "drain-for-stress"},
@@ -2544,13 +2544,13 @@ class TestAPIRedTeam:
                 )
 
         # Verify bot has ~100 STK
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             me_resp = await client.get("/api/user/me", headers=headers)
             bot_balance = me_resp.json()["balance"]
         assert bot_balance == 100, f"Expected 100, got {bot_balance}"
 
         # Fire 5 concurrent sends of 30 STK each (150 total > 100 available)
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             tasks = [
                 client.post(
                     f"/api/user/{user2_id}/send",
@@ -2577,7 +2577,7 @@ class TestAPIRedTeam:
         )
 
         # CRITICAL: Balance must never go negative
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             me_resp = await client.get("/api/user/me", headers=headers)
             final_balance = me_resp.json()["balance"]
 
@@ -2611,7 +2611,7 @@ class TestAPIRedTeam:
         user1_id = test_context["user1_id"]
 
         # Get bot balance before
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             me_resp = await client.get("/api/user/me", headers=headers)
             bot_balance_before = me_resp.json()["balance"]
 
@@ -2645,7 +2645,7 @@ class TestAPIRedTeam:
         # For the race test, we need to test that the status check is atomic.
         # Let's use the fact that the first accept transitions pending->accepted,
         # and subsequent accepts should see "accepted" and fail.
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             # Bot creates request: bot(requester) -> user1(responder)
             create_resp = await client.post(
                 f"/api/user/{user1_id}/request",
@@ -2662,7 +2662,7 @@ class TestAPIRedTeam:
         #
         # However, we can still test: fire 5 concurrent deny calls (bot CAN deny
         # as the requester/participant). Only 1 should succeed.
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             tasks = [
                 client.post(
                     f"/api/requests/{request_id}/deny",
@@ -2711,7 +2711,7 @@ class TestAPIRedTeam:
         user1_id = test_context["user1_id"]
 
         # Create preauth with budget=10
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             create_resp = await client.post(
                 f"/api/user/{user1_id}/preauth",
                 json={"max_amount": 10, "window_hours": 24},
@@ -2722,7 +2722,7 @@ class TestAPIRedTeam:
         approve_preauth(preauth_id)
 
         # Fire 5 concurrent 3-STK preauth transfers
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             tasks = [
                 client.post(
                     f"/api/user/{user1_id}/request",
@@ -2755,7 +2755,7 @@ class TestAPIRedTeam:
         )
 
         # Verify remaining budget is consistent
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             preauth_resp = await client.get(
                 f"/api/preauth/{preauth_id}",
                 headers=headers,
@@ -2877,7 +2877,7 @@ class TestAPIRedTeam:
         base = test_context["base_url"]
         user1_id = test_context["user1_id"]
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             tasks = [
                 client.post(
                     f"/api/user/{user1_id}/send",
@@ -2925,7 +2925,7 @@ class TestAPIRedTeam:
         user2_id = test_context["user2_id"]
 
         # Run a bunch of concurrent transfers to stress the system
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             tasks = []
             for i in range(5):
                 tasks.append(
@@ -2985,7 +2985,7 @@ class TestAPIRedTeam:
         user1_id = test_context["user1_id"]
 
         # Get balances before
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             bot_before = (await client.get("/api/user/me", headers=headers)).json()["balance"]
             user_before = (await client.get(f"/api/user/{user1_id}", headers=headers)).json()["balance"]
 
@@ -3017,7 +3017,7 @@ class TestAPIRedTeam:
         }
         bot_user_id = test_context["bot_user_id"]
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{bot_user_id}/send",
                 json={"amount": 1, "label": "self-transfer"},
@@ -3043,7 +3043,7 @@ class TestAPIRedTeam:
         }
         user1_id = test_context["user1_id"]
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/send",
                 json={"amount": -10, "label": "negative-transfer"},
@@ -3063,7 +3063,7 @@ class TestAPIRedTeam:
         }
         user1_id = test_context["user1_id"]
 
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             resp = await client.post(
                 f"/api/user/{user1_id}/send",
                 json={"amount": 0, "label": "zero-transfer"},
@@ -3089,12 +3089,12 @@ class TestAPIRedTeam:
         user1_id = test_context["user1_id"]
 
         # Get initial balance
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             me_resp = await client.get("/api/user/me", headers=headers)
             initial_balance = me_resp.json()["balance"]
 
         # Fire 10 concurrent sends of 1 STK each
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             tasks = [
                 client.post(
                     f"/api/user/{user1_id}/send",
@@ -3108,7 +3108,7 @@ class TestAPIRedTeam:
         successes = sum(1 for r in responses if r.status_code == 200)
 
         # Check final balance
-        async with httpx.AsyncClient(base_url=base) as client:
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
             me_resp = await client.get("/api/user/me", headers=headers)
             final_balance = me_resp.json()["balance"]
 
@@ -3187,4 +3187,323 @@ class TestAutoEnterPreauthReRequest:
         pending_preauths = [p for p in preauths if p.get("status") == "pending"]
         assert len(pending_preauths) == 1, (
             f"Expected 1 pending preauth after re-request, got {len(pending_preauths)}"
+        )
+
+
+# ======================================================================
+# REGRESSION: Preauth + Idempotency + Multi-Guild Boundary Bugs
+# ======================================================================
+
+
+@pytest.mark.asyncio
+class TestPreauthRegressions:
+    """Regression and hardening tests for production bugs involving the
+    preauth budget system, idempotency caching, and multi-guild scenarios.
+
+    Production bug summary:
+    - User in 2 guilds. Auto-enter fires for both at ~00:00.
+    - Guild 1 auto-enter fails (preauth budget full). StackCoin returns 400.
+    - Idempotency system cached this 400.
+    - Guild 2 auto-enter succeeds (budget recovered by then).
+    - User manually retries /enter-pot with same idempotency key → cached 400.
+
+    Fixes applied:
+    - Idempotency system no longer caches error responses (only 2xx).
+    - Rolling window has a 30s grace buffer (effective 23h59m30s).
+    """
+
+    async def test_idempotency_does_not_cache_preauth_error(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Regression: a preauth_limit_exceeded 400 was cached by idempotency,
+        blocking retries even after budget recovered. Errors should not be cached.
+
+        Strategy:
+        1. Create preauth with max_amount=5 for user1
+        2. Hit API with key="X", amount=10, use_preauth=True → 400 (10 > 5 budget)
+        3. Hit API with key="X", amount=3, use_preauth=True → if error was cached,
+           returns the stale 400. If NOT cached (the fix), re-executes with
+           amount=3 which fits in budget → 200.
+        """
+        base = test_context["base_url"]
+        user1_id = test_context["user1_id"]
+        idem_key = "regression-error-cache-key"
+
+        # Create preauth with budget=5
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=5, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        headers_with_key = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+            "Idempotency-Key": idem_key,
+        }
+
+        # Step 1: amount=10 exceeds budget=5 → should be 400
+        async with httpx.AsyncClient(
+            base_url=base, timeout=30.0
+        ) as client:
+            resp1 = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 10, "use_preauth": True, "label": "over-budget"},
+                headers=headers_with_key,
+            )
+        assert resp1.status_code == 400, (
+            f"Expected 400 for amount=10 against budget=5, got {resp1.status_code}: "
+            f"{resp1.json()}"
+        )
+
+        # Step 2: same key, amount=3 fits in budget → should succeed if error
+        # was NOT cached. If error was cached, we'd get the stale 400 back.
+        async with httpx.AsyncClient(
+            base_url=base, timeout=30.0
+        ) as client:
+            resp2 = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 3, "use_preauth": True, "label": "within-budget"},
+                headers=headers_with_key,
+            )
+        assert resp2.status_code == 200, (
+            f"Expected 200 (error should not be cached by idempotency system), "
+            f"got {resp2.status_code}: {resp2.json()}. "
+            f"If this is 400, the idempotency system is still caching error responses."
+        )
+        assert resp2.json()["status"] == "accepted"
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_multi_guild_preauth_budget_shared(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
+    ):
+        """Preauth budget is shared across guilds. A user in 2 guilds uses
+        budget from both entries against the same preauth.
+
+        Steps:
+        1. Create preauth max_amount=10 for user1
+        2. Enter pot in guild_A (preauth, 5 STK) → confirmed
+        3. End pot in guild_A
+        4. Enter pot in guild_B (preauth, 5 STK) → confirmed (budget now 0/10)
+        5. End pot in guild_B, enter new pot in guild_A → skipped (budget exceeded)
+        6. Verify no ban
+        """
+        guild_a = "regression_multi_guild_A"
+        guild_b = "regression_multi_guild_B"
+        discord_id = test_context["user1_discord_id"]
+
+        preauth = await stk.create_preauth(
+            user_id=test_context["user1_id"], max_amount=10, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Enter guild_A → confirmed via preauth (5 STK)
+        result_a = await game.enter_pot(
+            discord_id=discord_id, guild_id=guild_a,
+        )
+        assert result_a["status"] == "confirmed", (
+            f"Expected confirmed in guild_A, got {result_a['status']}"
+        )
+
+        # End pot in guild_A so user can enter guild_B
+        conn = db.get_connection()
+        try:
+            pot_a = db.get_active_pot(conn, guild_a)
+            db.end_pot(conn, pot_a["pot_id"], discord_id, 5, "TEST")
+        finally:
+            conn.close()
+
+        # Enter guild_B → confirmed via preauth (another 5 STK, total 10 = budget)
+        result_b = await game.enter_pot(
+            discord_id=discord_id, guild_id=guild_b,
+        )
+        assert result_b["status"] == "confirmed", (
+            f"Expected confirmed in guild_B, got {result_b['status']}"
+        )
+
+        # Budget should now be 0/10
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 0, (
+            f"Expected 0 remaining after 2 entries, got {info['remaining_budget']}"
+        )
+
+        # End pot in guild_B, enter new pot in guild_A → should be skipped
+        conn = db.get_connection()
+        try:
+            pot_b = db.get_active_pot(conn, guild_b)
+            db.end_pot(conn, pot_b["pot_id"], discord_id, 5, "TEST")
+        finally:
+            conn.close()
+
+        result_a2 = await game.enter_pot(
+            discord_id=discord_id, guild_id=guild_a,
+        )
+        assert result_a2["status"] == "skipped", (
+            f"Expected skipped (budget exhausted), got {result_a2['status']}"
+        )
+
+        # Verify no ban was applied (budget exceeded is not a bannable offence)
+        conn = db.get_connection()
+        try:
+            ban_a = db.get_active_ban(conn, discord_id, guild_a)
+            ban_b = db.get_active_ban(conn, discord_id, guild_b)
+            assert ban_a is None, f"Unexpected ban in guild_A: {ban_a}"
+            assert ban_b is None, f"Unexpected ban in guild_B: {ban_b}"
+        finally:
+            conn.close()
+
+    async def test_window_grace_allows_retry_near_boundary(
+        self, luckypot_db, configure_luckypot_stk, test_context, approve_preauth,
+        stackcoin_server,
+    ):
+        """The 30s grace on the rolling window means entries age out slightly
+        early, preventing the daily auto-enter boundary race.
+
+        Strategy:
+        1. Create preauth max_amount=5, use it fully (budget → 0)
+        2. Manipulate the request's requested_at in the DB to be 23h59m45s ago
+           (within the 24hr window but outside the 23h59m30s grace window)
+        3. Check remaining_budget via API — should be 5 (entry aged out due to grace)
+        """
+        base = test_context["base_url"]
+        user1_id = test_context["user1_id"]
+        headers = {
+            "Authorization": f"Bearer {test_context['bot_token']}",
+            "Content-Type": "application/json",
+        }
+
+        # Create preauth with budget=5
+        preauth = await stk.create_preauth(
+            user_id=user1_id, max_amount=5, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Spend the full budget
+        async with httpx.AsyncClient(base_url=base, timeout=30.0) as client:
+            resp = await client.post(
+                f"/api/user/{user1_id}/request",
+                json={"amount": 5, "use_preauth": True, "label": "grace-test"},
+                headers=headers,
+            )
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "accepted"
+        request_id = resp.json()["request_id"]
+
+        # Budget should be 0
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 0
+
+        # Manipulate the request's requested_at to be 23h59m45s ago
+        # (86400 - 15 = 86385 seconds). This is inside the 24hr window but
+        # outside the 23h59m30s effective window (86400 - 30 = 86370 seconds).
+        port = stackcoin_server["port"]
+        db_file = os.path.join(
+            os.path.dirname(__file__), "../../..",
+            f"data/e2e_test_{port}.db",
+        )
+        conn = sqlite3.connect(db_file, timeout=10)
+        try:
+            conn.execute("PRAGMA busy_timeout = 5000")
+            conn.execute(
+                "UPDATE request SET requested_at = datetime('now', '-86385 seconds') "
+                "WHERE id = ?",
+                (request_id,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        # Now check remaining budget — with the 30s grace, the entry at 23h59m45s
+        # ago should be considered "aged out" (outside the 23h59m30s effective window)
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 5, (
+            f"Expected 5 (entry aged out due to 30s grace buffer), "
+            f"got {info['remaining_budget']}. "
+            f"The rolling window grace buffer may not be working correctly."
+        )
+
+    @patch("luckypot.game.random.random", return_value=0.99)
+    async def test_idempotency_key_reusable_after_error(
+        self, _mock_random, luckypot_db, configure_luckypot_stk, test_context,
+        approve_preauth, stackcoin_server,
+    ):
+        """After a failed request, the same idempotency key can be reused
+        and succeed if the underlying condition has changed.
+
+        This simulates the production scenario:
+        1. User enters pot → confirmed (5 STK, budget exhausted)
+        2. End pot, new pot starts
+        3. Enter pot again → skipped (budget exceeded), idempotency key is
+           pot_entry:<pot2>:<user>:1
+        4. Manually age the first request past the 24h window
+        5. Enter pot AGAIN → same pot, same user, same attempt = same key
+        6. Should succeed (budget recovered, error not cached)
+        """
+        guild_id = "regression_idem_retry_guild"
+        discord_id = test_context["user1_discord_id"]
+
+        # Create preauth with budget=5 (exactly one entry)
+        preauth = await stk.create_preauth(
+            user_id=test_context["user1_id"], max_amount=5, window_hours=24,
+        )
+        approve_preauth(preauth["id"])
+
+        # Enter pot #1 → confirmed (5 STK, budget now 0)
+        result1 = await game.enter_pot(
+            discord_id=discord_id, guild_id=guild_id,
+        )
+        assert result1["status"] == "confirmed"
+
+        # End pot #1, new pot starts
+        conn = db.get_connection()
+        try:
+            pot1 = db.get_active_pot(conn, guild_id)
+            db.end_pot(conn, pot1["pot_id"], discord_id, 5, "TEST")
+        finally:
+            conn.close()
+
+        # Enter pot #2 → skipped (budget exceeded)
+        result2 = await game.enter_pot(
+            discord_id=discord_id, guild_id=guild_id,
+        )
+        assert result2["status"] == "skipped", (
+            f"Expected skipped (budget exhausted), got {result2['status']}"
+        )
+
+        # Now simulate time passing: age the original request past 24h
+        # so the budget recovers
+        port = stackcoin_server["port"]
+        db_file = os.path.join(
+            os.path.dirname(__file__), "../../..",
+            f"data/e2e_test_{port}.db",
+        )
+        stk_conn = sqlite3.connect(db_file, timeout=10)
+        try:
+            stk_conn.execute("PRAGMA busy_timeout = 5000")
+            # Move ALL requests for this preauth's user to >24h ago
+            stk_conn.execute(
+                "UPDATE request SET requested_at = datetime('now', '-90000 seconds') "
+                "WHERE responder_id = ?",
+                (test_context["user1_id"],),
+            )
+            stk_conn.commit()
+        finally:
+            stk_conn.close()
+
+        # Verify budget recovered
+        info = await stk.get_client().get_preauth(preauth["id"])
+        assert info["remaining_budget"] == 5, (
+            f"Expected budget to recover to 5 after aging requests, "
+            f"got {info['remaining_budget']}"
+        )
+
+        # Enter pot #2 again — same pot, same user, same attempt count
+        # = same idempotency key. Should succeed if errors aren't cached.
+        result3 = await game.enter_pot(
+            discord_id=discord_id, guild_id=guild_id,
+        )
+        assert result3["status"] == "confirmed", (
+            f"Expected confirmed (budget recovered, error should not be cached), "
+            f"got {result3['status']}. "
+            f"If this is 'skipped', the idempotency system may still be caching "
+            f"the previous error response."
         )
