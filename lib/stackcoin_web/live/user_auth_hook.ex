@@ -17,6 +17,16 @@ defmodule StackCoinWeb.Live.UserAuthHook do
         end
       end
 
-    {:cont, assign(socket, :current_user, current_user)}
+    is_admin =
+      if current_user do
+        current_user.admin == true
+      else
+        false
+      end
+
+    {:cont,
+     socket
+     |> assign(:current_user, current_user)
+     |> assign(:is_admin, is_admin)}
   end
 end

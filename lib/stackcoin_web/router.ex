@@ -48,6 +48,9 @@ defmodule StackCoinWeb.Router do
       live("/transactions", StackCoinWeb.TransactionsLive, :index)
       live("/requests", StackCoinWeb.RequestsLive, :index)
       live("/user/:id", StackCoinWeb.UserLive, :show)
+      live("/bots", StackCoinWeb.BotsLive, :index)
+      live("/preauths", StackCoinWeb.PreauthsLive, :index)
+      live("/admin", StackCoinWeb.AdminLive, :index)
     end
   end
 

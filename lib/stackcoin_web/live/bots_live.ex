@@ -1,0 +1,31 @@
+defmodule StackCoinWeb.BotsLive do
+  use StackCoinWeb, :live_view
+
+  @impl true
+  def mount(_params, _session, socket), do: {:ok, socket}
+
+  @impl true
+  def handle_params(_params, _uri, socket) do
+    if socket.assigns[:current_user] == nil do
+      {:noreply,
+       socket
+       |> put_flash(:error, "You must be logged in to manage bots.")
+       |> push_navigate(to: ~p"/")}
+    else
+      {:noreply, assign(socket, :page_title, "Bots — StackCoin")}
+    end
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="max-w-2xl mx-auto px-4 py-6 w-full">
+      <.link navigate={~p"/"} class="text-sm text-gray-500 mb-6 inline-block">
+        &larr; Back
+      </.link>
+      <h1 class="text-2xl font-bold mb-4">Bots</h1>
+      <p class="text-gray-500">Coming soon.</p>
+    </div>
+    """
+  end
+end

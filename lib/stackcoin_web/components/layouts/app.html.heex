@@ -13,6 +13,15 @@
       <a href="/auth/discord" class="text-gray-500">Login with Discord</a>
     <% end %>
   </div>
+  <%= if assigns[:current_user] do %>
+    <nav class="flex items-center justify-center gap-4 mt-2 text-sm">
+      <.link navigate={~p"/bots"} class="text-gray-500">Bots</.link>
+      <.link navigate={~p"/preauths"} class="text-gray-500">Preauths</.link>
+      <.link :if={assigns[:is_admin]} navigate={~p"/admin"} class="text-gray-500">
+        Admin
+      </.link>
+    </nav>
+  <% end %>
 </header>
 
 <main class="flex-1 flex flex-col">
