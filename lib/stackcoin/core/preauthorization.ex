@@ -259,8 +259,15 @@ defmodule StackCoin.Core.Preauthorization do
     end
   end
 
+  # Shrink the window by 30s so entries right at the boundary age out
+  # slightly early. Prevents the race where daily auto-enter fires at
+  # nearly the same second each day and yesterday's entry is still
+  # barely inside the rolling window.
+  @window_grace_seconds 30
+
   defp get_used_amount(preauth) do
-    cutoff = NaiveDateTime.add(NaiveDateTime.utc_now(), -preauth.window_hours * 3600, :second)
+    window_seconds = preauth.window_hours * 3600 - @window_grace_seconds
+    cutoff = NaiveDateTime.add(NaiveDateTime.utc_now(), -window_seconds, :second)
 
     from(r in Schema.Request,
       where:
