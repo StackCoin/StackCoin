@@ -6,8 +6,9 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
 import NetworkGraph from "./hooks/network_graph"
+import Clipboard from "./hooks/clipboard"
 
-let Hooks = {NetworkGraph}
+let Hooks = {NetworkGraph, Clipboard}
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {
