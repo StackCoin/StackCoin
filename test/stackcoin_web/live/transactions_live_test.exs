@@ -75,5 +75,23 @@ defmodule StackCoinWebTest.TransactionsLiveTest do
       # Alice received 500 from reserve
       assert html =~ "alice"
     end
+
+    test "clearing user filter shows all transactions", %{conn: conn, alice: alice} do
+      {:ok, view, _html} = live(conn, ~p"/transactions?user=#{alice.id}")
+
+      html =
+        view
+        |> form("form", %{user_id: ""})
+        |> render_change()
+
+      assert html =~ "alice"
+      assert html =~ "bob"
+    end
+
+    test "shows empty state when no transactions match filter", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/transactions?user=999999")
+
+      assert html =~ "No transactions found"
+    end
   end
 end

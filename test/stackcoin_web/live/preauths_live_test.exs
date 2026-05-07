@@ -63,4 +63,23 @@ defmodule StackCoinWebTest.PreauthsLiveTest do
       assert html =~ "No active preauthorizations."
     end
   end
+
+  describe "real-time updates" do
+    test "page refreshes when preauth is revoked externally", %{
+      conn: conn,
+      alice: alice,
+      preauth: preauth
+    } do
+      {:ok, view, html} = conn |> login(alice) |> live(~p"/preauths")
+
+      assert html =~ "LuckyBot"
+
+      # Revoke via core module (broadcasts PubSub)
+      {:ok, _} = Preauthorization.revoke_preauth(preauth.id)
+
+      # PubSub message triggers refresh
+      html = render(view)
+      assert html =~ "No active preauthorizations."
+    end
+  end
 end

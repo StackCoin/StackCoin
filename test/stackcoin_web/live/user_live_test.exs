@@ -148,4 +148,35 @@ defmodule StackCoinWebTest.UserLiveTest do
       refute html =~ "YOU"
     end
   end
+
+  describe "real-time updates" do
+    test "page updates when a new transaction occurs", %{
+      conn: conn,
+      alice: alice,
+      bob: bob
+    } do
+      {:ok, view, html} = live(conn, ~p"/user/#{alice.id}")
+
+      assert html =~ "500 STK"
+
+      # Transfer happens outside this LiveView
+      {:ok, _} = Bank.transfer_between_users(alice.id, bob.id, 50, "PubSub test")
+
+      html = render(view)
+      assert html =~ "450 STK"
+    end
+  end
+
+  describe "send STK validation" do
+    test "shows error for invalid amount", %{conn: conn, alice: alice, bob: bob} do
+      {:ok, view, _html} = conn |> login(alice) |> live(~p"/user/#{bob.id}")
+
+      html =
+        view
+        |> form("form[phx-submit=send_stk]", %{amount: "0"})
+        |> render_submit()
+
+      assert html =~ "Enter a valid amount"
+    end
+  end
 end

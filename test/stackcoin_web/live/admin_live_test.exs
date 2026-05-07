@@ -102,5 +102,79 @@ defmodule StackCoinWebTest.AdminLiveTest do
       assert html =~ "User dole banned"
       assert html =~ "DOLE BANNED"
     end
+
+    test "pump with invalid amount shows error", %{conn: conn, admin: admin} do
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/admin")
+
+      html =
+        view
+        |> form("form[phx-submit=pump]", %{amount: "0", label: "Bad pump"})
+        |> render_submit()
+
+      assert html =~ "Invalid amount"
+    end
+
+    test "pump with non-numeric amount shows error", %{conn: conn, admin: admin} do
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/admin")
+
+      html =
+        view
+        |> form("form[phx-submit=pump]", %{amount: "abc", label: "Bad pump"})
+        |> render_submit()
+
+      assert html =~ "Invalid amount"
+    end
+
+    test "unban user works", %{conn: conn, admin: admin, alice: alice} do
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/admin")
+
+      view
+      |> form("form[phx-change=select_user]", %{user_id: to_string(alice.id)})
+      |> render_change()
+
+      # Ban first
+      render_click(view, "ban_user")
+
+      # Then unban
+      html = render_click(view, "ban_user")
+
+      assert html =~ "unbanned"
+      refute html =~ "BANNED"
+    end
+
+    test "dole unban user works", %{conn: conn, admin: admin, alice: alice} do
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/admin")
+
+      view
+      |> form("form[phx-change=select_user]", %{user_id: to_string(alice.id)})
+      |> render_change()
+
+      # Dole ban first
+      render_click(view, "dole_ban_user")
+
+      # Then dole unban
+      html = render_click(view, "dole_ban_user")
+
+      assert html =~ "unbanned"
+      refute html =~ "DOLE BANNED"
+    end
+
+    test "deselecting user clears selection", %{conn: conn, admin: admin, alice: alice} do
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/admin")
+
+      # Select alice
+      view
+      |> form("form[phx-change=select_user]", %{user_id: to_string(alice.id)})
+      |> render_change()
+
+      # Deselect
+      html =
+        view
+        |> form("form[phx-change=select_user]", %{user_id: ""})
+        |> render_change()
+
+      # Ban buttons should be gone since no user selected
+      refute html =~ "BANNED"
+    end
   end
 end

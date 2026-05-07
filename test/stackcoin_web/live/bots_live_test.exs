@@ -81,6 +81,17 @@ defmodule StackCoinWebTest.BotsLiveTest do
 
       assert html =~ "Bot creation request sent"
     end
+
+    test "empty bot name shows error", %{conn: conn, admin: admin} do
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/bots")
+
+      html =
+        view
+        |> form("form[phx-submit=create_bot]", %{name: "   "})
+        |> render_submit()
+
+      assert html =~ "Bot name cannot be empty"
+    end
   end
 
   describe "delete bot" do
@@ -116,6 +127,23 @@ defmodule StackCoinWebTest.BotsLiveTest do
       html = render_click(view, "confirm_delete_bot")
 
       # Bot should still be there
+      assert html =~ "TestBot"
+    end
+
+    test "cancel delete closes modal", %{conn: conn, admin: admin} do
+      bot_id = find_bot_id(admin)
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/bots")
+
+      # Open modal
+      render_click(view, "show_delete_modal", %{"bot-id" => to_string(bot_id)})
+      html = render(view)
+      assert html =~ "to confirm deletion"
+
+      # Cancel
+      html = render_click(view, "cancel_delete")
+
+      # Modal should be gone, bot still exists
+      refute html =~ "to confirm deletion"
       assert html =~ "TestBot"
     end
   end
