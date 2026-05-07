@@ -919,6 +919,11 @@ select {
   margin-right: auto;
 }
 
+.mx-4 {
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
 .mb-1 {
   margin-bottom: 0.25rem;
 }
@@ -1105,6 +1110,10 @@ select {
 
 .max-w-5xl {
   max-width: 64rem;
+}
+
+.max-w-sm {
+  max-width: 24rem;
 }
 
 .flex-1 {
@@ -1327,6 +1336,10 @@ select {
   background-color: rgb(24 24 27 / var(--tw-bg-opacity));
 }
 
+.bg-white\/80 {
+  background-color: rgb(255 255 255 / 0.8);
+}
+
 .fill-cyan-900 {
   fill: #164e63;
 }
@@ -1403,6 +1416,16 @@ select {
 .py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
 }
 
 .pb-2 {

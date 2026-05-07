@@ -295,10 +295,8 @@ defmodule StackCoinWeb.BotsLive do
                   Reset Token
                 </button>
                 <button
-                  phx-click={
-                    JS.push("show_delete_modal", value: %{"bot-id" => bot.id})
-                    |> show_modal("delete-bot-modal")
-                  }
+                  phx-click="show_delete_modal"
+                  phx-value-bot-id={bot.id}
                   class="border border-gray-300 px-3 py-1 text-xs text-gray-500"
                 >
                   Delete
@@ -337,8 +335,9 @@ defmodule StackCoinWeb.BotsLive do
         </div>
       </div>
 
-      <.modal id="delete-bot-modal" on_cancel={JS.push("cancel_delete")}>
-        <div :if={@delete_bot}>
+      <div :if={@delete_bot} class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="fixed inset-0 bg-white/80" phx-click="cancel_delete" />
+        <div class="relative border border-gray-200 bg-white px-6 py-5 max-w-sm w-full mx-4">
           <h2 class="text-lg font-bold mb-2">Delete Bot</h2>
           <p class="text-sm text-gray-500 mb-4">
             Type <span class="font-bold text-gray-900">{@delete_bot.name}</span>
@@ -369,7 +368,7 @@ defmodule StackCoinWeb.BotsLive do
               </button>
               <button
                 type="button"
-                phx-click={JS.push("cancel_delete") |> hide_modal("delete-bot-modal")}
+                phx-click="cancel_delete"
                 class="border border-gray-300 px-4 py-2 text-sm text-gray-500"
               >
                 Cancel
@@ -377,7 +376,7 @@ defmodule StackCoinWeb.BotsLive do
             </div>
           </form>
         </div>
-      </.modal>
+      </div>
     </div>
     """
   end
