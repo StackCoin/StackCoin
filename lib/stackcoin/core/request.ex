@@ -66,13 +66,7 @@ defmodule StackCoin.Core.Request do
   def create_request_with_preauth(requester_id, responder_id, amount, label \\ nil) do
     case Preauthorization.get_active_preauth(requester_id, responder_id) do
       {:ok, preauth} ->
-        case Preauthorization.check_budget(preauth, amount) do
-          {:ok, _remaining} ->
-            execute_preauth_transfer(preauth, requester_id, responder_id, amount, label)
-
-          {:error, :preauth_limit_exceeded} ->
-            {:error, :preauth_limit_exceeded}
-        end
+        execute_preauth_transfer(preauth, requester_id, responder_id, amount, label)
 
       {:error, :no_active_preauth} ->
         create_request(requester_id, responder_id, amount, label)
@@ -351,6 +345,14 @@ defmodule StackCoin.Core.Request do
   defp execute_preauth_transfer(preauth, requester_id, responder_id, amount, label) do
     result =
       Repo.transaction(fn ->
+        # Budget check inside the transaction so it's atomic with the insert.
+        # SQLite serializes writes, so once we're in a write transaction,
+        # no other writer can interleave between the check and the insert.
+        case Preauthorization.check_budget(preauth, amount) do
+          {:ok, _remaining} -> :ok
+          {:error, :preauth_limit_exceeded} -> Repo.rollback(:preauth_limit_exceeded)
+        end
+
         # Transfer funds: responder (user) pays requester (bot)
         case Bank.transfer_between_users(responder_id, requester_id, amount, label) do
           {:ok, transaction} ->
