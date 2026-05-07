@@ -84,15 +84,39 @@ defmodule StackCoinWebTest.BotsLiveTest do
   end
 
   describe "delete bot" do
-    test "delete bot works", %{conn: conn, admin: admin} do
+    test "delete bot requires typing name to confirm", %{conn: conn, admin: admin} do
+      bot_id = find_bot_id(admin)
       {:ok, view, html} = conn |> login(admin) |> live(~p"/bots")
 
       assert html =~ "TestBot"
 
-      html = render_click(view, "delete_bot", %{"bot-id" => to_string(find_bot_id(admin))})
+      # Open delete modal
+      render_click(view, "show_delete_modal", %{"bot-id" => to_string(bot_id)})
+      html = render(view)
+      assert html =~ "Type"
+      assert html =~ "to confirm deletion"
+
+      # Submit without typing name — button is disabled, bot not deleted
+      html = render_click(view, "confirm_delete_bot")
+      assert html =~ "TestBot"
+
+      # Type the correct name and confirm
+      render_change(view, "update_delete_confirmation", %{"confirmation" => "TestBot"})
+      html = render_click(view, "confirm_delete_bot")
 
       assert html =~ "Bot deleted."
-      refute html =~ "TestBot"
+    end
+
+    test "wrong name does not delete bot", %{conn: conn, admin: admin} do
+      bot_id = find_bot_id(admin)
+      {:ok, view, _html} = conn |> login(admin) |> live(~p"/bots")
+
+      render_click(view, "show_delete_modal", %{"bot-id" => to_string(bot_id)})
+      render_change(view, "update_delete_confirmation", %{"confirmation" => "WrongName"})
+      html = render_click(view, "confirm_delete_bot")
+
+      # Bot should still be there
+      assert html =~ "TestBot"
     end
   end
 

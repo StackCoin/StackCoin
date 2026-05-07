@@ -9,7 +9,7 @@ defmodule StackCoinWeb.BotsLive do
       Phoenix.PubSub.subscribe(StackCoin.PubSub, "transactions")
     end
 
-    {:ok, socket}
+    {:ok, assign(socket, delete_bot: nil, delete_confirmation: "")}
   end
 
   @impl true
@@ -92,27 +92,59 @@ defmodule StackCoinWeb.BotsLive do
     end
   end
 
-  def handle_event("delete_bot", %{"bot-id" => bot_id_str}, socket) do
+  def handle_event("show_delete_modal", %{"bot-id" => bot_id_str}, socket) do
     bot_id = String.to_integer(bot_id_str)
-    snowflake = socket.assigns.snowflake
+    bot = Enum.find(socket.assigns.bots, &(&1.id == bot_id))
 
-    case Bot.delete_bot_user(snowflake, bot_id) do
-      {:ok, deleted_bot} ->
-        bots = load_bots(snowflake)
+    {:noreply,
+     socket
+     |> assign(:delete_bot, bot)
+     |> assign(:delete_confirmation, "")}
+  end
 
-        {:noreply,
-         socket
-         |> assign(:bots, bots)
-         |> assign(
-           :revealed_tokens,
-           Map.delete(socket.assigns.revealed_tokens, deleted_bot.id)
-         )
-         |> assign(:show_tokens, MapSet.delete(socket.assigns.show_tokens, deleted_bot.id))
-         |> put_flash(:info, "Bot deleted.")}
+  def handle_event("update_delete_confirmation", %{"confirmation" => value}, socket) do
+    {:noreply, assign(socket, :delete_confirmation, value)}
+  end
 
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, format_error(reason))}
+  def handle_event("confirm_delete_bot", _params, socket) do
+    bot = socket.assigns.delete_bot
+
+    if bot && socket.assigns.delete_confirmation == bot.name do
+      snowflake = socket.assigns.snowflake
+
+      case Bot.delete_bot_user(snowflake, bot.id) do
+        {:ok, deleted_bot} ->
+          bots = load_bots(snowflake)
+
+          {:noreply,
+           socket
+           |> assign(:bots, bots)
+           |> assign(:delete_bot, nil)
+           |> assign(:delete_confirmation, "")
+           |> assign(
+             :revealed_tokens,
+             Map.delete(socket.assigns.revealed_tokens, deleted_bot.id)
+           )
+           |> assign(:show_tokens, MapSet.delete(socket.assigns.show_tokens, deleted_bot.id))
+           |> put_flash(:info, "Bot deleted.")}
+
+        {:error, reason} ->
+          {:noreply,
+           socket
+           |> assign(:delete_bot, nil)
+           |> assign(:delete_confirmation, "")
+           |> put_flash(:error, format_error(reason))}
+      end
+    else
+      {:noreply, socket}
     end
+  end
+
+  def handle_event("cancel_delete", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:delete_bot, nil)
+     |> assign(:delete_confirmation, "")}
   end
 
   def handle_event("reset_token", %{"bot-id" => bot_id_str}, socket) do
@@ -263,8 +295,10 @@ defmodule StackCoinWeb.BotsLive do
                   Reset Token
                 </button>
                 <button
-                  phx-click="delete_bot"
-                  phx-value-bot-id={bot.id}
+                  phx-click={
+                    JS.push("show_delete_modal", value: %{"bot-id" => bot.id})
+                    |> show_modal("delete-bot-modal")
+                  }
                   class="border border-gray-300 px-3 py-1 text-xs text-gray-500"
                 >
                   Delete
@@ -302,6 +336,48 @@ defmodule StackCoinWeb.BotsLive do
           </div>
         </div>
       </div>
+
+      <.modal id="delete-bot-modal" on_cancel={JS.push("cancel_delete")}>
+        <div :if={@delete_bot}>
+          <h2 class="text-lg font-bold mb-2">Delete Bot</h2>
+          <p class="text-sm text-gray-500 mb-4">
+            Type <span class="font-bold text-gray-900">{@delete_bot.name}</span>
+            to confirm deletion. This cannot be undone.
+          </p>
+          <form phx-submit="confirm_delete_bot" phx-change="update_delete_confirmation">
+            <input
+              type="text"
+              name="confirmation"
+              value={@delete_confirmation}
+              placeholder="Bot name"
+              autocomplete="off"
+              class="border border-gray-200 px-3 py-2 text-sm w-full mb-4"
+            />
+            <div class="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={@delete_confirmation != @delete_bot.name}
+                class={[
+                  "border px-4 py-2 text-sm font-bold",
+                  @delete_confirmation == @delete_bot.name &&
+                    "border-red-700 text-red-700",
+                  @delete_confirmation != @delete_bot.name &&
+                    "border-gray-200 text-gray-300 cursor-not-allowed"
+                ]}
+              >
+                Delete Bot
+              </button>
+              <button
+                type="button"
+                phx-click={JS.push("cancel_delete") |> hide_modal("delete-bot-modal")}
+                class="border border-gray-300 px-4 py-2 text-sm text-gray-500"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </.modal>
     </div>
     """
   end
