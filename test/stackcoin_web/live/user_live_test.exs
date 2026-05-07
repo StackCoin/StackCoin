@@ -130,7 +130,7 @@ defmodule StackCoinWebTest.UserLiveTest do
       {:ok, view, _html} = live(conn, ~p"/user/#{alice.id}?range=1w")
 
       view |> element("a", "All") |> render_click()
-      img_html = view |> element("img") |> render()
+      img_html = view |> element("img[alt]") |> render()
       refute img_html =~ "range="
     end
   end
