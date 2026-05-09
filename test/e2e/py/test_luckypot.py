@@ -31,7 +31,7 @@ class TestLuckyPotEntryFlow:
         )
         assert result["status"] == "error"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_enter_pot_success(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -53,7 +53,7 @@ class TestLuckyPotEntryFlow:
         finally:
             conn.close()
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_enter_pot_local_insert_failure_does_not_leave_stackcoin_request(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -75,7 +75,7 @@ class TestLuckyPotEntryFlow:
         ]
         assert luckypot_requests == []
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_enter_pot_duplicate_blocked(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -92,7 +92,7 @@ class TestLuckyPotEntryFlow:
         )
         assert result2["status"] == "already_entered"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_multiple_users_enter_same_pot(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -108,7 +108,7 @@ class TestLuckyPotEntryFlow:
         assert result1["status"] == "pending"
         assert result2["status"] == "pending"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_separate_guilds_separate_pots(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -129,7 +129,7 @@ class TestLuckyPotEntryFlow:
 class TestLuckyPotInstantWin:
     """Tests for the instant win path -- random.random is mocked to always trigger it."""
 
-    @patch("luckypot.game.random.random", return_value=0.001)
+    @patch("luckypot.game.secrets.randbelow", return_value=0)
     async def test_instant_win_on_empty_pot_gives_free_entry(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -159,7 +159,7 @@ class TestLuckyPotInstantWin:
     ):
         """An instant win on a pot with confirmed entries pays out immediately and ends the pot."""
         # First, user1 enters normally and confirms
-        with patch("luckypot.game.random.random", return_value=0.99):
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
             result1 = await game.enter_pot(
                 discord_id=test_context["user1_discord_id"],
                 guild_id="test_guild_iw",
@@ -176,7 +176,7 @@ class TestLuckyPotInstantWin:
         await game.on_request_accepted(event_data)
 
         # Now user2 enters and rolls instant win — should win the pot
-        with patch("luckypot.game.random.random", return_value=0.001):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             result2 = await game.enter_pot(
                 discord_id=test_context["user2_discord_id"],
                 guild_id="test_guild_iw",
@@ -196,7 +196,7 @@ class TestLuckyPotInstantWin:
     ):
         """After an instant win ends a pot, a new pot can be started."""
         # User1 enters and confirms
-        with patch("luckypot.game.random.random", return_value=0.99):
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
             result1 = await game.enter_pot(
                 discord_id=test_context["user1_discord_id"],
                 guild_id="test_guild_iw",
@@ -211,7 +211,7 @@ class TestLuckyPotInstantWin:
         await game.on_request_accepted(event_data)
 
         # User2 instant wins
-        with patch("luckypot.game.random.random", return_value=0.001):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             result2 = await game.enter_pot(
                 discord_id=test_context["user2_discord_id"],
                 guild_id="test_guild_iw",
@@ -219,7 +219,7 @@ class TestLuckyPotInstantWin:
         assert result2["status"] == "instant_win"
 
         # User1 should be able to enter a new pot
-        with patch("luckypot.game.random.random", return_value=0.99):
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
             result3 = await game.enter_pot(
                 discord_id=test_context["user1_discord_id"],
                 guild_id="test_guild_iw",
@@ -233,7 +233,7 @@ class TestLuckyPotInstantWin:
             {"discord_id": "paid_entry_user", "amount": game.POT_ENTRY_COST},
         ]
 
-        with patch("luckypot.game.random.uniform", return_value=0.1):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             winner = game.select_random_winner(participants)
 
         assert winner["discord_id"] == "free_entry_user"
@@ -281,7 +281,7 @@ class TestLuckyPotMultiGuildIsolation:
     ):
         """An instant win ending guild A's pot should not affect guild B."""
         # User1 enters guild_A normally and confirms
-        with patch("luckypot.game.random.random", return_value=0.99):
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
             result_a1 = await game.enter_pot(
                 discord_id=test_context["user1_discord_id"],
                 guild_id="guild_A",
@@ -296,7 +296,7 @@ class TestLuckyPotMultiGuildIsolation:
         await game.on_request_accepted(event_data)
 
         # User2 enters guild_B normally
-        with patch("luckypot.game.random.random", return_value=0.99):
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
             result_b = await game.enter_pot(
                 discord_id=test_context["user2_discord_id"],
                 guild_id="guild_B",
@@ -304,7 +304,7 @@ class TestLuckyPotMultiGuildIsolation:
         assert result_b["status"] == "pending"
 
         # User2 instant wins guild_A's pot — ends it
-        with patch("luckypot.game.random.random", return_value=0.001):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             result_a2 = await game.enter_pot(
                 discord_id=test_context["user2_discord_id"],
                 guild_id="guild_A",
@@ -330,7 +330,7 @@ class TestLuckyPotMultiGuildIsolation:
     ):
         """Same user can instant win in guild A and enter guild B normally."""
         # On an empty pot, instant win gives a free entry
-        with patch("luckypot.game.random.random", return_value=0.001):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             result_a = await game.enter_pot(
                 discord_id=test_context["user1_discord_id"],
                 guild_id="guild_A",
@@ -338,14 +338,14 @@ class TestLuckyPotMultiGuildIsolation:
         assert result_a["status"] == "instant_win_free_entry"
 
         # Same user enters guild_B normally
-        with patch("luckypot.game.random.random", return_value=0.99):
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
             result_b = await game.enter_pot(
                 discord_id=test_context["user1_discord_id"],
                 guild_id="guild_B",
             )
         assert result_b["status"] == "pending"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_denied_in_guild_a_does_not_affect_guild_b_entry(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -381,7 +381,7 @@ class TestLuckyPotMultiGuildIsolation:
         finally:
             conn.close()
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_daily_draw_processes_guilds_independently(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -409,7 +409,7 @@ class TestLuckyPotMultiGuildIsolation:
             await game.on_request_accepted(event_data)
 
         # Run daily draw with 100% chance (mock random to always trigger)
-        with patch("luckypot.game.random.random", return_value=0.01):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             await game.daily_pot_draw()
 
         conn = db.get_connection()
@@ -792,7 +792,7 @@ def test_enter_pot_command_defers_before_slow_stackcoin_work():
 class TestLuckyPotPaymentDenialBan:
     """Tests for the payment denial ban system."""
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_denial_creates_ban(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -820,7 +820,7 @@ class TestLuckyPotPaymentDenialBan:
         finally:
             conn.close()
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_reenter_after_denial_uses_a_new_stackcoin_request(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -866,7 +866,7 @@ class TestLuckyPotPaymentDenialBan:
         finally:
             conn.close()
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_banned_user_cannot_enter_pot(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -893,7 +893,7 @@ class TestLuckyPotPaymentDenialBan:
         assert result2["status"] == "banned"
         assert "expires_at" in result2
 
-    @patch("luckypot.game.random.random", return_value=0.001)
+    @patch("luckypot.game.secrets.randbelow", return_value=0)
     async def test_banned_user_cannot_roll_instant_win(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -918,7 +918,7 @@ class TestLuckyPotPaymentDenialBan:
         )
         assert result["status"] == "banned"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_ban_is_guild_scoped(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -950,7 +950,7 @@ class TestLuckyPotPaymentDenialBan:
         )
         assert result3["status"] == "pending"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_expired_ban_allows_entry(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -978,7 +978,7 @@ class TestLuckyPotPaymentDenialBan:
         )
         assert result["status"] == "pending"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_other_user_not_affected_by_ban(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -1069,7 +1069,7 @@ class TestAutoEnterTrigger:
     """Test that auto-enter fires correctly after a pot win."""
 
     @patch("luckypot.game.AUTO_ENTER_DELAY_SECONDS", 0)
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_opted_in_user_is_entered_after_win(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -1099,7 +1099,7 @@ class TestAutoEnterTrigger:
         )
 
         # Force draw — pot ends, user1 wins
-        with patch("luckypot.game.random.random", return_value=0.01):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
 
         # Drain all pending tasks (including the fire-and-forget _auto_enter_users task)
@@ -1122,7 +1122,7 @@ class TestAutoEnterTrigger:
             conn.close()
 
     @patch("luckypot.game.AUTO_ENTER_DELAY_SECONDS", 0)
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_not_opted_in_user_is_not_entered(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -1144,7 +1144,7 @@ class TestAutoEnterTrigger:
             )
         )
 
-        with patch("luckypot.game.random.random", return_value=0.01):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
 
         # Drain all pending tasks (including the fire-and-forget _auto_enter_users task)
@@ -1160,7 +1160,7 @@ class TestAutoEnterTrigger:
             conn.close()
 
     @patch("luckypot.game.AUTO_ENTER_DELAY_SECONDS", 0)
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_banned_user_skipped_by_auto_enter(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -1192,7 +1192,7 @@ class TestAutoEnterTrigger:
             )
         )
 
-        with patch("luckypot.game.random.random", return_value=0.01):
+        with patch("luckypot.game.secrets.randbelow", return_value=0):
             await game.end_pot_with_winner(guild_id, win_type="DAILY DRAW")
 
         # Drain all pending tasks (including the fire-and-forget _auto_enter_users task)
@@ -1221,7 +1221,7 @@ class TestAutoEnterTrigger:
 class TestPreauthFlow:
     """Tests for preauthorization-enhanced pot entry."""
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_enter_pot_with_preauth_instant_confirm(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
     ):
@@ -1251,7 +1251,7 @@ class TestPreauthFlow:
         finally:
             conn.close()
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_enter_pot_without_preauth_falls_back(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
@@ -1262,7 +1262,7 @@ class TestPreauthFlow:
         )
         assert result["status"] == "pending"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_enter_pot_preauth_budget_exceeded_skips_no_ban(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
     ):
@@ -1305,7 +1305,7 @@ class TestPreauthFlow:
         finally:
             conn.close()
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_preauth_and_normal_entry_in_same_pot(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
     ):
@@ -1447,7 +1447,7 @@ class TestPreauthRedTeam:
     # ------------------------------------------------------------------
     # 3. Preauth + normal request interaction
     # ------------------------------------------------------------------
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_preauth_entry_and_normal_entry_concurrent(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
     ):
@@ -1852,7 +1852,7 @@ class TestPreauthRedTeam:
     # ------------------------------------------------------------------
     # 12. Multiple pots same guild: preauth budget spans pots
     # ------------------------------------------------------------------
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_preauth_budget_spans_pot_boundaries(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
     ):
@@ -3272,7 +3272,7 @@ class TestPreauthRegressions:
         )
         assert resp2.json()["status"] == "accepted"
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_multi_guild_preauth_budget_shared(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context, approve_preauth
     ):
@@ -3421,7 +3421,7 @@ class TestPreauthRegressions:
             f"The rolling window grace buffer may not be working correctly."
         )
 
-    @patch("luckypot.game.random.random", return_value=0.99)
+    @patch("luckypot.game.secrets.randbelow", return_value=9999)
     async def test_idempotency_key_reusable_after_error(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context,
         approve_preauth, stackcoin_server,
