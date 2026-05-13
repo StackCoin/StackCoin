@@ -2,331 +2,290 @@
   "components": {
     "responses": {},
     "schemas": {
-      "CreateRequestParams": {
-        "description": "Parameters for creating a STK request",
+      "User": {
+        "description": "A StackCoin user",
         "example": {
-          "amount": 200,
-          "label": "Payment request"
+          "admin": false,
+          "balance": 1000,
+          "banned": false,
+          "id": 123,
+          "inserted_at": "2019-09-12T12:34:55Z",
+          "updated_at": "2025-09-13T10:11:12Z",
+          "username": "johndoe"
         },
         "properties": {
-          "amount": {
-            "description": "Amount of STK to request",
+          "admin": {
+            "description": "Whether user is an admin",
+            "type": "boolean"
+          },
+          "balance": {
+            "description": "User's STK balance",
             "type": "integer"
           },
-          "label": {
-            "description": "Optional request label",
-            "nullable": true,
+          "banned": {
+            "description": "Whether user is banned",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "User ID",
+            "type": "integer"
+          },
+          "inserted_at": {
+            "description": "Creation timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Update timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "username": {
+            "description": "Username",
             "type": "string"
           }
         },
         "required": [
-          "amount"
+          "username",
+          "balance",
+          "admin",
+          "banned"
         ],
-        "title": "CreateRequestParams",
+        "title": "User",
         "type": "object"
       },
-      "CreateRequestResponse": {
-        "description": "Response schema for creating a request",
+      "TransactionResponse": {
+        "description": "Response schema for single transaction",
         "example": {
-          "amount": 200,
-          "request_id": 789,
-          "requested_at": "2019-09-12T12:34:55Z",
-          "requester": {
+          "amount": 100,
+          "from": {
             "id": 123,
             "username": "johndoe"
           },
-          "responder": {
-            "id": 456,
+          "id": 456,
+          "label": "Payment for services",
+          "time": "2019-09-12T12:34:55Z",
+          "to": {
+            "id": 789,
             "username": "janedoe"
-          },
-          "status": "pending",
-          "success": true
+          }
         },
         "properties": {
           "amount": {
-            "description": "Requested amount",
+            "description": "Transaction amount",
+            "type": "integer"
+          },
+          "from": {
+            "properties": {
+              "id": {
+                "description": "From user ID",
+                "type": "integer"
+              },
+              "username": {
+                "description": "From username",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "description": "Transaction ID",
+            "type": "integer"
+          },
+          "label": {
+            "description": "Transaction label",
+            "nullable": true,
+            "type": "string"
+          },
+          "time": {
+            "description": "Transaction timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "to": {
+            "properties": {
+              "id": {
+                "description": "To user ID",
+                "type": "integer"
+              },
+              "username": {
+                "description": "To username",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "amount",
+          "time"
+        ],
+        "title": "TransactionResponse",
+        "type": "object"
+      },
+      "RequestDeniedData": {
+        "description": "Data payload for request.denied events",
+        "properties": {
+          "denied_by_id": {
+            "description": "User ID that denied the request",
             "type": "integer"
           },
           "request_id": {
-            "description": "Created request ID",
+            "description": "Request ID",
             "type": "integer"
-          },
-          "requested_at": {
-            "description": "Request timestamp",
-            "format": "date-time",
-            "type": "string"
-          },
-          "requester": {
-            "properties": {
-              "id": {
-                "description": "Requester user ID",
-                "type": "integer"
-              },
-              "username": {
-                "description": "Requester username",
-                "type": "string"
-              }
-            },
-            "type": "object"
-          },
-          "responder": {
-            "properties": {
-              "id": {
-                "description": "Responder user ID",
-                "type": "integer"
-              },
-              "username": {
-                "description": "Responder username",
-                "type": "string"
-              }
-            },
-            "type": "object"
           },
           "status": {
-            "description": "Request status",
+            "description": "New request status",
             "type": "string"
-          },
-          "success": {
-            "description": "Whether the operation succeeded",
-            "type": "boolean"
           }
         },
         "required": [
-          "success",
           "request_id",
-          "amount",
           "status",
-          "requested_at",
-          "requester",
-          "responder"
+          "denied_by_id"
         ],
-        "title": "CreateRequestResponse",
+        "title": "RequestDeniedData",
         "type": "object"
       },
-      "DiscordBotResponse": {
-        "description": "Response containing the StackCoin Discord bot's user ID",
+      "Transaction": {
+        "description": "A STK transaction",
         "example": {
-          "discord_id": "123456789012345678"
-        },
-        "properties": {
-          "discord_id": {
-            "description": "The Discord snowflake ID of the StackCoin bot",
-            "type": "string"
+          "amount": 100,
+          "from": {
+            "id": 123,
+            "username": "johndoe"
+          },
+          "id": 456,
+          "label": "Payment for services",
+          "time": "2019-09-12T12:34:55Z",
+          "to": {
+            "id": 789,
+            "username": "janedoe"
           }
         },
-        "required": [
-          "discord_id"
-        ],
-        "title": "DiscordBotResponse",
-        "type": "object"
-      },
-      "DiscordGuild": {
-        "description": "A Discord guild",
-        "example": {
-          "designated_channel_snowflake": "987654321098765432",
-          "id": 123,
-          "last_updated": "2019-09-12T12:34:55Z",
-          "name": "My Discord Server",
-          "snowflake": "123456789012345678"
-        },
         "properties": {
-          "designated_channel_snowflake": {
-            "description": "Designated channel snowflake ID",
-            "nullable": true,
-            "type": "string"
-          },
-          "id": {
-            "description": "Guild ID",
+          "amount": {
+            "description": "Transaction amount",
             "type": "integer"
           },
-          "last_updated": {
-            "description": "Last updated timestamp",
-            "format": "date-time",
-            "type": "string"
-          },
-          "name": {
-            "description": "Guild name",
-            "type": "string"
-          },
-          "snowflake": {
-            "description": "Discord guild snowflake ID",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "snowflake",
-          "name",
-          "last_updated"
-        ],
-        "title": "DiscordGuild",
-        "type": "object"
-      },
-      "DiscordGuildResponse": {
-        "description": "Response schema for single Discord guild",
-        "example": {
-          "designated_channel_snowflake": "987654321098765432",
-          "id": 123,
-          "last_updated": "2019-09-12T12:34:55Z",
-          "name": "My Discord Server",
-          "snowflake": "123456789012345678"
-        },
-        "properties": {
-          "designated_channel_snowflake": {
-            "description": "Designated channel snowflake ID",
-            "nullable": true,
-            "type": "string"
-          },
-          "id": {
-            "description": "Guild ID",
-            "type": "integer"
-          },
-          "last_updated": {
-            "description": "Last updated timestamp",
-            "format": "date-time",
-            "type": "string"
-          },
-          "name": {
-            "description": "Guild name",
-            "type": "string"
-          },
-          "snowflake": {
-            "description": "Discord guild snowflake ID",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "snowflake",
-          "name",
-          "last_updated"
-        ],
-        "title": "DiscordGuildResponse",
-        "type": "object"
-      },
-      "DiscordGuildsResponse": {
-        "description": "Response schema for multiple Discord guilds",
-        "example": {
-          "guilds": [
-            {
-              "designated_channel_snowflake": "987654321098765432",
-              "id": 123,
-              "last_updated": "2019-09-12T12:34:55Z",
-              "name": "My Discord Server",
-              "snowflake": "123456789012345678"
-            },
-            {
-              "designated_channel_snowflake": null,
-              "id": 456,
-              "last_updated": "2019-09-13T10:11:12Z",
-              "name": "Another Server",
-              "snowflake": "876543210987654321"
-            }
-          ],
-          "pagination": {
-            "limit": 20,
-            "page": 1,
-            "total": 2,
-            "total_pages": 1
-          }
-        },
-        "properties": {
-          "guilds": {
-            "description": "The guilds list",
-            "items": {
-              "$ref": "#/components/schemas/DiscordGuild"
-            },
-            "type": "array"
-          },
-          "pagination": {
+          "from": {
             "properties": {
-              "limit": {
-                "description": "Items per page",
+              "id": {
+                "description": "From user ID",
                 "type": "integer"
               },
-              "page": {
-                "description": "Current page",
+              "username": {
+                "description": "From username",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "description": "Transaction ID",
+            "type": "integer"
+          },
+          "label": {
+            "description": "Transaction label",
+            "nullable": true,
+            "type": "string"
+          },
+          "time": {
+            "description": "Transaction timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "to": {
+            "properties": {
+              "id": {
+                "description": "To user ID",
                 "type": "integer"
               },
-              "total": {
-                "description": "Total items",
-                "type": "integer"
-              },
-              "total_pages": {
-                "description": "Total pages",
-                "type": "integer"
+              "username": {
+                "description": "To username",
+                "type": "string"
               }
             },
             "type": "object"
           }
         },
-        "title": "DiscordGuildsResponse",
+        "required": [
+          "id",
+          "from",
+          "to",
+          "amount",
+          "time"
+        ],
+        "title": "Transaction",
         "type": "object"
       },
-      "ErrorResponse": {
-        "description": "Error response schema",
-        "example": {
-          "error": "User not found"
-        },
+      "TransferCompletedData": {
+        "description": "Data payload for transfer.completed events",
         "properties": {
-          "error": {
-            "description": "Error message",
+          "amount": {
+            "description": "Amount transferred",
+            "type": "integer"
+          },
+          "from_id": {
+            "description": "Sender user ID",
+            "type": "integer"
+          },
+          "role": {
+            "description": "Role of the event recipient (sender or receiver)",
+            "type": "string"
+          },
+          "to_id": {
+            "description": "Recipient user ID",
+            "type": "integer"
+          },
+          "transaction_id": {
+            "description": "Transaction ID",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "transaction_id",
+          "from_id",
+          "to_id",
+          "amount",
+          "role"
+        ],
+        "title": "TransferCompletedData",
+        "type": "object"
+      },
+      "TransferCompletedEvent": {
+        "description": "A transfer.completed event",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TransferCompletedData"
+          },
+          "id": {
+            "description": "Event ID",
+            "type": "integer"
+          },
+          "inserted_at": {
+            "description": "Event timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "description": "Event type",
+            "enum": [
+              "transfer.completed"
+            ],
             "type": "string"
           }
         },
         "required": [
-          "error"
+          "id",
+          "type",
+          "data",
+          "inserted_at"
         ],
-        "title": "ErrorResponse",
-        "type": "object"
-      },
-      "Event": {
-        "description": "A StackCoin event (discriminated by type)",
-        "discriminator": {
-          "mapping": {
-            "request.accepted": "#/components/schemas/RequestAcceptedEvent",
-            "request.created": "#/components/schemas/RequestCreatedEvent",
-            "request.denied": "#/components/schemas/RequestDeniedEvent",
-            "transfer.completed": "#/components/schemas/TransferCompletedEvent"
-          },
-          "propertyName": "type"
-        },
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/TransferCompletedEvent"
-          },
-          {
-            "$ref": "#/components/schemas/RequestCreatedEvent"
-          },
-          {
-            "$ref": "#/components/schemas/RequestAcceptedEvent"
-          },
-          {
-            "$ref": "#/components/schemas/RequestDeniedEvent"
-          }
-        ],
-        "title": "Event"
-      },
-      "EventsResponse": {
-        "description": "Response schema for listing events",
-        "properties": {
-          "events": {
-            "description": "The events list",
-            "items": {
-              "$ref": "#/components/schemas/Event"
-            },
-            "type": "array"
-          },
-          "has_more": {
-            "description": "Whether more events exist beyond this page",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "events",
-          "has_more"
-        ],
-        "title": "EventsResponse",
+        "title": "TransferCompletedEvent",
         "type": "object"
       },
       "Request": {
@@ -420,6 +379,65 @@
         "title": "Request",
         "type": "object"
       },
+      "DiscordGuildsResponse": {
+        "description": "Response schema for multiple Discord guilds",
+        "example": {
+          "guilds": [
+            {
+              "designated_channel_snowflake": "987654321098765432",
+              "id": 123,
+              "last_updated": "2019-09-12T12:34:55Z",
+              "name": "My Discord Server",
+              "snowflake": "123456789012345678"
+            },
+            {
+              "designated_channel_snowflake": null,
+              "id": 456,
+              "last_updated": "2019-09-13T10:11:12Z",
+              "name": "Another Server",
+              "snowflake": "876543210987654321"
+            }
+          ],
+          "pagination": {
+            "limit": 20,
+            "page": 1,
+            "total": 2,
+            "total_pages": 1
+          }
+        },
+        "properties": {
+          "guilds": {
+            "description": "The guilds list",
+            "items": {
+              "$ref": "#/components/schemas/DiscordGuild"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "properties": {
+              "limit": {
+                "description": "Items per page",
+                "type": "integer"
+              },
+              "page": {
+                "description": "Current page",
+                "type": "integer"
+              },
+              "total": {
+                "description": "Total items",
+                "type": "integer"
+              },
+              "total_pages": {
+                "description": "Total pages",
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "title": "DiscordGuildsResponse",
+        "type": "object"
+      },
       "RequestAcceptedData": {
         "description": "Data payload for request.accepted events",
         "properties": {
@@ -481,87 +499,35 @@
         "title": "RequestAcceptedEvent",
         "type": "object"
       },
-      "RequestActionResponse": {
-        "description": "Response schema for request actions (accept/deny)",
-        "example": {
-          "request_id": 789,
-          "resolved_at": "2025-09-12T13:34:55Z",
-          "status": "accepted",
-          "success": true,
-          "transaction_id": 456
-        },
+      "PreauthApprovedData": {
+        "description": "Data payload for preauth.approved events",
         "properties": {
-          "request_id": {
-            "description": "Request ID",
+          "bot_user_id": {
+            "description": "Bot user ID",
             "type": "integer"
           },
-          "resolved_at": {
-            "description": "Resolution timestamp",
-            "format": "date-time",
-            "type": "string"
+          "preauth_id": {
+            "description": "Preauthorization ID",
+            "type": "integer"
           },
-          "status": {
-            "description": "New request status",
-            "type": "string"
-          },
-          "success": {
-            "description": "Whether the operation succeeded",
-            "type": "boolean"
-          },
-          "transaction_id": {
-            "description": "Associated transaction ID",
-            "nullable": true,
+          "user_id": {
+            "description": "Target user ID",
             "type": "integer"
           }
         },
         "required": [
-          "success",
-          "request_id",
-          "status",
-          "resolved_at"
+          "preauth_id",
+          "bot_user_id",
+          "user_id"
         ],
-        "title": "RequestActionResponse",
+        "title": "PreauthApprovedData",
         "type": "object"
       },
-      "RequestCreatedData": {
-        "description": "Data payload for request.created events",
-        "properties": {
-          "amount": {
-            "description": "Requested amount",
-            "type": "integer"
-          },
-          "label": {
-            "description": "Request label",
-            "nullable": true,
-            "type": "string"
-          },
-          "request_id": {
-            "description": "Request ID",
-            "type": "integer"
-          },
-          "requester_id": {
-            "description": "Requester user ID",
-            "type": "integer"
-          },
-          "responder_id": {
-            "description": "Responder user ID",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "request_id",
-          "requester_id",
-          "responder_id",
-          "amount"
-        ],
-        "title": "RequestCreatedData",
-        "type": "object"
-      },
-      "RequestCreatedEvent": {
-        "description": "A request.created event",
+      "PreauthRevokedEvent": {
+        "description": "A preauth.revoked event",
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/RequestCreatedData"
+            "$ref": "#/components/schemas/PreauthRevokedData"
           },
           "id": {
             "description": "Event ID",
@@ -575,7 +541,7 @@
           "type": {
             "description": "Event type",
             "enum": [
-              "request.created"
+              "preauth.revoked"
             ],
             "type": "string"
           }
@@ -586,31 +552,66 @@
           "data",
           "inserted_at"
         ],
-        "title": "RequestCreatedEvent",
+        "title": "PreauthRevokedEvent",
         "type": "object"
       },
-      "RequestDeniedData": {
-        "description": "Data payload for request.denied events",
+      "TransactionsResponse": {
+        "description": "Response schema for multiple transactions",
+        "example": {
+          "pagination": {
+            "limit": 20,
+            "page": 1,
+            "total": 1,
+            "total_pages": 1
+          },
+          "transactions": [
+            {
+              "amount": 100,
+              "from": {
+                "id": 123,
+                "username": "johndoe"
+              },
+              "id": 456,
+              "label": "Payment for services",
+              "time": "2019-09-12T12:34:55Z",
+              "to": {
+                "id": 789,
+                "username": "janedoe"
+              }
+            }
+          ]
+        },
         "properties": {
-          "denied_by_id": {
-            "description": "User ID that denied the request",
-            "type": "integer"
+          "pagination": {
+            "properties": {
+              "limit": {
+                "description": "Items per page",
+                "type": "integer"
+              },
+              "page": {
+                "description": "Current page",
+                "type": "integer"
+              },
+              "total": {
+                "description": "Total items",
+                "type": "integer"
+              },
+              "total_pages": {
+                "description": "Total pages",
+                "type": "integer"
+              }
+            },
+            "type": "object"
           },
-          "request_id": {
-            "description": "Request ID",
-            "type": "integer"
-          },
-          "status": {
-            "description": "New request status",
-            "type": "string"
+          "transactions": {
+            "description": "The transactions list",
+            "items": {
+              "$ref": "#/components/schemas/Transaction"
+            },
+            "type": "array"
           }
         },
-        "required": [
-          "request_id",
-          "status",
-          "denied_by_id"
-        ],
-        "title": "RequestDeniedData",
+        "title": "TransactionsResponse",
         "type": "object"
       },
       "RequestDeniedEvent": {
@@ -643,6 +644,68 @@
           "inserted_at"
         ],
         "title": "RequestDeniedEvent",
+        "type": "object"
+      },
+      "Event": {
+        "description": "A StackCoin event (discriminated by type)",
+        "discriminator": {
+          "mapping": {
+            "preauth.approved": "#/components/schemas/PreauthApprovedEvent",
+            "preauth.created": "#/components/schemas/PreauthCreatedEvent",
+            "preauth.revoked": "#/components/schemas/PreauthRevokedEvent",
+            "request.accepted": "#/components/schemas/RequestAcceptedEvent",
+            "request.created": "#/components/schemas/RequestCreatedEvent",
+            "request.denied": "#/components/schemas/RequestDeniedEvent",
+            "transfer.completed": "#/components/schemas/TransferCompletedEvent"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/TransferCompletedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RequestCreatedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RequestAcceptedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/RequestDeniedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/PreauthCreatedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/PreauthApprovedEvent"
+          },
+          {
+            "$ref": "#/components/schemas/PreauthRevokedEvent"
+          }
+        ],
+        "title": "Event"
+      },
+      "SendStkParams": {
+        "description": "Parameters for sending STK",
+        "example": {
+          "amount": 100,
+          "label": "Payment for services"
+        },
+        "properties": {
+          "amount": {
+            "description": "Amount of STK to send",
+            "type": "integer"
+          },
+          "label": {
+            "description": "Optional transaction label",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "title": "SendStkParams",
         "type": "object"
       },
       "RequestResponse": {
@@ -798,27 +861,195 @@
         "title": "RequestsResponse",
         "type": "object"
       },
-      "SendStkParams": {
-        "description": "Parameters for sending STK",
-        "example": {
-          "amount": 100,
-          "label": "Payment for services"
-        },
+      "PreauthCreatedData": {
+        "description": "Data payload for preauth.created events",
         "properties": {
-          "amount": {
-            "description": "Amount of STK to send",
+          "bot_user_id": {
+            "description": "Bot user ID",
             "type": "integer"
           },
-          "label": {
-            "description": "Optional transaction label",
-            "nullable": true,
+          "max_amount": {
+            "description": "Max amount per window",
+            "type": "integer"
+          },
+          "preauth_id": {
+            "description": "Preauthorization ID",
+            "type": "integer"
+          },
+          "user_id": {
+            "description": "Target user ID",
+            "type": "integer"
+          },
+          "window_hours": {
+            "description": "Rolling window in hours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "preauth_id",
+          "bot_user_id",
+          "user_id",
+          "max_amount",
+          "window_hours"
+        ],
+        "title": "PreauthCreatedData",
+        "type": "object"
+      },
+      "PreauthApprovedEvent": {
+        "description": "A preauth.approved event",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PreauthApprovedData"
+          },
+          "id": {
+            "description": "Event ID",
+            "type": "integer"
+          },
+          "inserted_at": {
+            "description": "Event timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "description": "Event type",
+            "enum": [
+              "preauth.approved"
+            ],
             "type": "string"
           }
         },
         "required": [
-          "amount"
+          "id",
+          "type",
+          "data",
+          "inserted_at"
         ],
-        "title": "SendStkParams",
+        "title": "PreauthApprovedEvent",
+        "type": "object"
+      },
+      "DiscordBotResponse": {
+        "description": "Response containing the StackCoin Discord bot's user ID",
+        "example": {
+          "discord_id": "123456789012345678"
+        },
+        "properties": {
+          "discord_id": {
+            "description": "The Discord snowflake ID of the StackCoin bot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "discord_id"
+        ],
+        "title": "DiscordBotResponse",
+        "type": "object"
+      },
+      "DiscordGuild": {
+        "description": "A Discord guild",
+        "example": {
+          "designated_channel_snowflake": "987654321098765432",
+          "id": 123,
+          "last_updated": "2019-09-12T12:34:55Z",
+          "name": "My Discord Server",
+          "snowflake": "123456789012345678"
+        },
+        "properties": {
+          "designated_channel_snowflake": {
+            "description": "Designated channel snowflake ID",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Guild ID",
+            "type": "integer"
+          },
+          "last_updated": {
+            "description": "Last updated timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "description": "Guild name",
+            "type": "string"
+          },
+          "snowflake": {
+            "description": "Discord guild snowflake ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "snowflake",
+          "name",
+          "last_updated"
+        ],
+        "title": "DiscordGuild",
+        "type": "object"
+      },
+      "PreauthRevokedData": {
+        "description": "Data payload for preauth.revoked events",
+        "properties": {
+          "bot_user_id": {
+            "description": "Bot user ID",
+            "type": "integer"
+          },
+          "preauth_id": {
+            "description": "Preauthorization ID",
+            "type": "integer"
+          },
+          "user_id": {
+            "description": "Target user ID",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "preauth_id",
+          "bot_user_id",
+          "user_id"
+        ],
+        "title": "PreauthRevokedData",
+        "type": "object"
+      },
+      "DiscordGuildResponse": {
+        "description": "Response schema for single Discord guild",
+        "example": {
+          "designated_channel_snowflake": "987654321098765432",
+          "id": 123,
+          "last_updated": "2019-09-12T12:34:55Z",
+          "name": "My Discord Server",
+          "snowflake": "123456789012345678"
+        },
+        "properties": {
+          "designated_channel_snowflake": {
+            "description": "Designated channel snowflake ID",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Guild ID",
+            "type": "integer"
+          },
+          "last_updated": {
+            "description": "Last updated timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "description": "Guild name",
+            "type": "string"
+          },
+          "snowflake": {
+            "description": "Discord guild snowflake ID",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "snowflake",
+          "name",
+          "last_updated"
+        ],
+        "title": "DiscordGuildResponse",
         "type": "object"
       },
       "SendStkResponse": {
@@ -862,248 +1093,68 @@
         "title": "SendStkResponse",
         "type": "object"
       },
-      "Transaction": {
-        "description": "A STK transaction",
-        "example": {
-          "amount": 100,
-          "from": {
-            "id": 123,
-            "username": "johndoe"
-          },
-          "id": 456,
-          "label": "Payment for services",
-          "time": "2019-09-12T12:34:55Z",
-          "to": {
-            "id": 789,
-            "username": "janedoe"
-          }
-        },
+      "RequestCreatedData": {
+        "description": "Data payload for request.created events",
         "properties": {
           "amount": {
-            "description": "Transaction amount",
-            "type": "integer"
-          },
-          "from": {
-            "properties": {
-              "id": {
-                "description": "From user ID",
-                "type": "integer"
-              },
-              "username": {
-                "description": "From username",
-                "type": "string"
-              }
-            },
-            "type": "object"
-          },
-          "id": {
-            "description": "Transaction ID",
+            "description": "Requested amount",
             "type": "integer"
           },
           "label": {
-            "description": "Transaction label",
+            "description": "Request label",
             "nullable": true,
             "type": "string"
           },
-          "time": {
-            "description": "Transaction timestamp",
-            "format": "date-time",
-            "type": "string"
+          "request_id": {
+            "description": "Request ID",
+            "type": "integer"
           },
-          "to": {
-            "properties": {
-              "id": {
-                "description": "To user ID",
-                "type": "integer"
-              },
-              "username": {
-                "description": "To username",
-                "type": "string"
-              }
-            },
-            "type": "object"
+          "requester_id": {
+            "description": "Requester user ID",
+            "type": "integer"
+          },
+          "responder_id": {
+            "description": "Responder user ID",
+            "type": "integer"
           }
         },
         "required": [
-          "id",
-          "from",
-          "to",
-          "amount",
-          "time"
+          "request_id",
+          "requester_id",
+          "responder_id",
+          "amount"
         ],
-        "title": "Transaction",
+        "title": "RequestCreatedData",
         "type": "object"
       },
-      "TransactionResponse": {
-        "description": "Response schema for single transaction",
+      "CreateRequestParams": {
+        "description": "Parameters for creating a STK request",
         "example": {
-          "amount": 100,
-          "from": {
-            "id": 123,
-            "username": "johndoe"
-          },
-          "id": 456,
-          "label": "Payment for services",
-          "time": "2019-09-12T12:34:55Z",
-          "to": {
-            "id": 789,
-            "username": "janedoe"
-          }
+          "amount": 200,
+          "label": "Payment request"
         },
         "properties": {
           "amount": {
-            "description": "Transaction amount",
-            "type": "integer"
-          },
-          "from": {
-            "properties": {
-              "id": {
-                "description": "From user ID",
-                "type": "integer"
-              },
-              "username": {
-                "description": "From username",
-                "type": "string"
-              }
-            },
-            "type": "object"
-          },
-          "id": {
-            "description": "Transaction ID",
+            "description": "Amount of STK to request",
             "type": "integer"
           },
           "label": {
-            "description": "Transaction label",
+            "description": "Optional request label",
             "nullable": true,
             "type": "string"
-          },
-          "time": {
-            "description": "Transaction timestamp",
-            "format": "date-time",
-            "type": "string"
-          },
-          "to": {
-            "properties": {
-              "id": {
-                "description": "To user ID",
-                "type": "integer"
-              },
-              "username": {
-                "description": "To username",
-                "type": "string"
-              }
-            },
-            "type": "object"
           }
         },
         "required": [
-          "id",
-          "from",
-          "to",
-          "amount",
-          "time"
+          "amount"
         ],
-        "title": "TransactionResponse",
+        "title": "CreateRequestParams",
         "type": "object"
       },
-      "TransactionsResponse": {
-        "description": "Response schema for multiple transactions",
-        "example": {
-          "pagination": {
-            "limit": 20,
-            "page": 1,
-            "total": 1,
-            "total_pages": 1
-          },
-          "transactions": [
-            {
-              "amount": 100,
-              "from": {
-                "id": 123,
-                "username": "johndoe"
-              },
-              "id": 456,
-              "label": "Payment for services",
-              "time": "2019-09-12T12:34:55Z",
-              "to": {
-                "id": 789,
-                "username": "janedoe"
-              }
-            }
-          ]
-        },
-        "properties": {
-          "pagination": {
-            "properties": {
-              "limit": {
-                "description": "Items per page",
-                "type": "integer"
-              },
-              "page": {
-                "description": "Current page",
-                "type": "integer"
-              },
-              "total": {
-                "description": "Total items",
-                "type": "integer"
-              },
-              "total_pages": {
-                "description": "Total pages",
-                "type": "integer"
-              }
-            },
-            "type": "object"
-          },
-          "transactions": {
-            "description": "The transactions list",
-            "items": {
-              "$ref": "#/components/schemas/Transaction"
-            },
-            "type": "array"
-          }
-        },
-        "title": "TransactionsResponse",
-        "type": "object"
-      },
-      "TransferCompletedData": {
-        "description": "Data payload for transfer.completed events",
-        "properties": {
-          "amount": {
-            "description": "Amount transferred",
-            "type": "integer"
-          },
-          "from_id": {
-            "description": "Sender user ID",
-            "type": "integer"
-          },
-          "role": {
-            "description": "Role of the event recipient (sender or receiver)",
-            "type": "string"
-          },
-          "to_id": {
-            "description": "Recipient user ID",
-            "type": "integer"
-          },
-          "transaction_id": {
-            "description": "Transaction ID",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "transaction_id",
-          "from_id",
-          "to_id",
-          "amount",
-          "role"
-        ],
-        "title": "TransferCompletedData",
-        "type": "object"
-      },
-      "TransferCompletedEvent": {
-        "description": "A transfer.completed event",
+      "RequestCreatedEvent": {
+        "description": "A request.created event",
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/TransferCompletedData"
+            "$ref": "#/components/schemas/RequestCreatedData"
           },
           "id": {
             "description": "Event ID",
@@ -1117,7 +1168,7 @@
           "type": {
             "description": "Event type",
             "enum": [
-              "transfer.completed"
+              "request.created"
             ],
             "type": "string"
           }
@@ -1128,59 +1179,46 @@
           "data",
           "inserted_at"
         ],
-        "title": "TransferCompletedEvent",
+        "title": "RequestCreatedEvent",
         "type": "object"
       },
-      "User": {
-        "description": "A StackCoin user",
+      "EventsResponse": {
+        "description": "Response schema for listing events",
+        "properties": {
+          "events": {
+            "description": "The events list",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            },
+            "type": "array"
+          },
+          "has_more": {
+            "description": "Whether more events exist beyond this page",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "events",
+          "has_more"
+        ],
+        "title": "EventsResponse",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "description": "Error response schema",
         "example": {
-          "admin": false,
-          "balance": 1000,
-          "banned": false,
-          "id": 123,
-          "inserted_at": "2019-09-12T12:34:55Z",
-          "updated_at": "2025-09-13T10:11:12Z",
-          "username": "johndoe"
+          "error": "User not found"
         },
         "properties": {
-          "admin": {
-            "description": "Whether user is an admin",
-            "type": "boolean"
-          },
-          "balance": {
-            "description": "User's STK balance",
-            "type": "integer"
-          },
-          "banned": {
-            "description": "Whether user is banned",
-            "type": "boolean"
-          },
-          "id": {
-            "description": "User ID",
-            "type": "integer"
-          },
-          "inserted_at": {
-            "description": "Creation timestamp",
-            "format": "date-time",
-            "type": "string"
-          },
-          "updated_at": {
-            "description": "Update timestamp",
-            "format": "date-time",
-            "type": "string"
-          },
-          "username": {
-            "description": "Username",
+          "error": {
+            "description": "Error message",
             "type": "string"
           }
         },
         "required": [
-          "username",
-          "balance",
-          "admin",
-          "banned"
+          "error"
         ],
-        "title": "User",
+        "title": "ErrorResponse",
         "type": "object"
       },
       "UserResponse": {
@@ -1292,6 +1330,163 @@
           }
         },
         "title": "UsersResponse",
+        "type": "object"
+      },
+      "CreateRequestResponse": {
+        "description": "Response schema for creating a request",
+        "example": {
+          "amount": 200,
+          "request_id": 789,
+          "requested_at": "2019-09-12T12:34:55Z",
+          "requester": {
+            "id": 123,
+            "username": "johndoe"
+          },
+          "responder": {
+            "id": 456,
+            "username": "janedoe"
+          },
+          "status": "pending",
+          "success": true
+        },
+        "properties": {
+          "amount": {
+            "description": "Requested amount",
+            "type": "integer"
+          },
+          "request_id": {
+            "description": "Created request ID",
+            "type": "integer"
+          },
+          "requested_at": {
+            "description": "Request timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "requester": {
+            "properties": {
+              "id": {
+                "description": "Requester user ID",
+                "type": "integer"
+              },
+              "username": {
+                "description": "Requester username",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "responder": {
+            "properties": {
+              "id": {
+                "description": "Responder user ID",
+                "type": "integer"
+              },
+              "username": {
+                "description": "Responder username",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "status": {
+            "description": "Request status",
+            "type": "string"
+          },
+          "success": {
+            "description": "Whether the operation succeeded",
+            "type": "boolean"
+          },
+          "transaction_id": {
+            "description": "Transaction ID (present when preauth auto-confirmed)",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "success",
+          "request_id",
+          "amount",
+          "status",
+          "requested_at",
+          "requester",
+          "responder"
+        ],
+        "title": "CreateRequestResponse",
+        "type": "object"
+      },
+      "RequestActionResponse": {
+        "description": "Response schema for request actions (accept/deny)",
+        "example": {
+          "request_id": 789,
+          "resolved_at": "2025-09-12T13:34:55Z",
+          "status": "accepted",
+          "success": true,
+          "transaction_id": 456
+        },
+        "properties": {
+          "request_id": {
+            "description": "Request ID",
+            "type": "integer"
+          },
+          "resolved_at": {
+            "description": "Resolution timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "New request status",
+            "type": "string"
+          },
+          "success": {
+            "description": "Whether the operation succeeded",
+            "type": "boolean"
+          },
+          "transaction_id": {
+            "description": "Associated transaction ID",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "success",
+          "request_id",
+          "status",
+          "resolved_at"
+        ],
+        "title": "RequestActionResponse",
+        "type": "object"
+      },
+      "PreauthCreatedEvent": {
+        "description": "A preauth.created event",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PreauthCreatedData"
+          },
+          "id": {
+            "description": "Event ID",
+            "type": "integer"
+          },
+          "inserted_at": {
+            "description": "Event timestamp",
+            "format": "date-time",
+            "type": "string"
+          },
+          "type": {
+            "description": "Event type",
+            "enum": [
+              "preauth.created"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "data",
+          "inserted_at"
+        ],
+        "title": "PreauthCreatedEvent",
         "type": "object"
       }
     },

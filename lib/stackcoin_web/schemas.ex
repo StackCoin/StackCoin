@@ -428,6 +428,11 @@ defmodule StackCoinWeb.Schemas do
             id: %Schema{type: :integer, description: "Responder user ID"},
             username: %Schema{type: :string, description: "Responder username"}
           }
+        },
+        transaction_id: %Schema{
+          type: :integer,
+          description: "Transaction ID (present when preauth auto-confirmed)",
+          nullable: true
         }
       },
       required: [:success, :request_id, :amount, :status, :requested_at, :requester, :responder],
