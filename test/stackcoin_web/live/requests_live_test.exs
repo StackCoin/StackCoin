@@ -55,6 +55,7 @@ defmodule StackCoinWebTest.RequestsLiveTest do
       {:ok, view, _html} = conn |> login(alice) |> live(~p"/requests")
 
       html = render_click(view, "accept_request", %{"id" => to_string(request.id)})
+      render(view)
 
       assert html =~ "Request accepted"
     end
@@ -65,6 +66,7 @@ defmodule StackCoinWebTest.RequestsLiveTest do
       {:ok, view, _html} = conn |> login(alice) |> live(~p"/requests")
 
       html = render_click(view, "deny_request", %{"id" => to_string(request.id)})
+      render(view)
 
       assert html =~ "Request denied"
     end

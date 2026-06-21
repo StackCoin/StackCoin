@@ -98,6 +98,7 @@ defmodule StackCoinWebTest.HomeLiveTest do
       html = render_click(view, "accept_request", %{"id" => to_string(request.id)})
 
       assert html =~ "Request accepted"
+      render(view)
     end
 
     test "deny request works", %{conn: conn, alice: alice, bob: bob} do

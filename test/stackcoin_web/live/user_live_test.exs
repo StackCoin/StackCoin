@@ -86,6 +86,7 @@ defmodule StackCoinWebTest.UserLiveTest do
         |> render_submit()
 
       assert html =~ "Sent 50 STK to bob"
+      render(view)
     end
 
     test "shows error for insufficient balance", %{conn: conn, alice: alice, bob: bob} do
