@@ -1,0 +1,4 @@
+# Exclude vendored dependencies and generated build output from GitHub language stats.
+deps/** linguist-vendored
+assets/vendor/** linguist-vendored
+priv/static/** linguist-generated
