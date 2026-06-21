@@ -79,7 +79,6 @@ defmodule StackCoin.Bot.Discord.Send do
     case User.get_user_by_discord_id(to_user_id) do
       {:ok, user} -> {:ok, user}
       {:error, :user_not_found} -> {:error, :recipient_not_found}
-      {:error, reason} -> {:error, reason}
     end
   end
 

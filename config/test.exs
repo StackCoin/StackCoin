@@ -11,6 +11,8 @@ config :stackcoin, StackCoinWeb.Endpoint,
 
 config :stackcoin, start_discord: false
 
+config :nostrum, ffmpeg: false
+
 config :logger, level: :warning
 
 config :phoenix, :plug_init_mode, :runtime

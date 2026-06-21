@@ -89,7 +89,6 @@ defmodule StackCoin.Bot.Discord.Balance do
           case User.get_user_by_discord_id(user_option) do
             {:ok, user} -> {:ok, {user, :user, false}}
             {:error, :user_not_found} -> {:error, :other_user_not_found}
-            {:error, reason} -> {:error, reason}
           end
         else
           {:error, :user_banned} -> {:error, :user_banned}
@@ -103,7 +102,6 @@ defmodule StackCoin.Bot.Discord.Balance do
           case Bot.get_bot_by_name(bot_option) do
             {:ok, bot} -> {:ok, {bot, :bot, false}}
             {:error, :bot_not_found} -> {:error, :bot_not_found}
-            {:error, reason} -> {:error, reason}
           end
         else
           {:error, :user_banned} -> {:error, :user_banned}

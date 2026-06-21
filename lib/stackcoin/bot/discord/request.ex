@@ -176,9 +176,6 @@ defmodule StackCoin.Bot.Discord.Request do
     else
       {:error, :user_not_found} ->
         send_error_response(interaction, "You don't have a StackCoin account.")
-
-      {:error, reason} ->
-        send_error_response(interaction, "Failed to get user: #{inspect(reason)}")
     end
   end
 
@@ -196,16 +193,10 @@ defmodule StackCoin.Bot.Discord.Request do
 
         {:error, :request_not_pending} ->
           send_error_response(interaction, "This request is no longer pending.")
-
-        {:error, reason} ->
-          send_error_response(interaction, "Failed to deny request: #{inspect(reason)}")
       end
     else
       {:error, :user_not_found} ->
         send_error_response(interaction, "You don't have a StackCoin account.")
-
-      {:error, reason} ->
-        send_error_response(interaction, "Failed to get user: #{inspect(reason)}")
     end
   end
 

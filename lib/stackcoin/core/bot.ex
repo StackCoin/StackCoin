@@ -14,9 +14,6 @@ defmodule StackCoin.Core.Bot do
   def admin_create_bot_user(admin_discord_snowflake, bot_name) do
     with {:ok, _admin_check} <- User.check_admin_permissions(admin_discord_snowflake) do
       create_bot_user(admin_discord_snowflake, bot_name)
-    else
-      {:error, :not_admin} -> {:error, :not_admin}
-      {:error, reason} -> {:error, reason}
     end
   end
 

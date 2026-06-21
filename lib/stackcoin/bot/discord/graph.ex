@@ -94,7 +94,6 @@ defmodule StackCoin.Bot.Discord.Graph do
         case User.get_user_by_discord_id(target_user_id) do
           {:ok, user} -> {:ok, {user, false}}
           {:error, :user_not_found} -> {:error, :other_user_not_found}
-          {:error, reason} -> {:error, reason}
         end
     end
   end

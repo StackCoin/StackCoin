@@ -97,10 +97,10 @@ defmodule StackCoinWeb.HomeLive do
   defp load_pending_requests(nil), do: []
 
   defp load_pending_requests(user) do
-    case Request.get_requests_for_user(user.id, role: :responder, status: "pending", limit: 5) do
-      {:ok, %{requests: requests}} -> requests
-      _ -> []
-    end
+    {:ok, %{requests: requests}} =
+      Request.get_requests_for_user(user.id, role: :responder, status: "pending", limit: 5)
+
+    requests
   end
 
   defp parse_filter("bots"), do: :bots

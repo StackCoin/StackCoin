@@ -192,7 +192,6 @@ defmodule StackCoin.Core.User do
     else
       {:error, :not_admin} -> {:error, :not_admin}
       {:error, :user_not_found} -> {:error, :other_user_not_found}
-      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -219,7 +218,6 @@ defmodule StackCoin.Core.User do
     else
       {:error, :not_admin} -> {:error, :not_admin}
       {:error, :user_not_found} -> {:error, :other_user_not_found}
-      {:error, reason} -> {:error, reason}
     end
   end
 

@@ -69,9 +69,6 @@ defmodule StackCoin.Bot.Discord.Dole do
       {:error, :user_not_found} ->
         username = discord_user.username
         User.create_user_account(discord_user.id, username)
-
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
