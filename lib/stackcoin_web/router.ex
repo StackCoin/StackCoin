@@ -54,6 +54,12 @@ defmodule StackCoinWeb.Router do
     end
   end
 
+  scope "/" do
+    pipe_through(:api)
+
+    get("/health", StackCoinWeb.HealthController, :index)
+  end
+
   scope "/api" do
     pipe_through(:api)
 
