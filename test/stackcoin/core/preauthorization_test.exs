@@ -43,7 +43,9 @@ defmodule StackCoin.Core.PreauthorizationTest do
 
     test "rejects duplicate when active/pending preauth already exists", %{bot: bot, user: user} do
       {:ok, _preauth} = Preauthorization.create_preauth(bot.user.id, user.id, 100, 24)
-      assert {:error, :preauth_already_exists} = Preauthorization.create_preauth(bot.user.id, user.id, 200, 48)
+
+      assert {:error, :preauth_already_exists} =
+               Preauthorization.create_preauth(bot.user.id, user.id, 200, 48)
     end
 
     test "allows new preauth after old one is revoked", %{bot: bot, user: user} do
@@ -144,7 +146,8 @@ defmodule StackCoin.Core.PreauthorizationTest do
     end
 
     test "returns error when none exists", %{bot: bot, user: user} do
-      assert {:error, :no_active_preauth} = Preauthorization.get_active_preauth(bot.user.id, user.id)
+      assert {:error, :no_active_preauth} =
+               Preauthorization.get_active_preauth(bot.user.id, user.id)
     end
 
     test "returns error for revoked preauth", %{bot: bot, user: user} do
@@ -152,7 +155,8 @@ defmodule StackCoin.Core.PreauthorizationTest do
       {:ok, _approved} = Preauthorization.approve_preauth(preauth.id)
       {:ok, _revoked} = Preauthorization.revoke_preauth(preauth.id)
 
-      assert {:error, :no_active_preauth} = Preauthorization.get_active_preauth(bot.user.id, user.id)
+      assert {:error, :no_active_preauth} =
+               Preauthorization.get_active_preauth(bot.user.id, user.id)
     end
   end
 

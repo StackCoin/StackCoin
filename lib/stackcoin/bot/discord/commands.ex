@@ -6,7 +6,18 @@ defmodule StackCoin.Bot.Discord.Commands do
   alias Nostrum.Api.ApplicationCommand
   alias Nostrum.Api
   alias Nostrum.Constants.InteractionCallbackType
-  alias StackCoin.Bot.Discord.{Balance, Admin, Dole, Send, Leaderboard, Transactions, Graph, Bot, Preauths}
+
+  alias StackCoin.Bot.Discord.{
+    Balance,
+    Admin,
+    Dole,
+    Send,
+    Leaderboard,
+    Transactions,
+    Graph,
+    Bot,
+    Preauths
+  }
 
   @stackcoin_emoji "<:stackcoin:1401621482026827908>"
   @stackcoin_color 0xFFFD5D
@@ -172,94 +183,94 @@ defmodule StackCoin.Bot.Discord.Commands do
 
   defp error_message(error_type) do
     case error_type do
-        :not_in_guild ->
-          "❌ This command can only be used in a server, not in DMs."
+      :not_in_guild ->
+        "❌ This command can only be used in a server, not in DMs."
 
-        :guild_not_registered ->
-          "❌ This server is not registered with StackCoin."
+      :guild_not_registered ->
+        "❌ This server is not registered with StackCoin."
 
-        {:wrong_channel, guild} ->
-          if is_nil(guild.designated_channel_snowflake) do
-            "❌ There is no designated StackCoin channel set for this server."
-          else
-            "❌ This command can only be used in the designated StackCoin channel: <##{guild.designated_channel_snowflake}>"
-          end
+      {:wrong_channel, guild} ->
+        if is_nil(guild.designated_channel_snowflake) do
+          "❌ There is no designated StackCoin channel set for this server."
+        else
+          "❌ This command can only be used in the designated StackCoin channel: <##{guild.designated_channel_snowflake}>"
+        end
 
-        :user_not_found ->
-          "❌ You don't have a StackCoin account yet. Use `/dole` to get started."
+      :user_not_found ->
+        "❌ You don't have a StackCoin account yet. Use `/dole` to get started."
 
-        :other_user_not_found ->
-          "❌ That user doesn't have a StackCoin account yet."
+      :other_user_not_found ->
+        "❌ That user doesn't have a StackCoin account yet."
 
-        :insufficient_reserve_balance ->
-          "❌ The reserve doesn't have enough STK to give you dole!"
+      :insufficient_reserve_balance ->
+        "❌ The reserve doesn't have enough STK to give you dole!"
 
-        {:dole_already_given_today, next_timestamp} ->
-          "❌ You have already received your daily dole today, next dole available: <t:#{next_timestamp}:R>"
+      {:dole_already_given_today, next_timestamp} ->
+        "❌ You have already received your daily dole today, next dole available: <t:#{next_timestamp}:R>"
 
-        :not_admin ->
-          "❌ You don't have permission to use admin commands."
+      :not_admin ->
+        "❌ You don't have permission to use admin commands."
 
-        :insufficient_balance ->
-          "❌ You don't have enough STK to complete this transfer."
+      :insufficient_balance ->
+        "❌ You don't have enough STK to complete this transfer."
 
-        :invalid_amount ->
-          "❌ Transfer amount must be greater than 0."
+      :invalid_amount ->
+        "❌ Transfer amount must be greater than 0."
 
-        :self_transfer ->
-          "❌ You cannot send STK to yourself."
+      :self_transfer ->
+        "❌ You cannot send STK to yourself."
 
-        :recipient_not_found ->
-          "❌ The recipient doesn't have a StackCoin account yet. They need to use `/dole` first to create an account."
+      :recipient_not_found ->
+        "❌ The recipient doesn't have a StackCoin account yet. They need to use `/dole` first to create an account."
 
-        :user_banned ->
-          "❌ You have been banned from StackCoin."
+      :user_banned ->
+        "❌ You have been banned from StackCoin."
 
-        :user_dole_banned ->
-          "❌ You have been banned from collecting dole."
+      :user_dole_banned ->
+        "❌ You have been banned from collecting dole."
 
-        :recipient_banned ->
-          "❌ You cannot send STK to a banned user."
+      :recipient_banned ->
+        "❌ You cannot send STK to a banned user."
 
-        :conflicting_transaction_filters ->
-          "❌ You cannot use 'includes' with 'from' or 'to' filters. Use either 'includes' alone, or 'from'/'to' together."
+      :conflicting_transaction_filters ->
+        "❌ You cannot use 'includes' with 'from' or 'to' filters. Use either 'includes' alone, or 'from'/'to' together."
 
-        :bot_not_found ->
-          "❌ Bot not found or you don't have permission to access it."
+      :bot_not_found ->
+        "❌ Bot not found or you don't have permission to access it."
 
-        :missing_name ->
-          "❌ Bot name is required."
+      :missing_name ->
+        "❌ Bot name is required."
 
-        :invalid_name ->
-          "❌ Invalid bot name provided."
+      :invalid_name ->
+        "❌ Invalid bot name provided."
 
-        :missing_bot_id ->
-          "❌ Bot ID is required."
+      :missing_bot_id ->
+        "❌ Bot ID is required."
 
-        :invalid_bot_id ->
-          "❌ Invalid bot ID provided."
+      :invalid_bot_id ->
+        "❌ Invalid bot ID provided."
 
-        :no_subcommand ->
-          "❌ No subcommand specified."
+      :no_subcommand ->
+        "❌ No subcommand specified."
 
-        :preauth_limit_exceeded ->
-          "❌ Preauthorization limit exceeded for this time window."
+      :preauth_limit_exceeded ->
+        "❌ Preauthorization limit exceeded for this time window."
 
-        :preauth_already_exists ->
-          "❌ A preauthorization already exists for this bot and user."
+      :preauth_already_exists ->
+        "❌ A preauthorization already exists for this bot and user."
 
-        :preauth_not_found ->
-          "❌ Preauthorization not found."
+      :preauth_not_found ->
+        "❌ Preauthorization not found."
 
-        :no_active_preauth ->
-          "❌ No active preauthorization found."
+      :no_active_preauth ->
+        "❌ No active preauthorization found."
 
-        :not_bot_user ->
-          "❌ Only bot users can create preauthorizations."
+      :not_bot_user ->
+        "❌ Only bot users can create preauthorizations."
 
-        reason ->
-          "❌ An error occurred: #{inspect(reason)}"
-      end
+      reason ->
+        "❌ An error occurred: #{inspect(reason)}"
+    end
   end
 
   def send_error_response(interaction, error_type) do

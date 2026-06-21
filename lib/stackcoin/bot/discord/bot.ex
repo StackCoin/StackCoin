@@ -286,7 +286,11 @@ defmodule StackCoin.Bot.Discord.Bot do
             :reject -> handle_bot_creation_reject(requester_snowflake, bot_name, interaction)
           end
         else
-          send_update_message(interaction, 0xFF6B6B, "❌ Only admins can approve or reject bot creation requests.")
+          send_update_message(
+            interaction,
+            0xFF6B6B,
+            "❌ Only admins can approve or reject bot creation requests."
+          )
         end
 
       {:error, :invalid_custom_id} ->

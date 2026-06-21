@@ -101,7 +101,9 @@ defmodule StackCoin.Bot.Discord.Graph do
 
   defp get_option_value(interaction, name) do
     case interaction.data.options do
-      nil -> nil
+      nil ->
+        nil
+
       options ->
         Enum.find_value(options, fn option ->
           if option.name == name, do: option.value, else: nil
