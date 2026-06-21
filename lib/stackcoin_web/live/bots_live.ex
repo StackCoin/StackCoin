@@ -248,7 +248,7 @@ defmodule StackCoinWeb.BotsLive do
 
       <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">Create Bot</h2>
-        <form phx-submit="create_bot" class="flex items-center gap-2">
+        <form id="create-bot-form" phx-submit="create_bot" class="flex items-center gap-2">
           <input
             type="text"
             name="name"
@@ -343,7 +343,11 @@ defmodule StackCoinWeb.BotsLive do
             Type <span class="font-bold text-gray-900">{@delete_bot.name}</span>
             to confirm deletion. This cannot be undone.
           </p>
-          <form phx-submit="confirm_delete_bot" phx-change="update_delete_confirmation">
+          <form
+            id="delete-bot-form"
+            phx-submit="confirm_delete_bot"
+            phx-change="update_delete_confirmation"
+          >
             <input
               type="text"
               name="confirmation"

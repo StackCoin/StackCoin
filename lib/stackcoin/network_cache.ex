@@ -22,9 +22,6 @@ defmodule StackCoin.NetworkCache do
 
       {:error, :no_transactions} ->
         {:ok, Jason.encode!(%{nodes: [], links: []})}
-
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 

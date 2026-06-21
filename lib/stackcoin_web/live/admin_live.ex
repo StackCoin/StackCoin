@@ -159,7 +159,7 @@ defmodule StackCoinWeb.AdminLive do
       <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">Reserve</h2>
         <p class="text-lg font-mono mb-3"><%= @reserve_balance %> STK</p>
-        <form phx-submit="pump" class="flex gap-2 items-end">
+        <form id="pump-reserve-form" phx-submit="pump" class="flex gap-2 items-end">
           <input
             type="number"
             name="amount"
@@ -183,7 +183,7 @@ defmodule StackCoinWeb.AdminLive do
       <%!-- User Management Section --%>
       <div class="mb-8">
         <h2 class="text-lg font-bold mb-3">User Management</h2>
-        <form phx-change="select_user">
+        <form id="select-user-form" phx-change="select_user">
           <select
             name="user_id"
             class="w-full border border-gray-200 px-3 py-2 text-sm bg-white"

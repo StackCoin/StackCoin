@@ -123,9 +123,6 @@ defmodule StackCoin.Core.DiscordGuild do
   def admin_register_guild(admin_discord_snowflake, guild_snowflake, name, channel_snowflake) do
     with {:ok, _admin_check} <- User.check_admin_permissions(admin_discord_snowflake) do
       register_guild(guild_snowflake, name, channel_snowflake)
-    else
-      {:error, :not_admin} -> {:error, :not_admin}
-      {:error, reason} -> {:error, reason}
     end
   end
 

@@ -162,7 +162,7 @@ defmodule StackCoinWeb.TransactionsLive do
 
       <h1 class="text-2xl font-bold mb-4">Transactions</h1>
 
-      <form phx-change="filter_user" class="mb-6">
+      <form id="filter-transactions-form" phx-change="filter_user" class="mb-6">
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-sm text-gray-500 mb-1">User</label>

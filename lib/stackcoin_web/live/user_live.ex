@@ -210,7 +210,7 @@ defmodule StackCoinWeb.UserLive do
 
       <div :if={@can_send} class="mb-6">
         <h2 class="text-lg font-bold mb-3">Send STK</h2>
-        <form phx-submit="send_stk" class="flex items-center gap-2">
+        <form id="send-stk-form" phx-submit="send_stk" class="flex items-center gap-2">
           <input
             type="number"
             name="amount"
