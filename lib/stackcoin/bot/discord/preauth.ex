@@ -38,7 +38,13 @@ defmodule StackCoin.Bot.Discord.Preauth do
 
       with {:ok, responder_discord} <- get_discord_user(preauth.user_id),
            {:ok, bot_name} <- format_bot_name(preauth.bot_user) do
-        send_transfer_dm(responder_discord.snowflake, request, preauth, bot_name, remaining_budget)
+        send_transfer_dm(
+          responder_discord.snowflake,
+          request,
+          preauth,
+          bot_name,
+          remaining_budget
+        )
       else
         {:error, :not_discord_user} -> :ok
         {:error, _reason} -> :error
@@ -203,7 +209,10 @@ defmodule StackCoin.Bot.Discord.Preauth do
         send_error_response(interaction, "Preauthorization not found.")
 
       {:error, :not_preauth_owner} ->
-        send_error_response(interaction, "You are not authorized to manage this preauthorization.")
+        send_error_response(
+          interaction,
+          "You are not authorized to manage this preauthorization."
+        )
     end
   end
 

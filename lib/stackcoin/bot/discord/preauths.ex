@@ -117,8 +117,7 @@ defmodule StackCoin.Bot.Discord.Preauths do
 
     header = %{
       type: Components.text_display(),
-      content:
-        "#{Commands.stackcoin_emoji()} Active Preauthorizations (#{length(preauths)})"
+      content: "#{Commands.stackcoin_emoji()} Active Preauthorizations (#{length(preauths)})"
     }
 
     Api.create_interaction_response(interaction, %{

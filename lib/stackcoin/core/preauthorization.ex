@@ -44,7 +44,7 @@ defmodule StackCoin.Core.Preauthorization do
 
           StackCoin.Bot.Discord.Preauth.send_preauth_notification(preauth)
 
-           {:ok, preauth}
+          {:ok, preauth}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           # Handle race condition: if two concurrent requests both pass the

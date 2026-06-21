@@ -24,8 +24,13 @@ defmodule StackCoin.Graph do
         max_bal = Enum.max(balances, fn -> 0 end)
         range = max(max_bal - min_bal, 1)
         pad = round(range * 0.1)
-        [type: :quantitative, title: "Balance (STK)", axis: [grid: true],
-         scale: [domain: [max(min_bal - pad, 0), max_bal + pad]]]
+
+        [
+          type: :quantitative,
+          title: "Balance (STK)",
+          axis: [grid: true],
+          scale: [domain: [max(min_bal - pad, 0), max_bal + pad]]
+        ]
       else
         [type: :quantitative, title: "Balance (STK)", axis: [grid: true]]
       end

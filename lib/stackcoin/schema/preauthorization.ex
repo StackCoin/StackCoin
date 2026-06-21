@@ -28,7 +28,14 @@ defmodule StackCoin.Schema.Preauthorization do
       :approved_at,
       :revoked_at
     ])
-    |> validate_required([:bot_user_id, :user_id, :max_amount, :window_hours, :status, :requested_at])
+    |> validate_required([
+      :bot_user_id,
+      :user_id,
+      :max_amount,
+      :window_hours,
+      :status,
+      :requested_at
+    ])
     |> validate_inclusion(:status, ["pending", "active", "revoked"])
     |> validate_number(:max_amount, greater_than: 0)
     |> validate_number(:window_hours, greater_than: 0)

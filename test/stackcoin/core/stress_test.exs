@@ -153,35 +153,35 @@ defmodule StackCoin.Core.StressTest do
       {:ok, req1} = Request.create_request(bot.user.id, user2.id, 10, "mixed-req-1")
       {:ok, req2} = Request.create_request(bot.user.id, user3.id, 10, "mixed-req-2")
 
+      # Direct transfers from bot
+      # Preauth transfers
+      # Request accepts
+      # User-to-user transfers
       tasks =
-        # Direct transfers from bot
-        (for i <- 1..5 do
-           Task.async(fn ->
-             Bank.transfer_between_users(bot.user.id, user4.id, 5, "mixed-transfer-#{i}")
-           end)
-         end) ++
-          # Preauth transfers
-          (for i <- 1..5 do
-             Task.async(fn ->
-               Request.create_request_with_preauth(
-                 bot.user.id,
-                 user1.id,
-                 5,
-                 "mixed-preauth-#{i}"
-               )
-             end)
-           end) ++
-          # Request accepts
+        for i <- 1..5 do
+          Task.async(fn ->
+            Bank.transfer_between_users(bot.user.id, user4.id, 5, "mixed-transfer-#{i}")
+          end)
+        end ++
+          for i <- 1..5 do
+            Task.async(fn ->
+              Request.create_request_with_preauth(
+                bot.user.id,
+                user1.id,
+                5,
+                "mixed-preauth-#{i}"
+              )
+            end)
+          end ++
           [
             Task.async(fn -> Request.accept_request(req1.id, user2.id) end),
             Task.async(fn -> Request.accept_request(req2.id, user3.id) end)
           ] ++
-          # User-to-user transfers
-          (for i <- 1..3 do
-             Task.async(fn ->
-               Bank.transfer_between_users(user5.id, user4.id, 10, "user-transfer-#{i}")
-             end)
-           end)
+          for i <- 1..3 do
+            Task.async(fn ->
+              Bank.transfer_between_users(user5.id, user4.id, 10, "user-transfer-#{i}")
+            end)
+          end
 
       _results = Task.await_many(tasks, 30_000)
 
@@ -251,18 +251,17 @@ defmodule StackCoin.Core.StressTest do
   # ── Helpers ─────────────────────────────────────────────────────────
 
   defp total_balance_sum do
-    StackCoin.Repo.one(
-      from(u in StackCoin.Schema.User, select: coalesce(sum(u.balance), 0))
-    )
+    StackCoin.Repo.one(from(u in StackCoin.Schema.User, select: coalesce(sum(u.balance), 0)))
   end
 
   defp total_pump_sum do
-    StackCoin.Repo.one(
-      from(p in StackCoin.Schema.Pump, select: coalesce(sum(p.amount), 0))
-    )
+    StackCoin.Repo.one(from(p in StackCoin.Schema.Pump, select: coalesce(sum(p.amount), 0)))
   end
 
-  defp assert_balances_unchanged(%{initial_balance_sum: initial_balance, initial_pump_sum: initial_pump}) do
+  defp assert_balances_unchanged(%{
+         initial_balance_sum: initial_balance,
+         initial_pump_sum: initial_pump
+       }) do
     current_balance = total_balance_sum()
     current_pump = total_pump_sum()
 

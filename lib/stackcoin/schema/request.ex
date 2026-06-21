@@ -13,7 +13,10 @@ defmodule StackCoin.Schema.Request do
     belongs_to(:responder, StackCoin.Schema.User, foreign_key: :responder_id)
     belongs_to(:denied_by, StackCoin.Schema.User, foreign_key: :denied_by_id)
     belongs_to(:transaction, StackCoin.Schema.Transaction, foreign_key: :transaction_id)
-    belongs_to(:preauthorization, StackCoin.Schema.Preauthorization, foreign_key: :preauthorization_id)
+
+    belongs_to(:preauthorization, StackCoin.Schema.Preauthorization,
+      foreign_key: :preauthorization_id
+    )
 
     timestamps(type: :utc_datetime)
   end

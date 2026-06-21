@@ -127,7 +127,9 @@ defmodule StackCoinWeb.UserLive do
   defp parse_range(_), do: nil
 
   defp graph_src(user_id, cache_buster, nil), do: ~p"/graph/#{user_id}?v=#{cache_buster}"
-  defp graph_src(user_id, cache_buster, range), do: ~p"/graph/#{user_id}?v=#{cache_buster}&range=#{range}"
+
+  defp graph_src(user_id, cache_buster, range),
+    do: ~p"/graph/#{user_id}?v=#{cache_buster}&range=#{range}"
 
   defp patch_url(assigns) do
     fn page ->

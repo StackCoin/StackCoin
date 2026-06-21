@@ -93,7 +93,9 @@ defmodule StackCoin.Core.PreauthRequestTest do
     test "pending preauth falls back to pending request", %{bot: bot} do
       {:ok, other_user} = User.create_user_account("400", "PendingUser", balance: 0)
       {:ok, _txn} = Bank.transfer_between_users(1, other_user.id, 100, "Fund")
-      {:ok, _pending_preauth} = Preauthorization.create_preauth(bot.user.id, other_user.id, 10, 24)
+
+      {:ok, _pending_preauth} =
+        Preauthorization.create_preauth(bot.user.id, other_user.id, 10, 24)
 
       {:ok, request} =
         Request.create_request_with_preauth(bot.user.id, other_user.id, 5, "Pending preauth")
@@ -101,7 +103,11 @@ defmodule StackCoin.Core.PreauthRequestTest do
       assert request.status == "pending"
     end
 
-    test "preauth request links via preauthorization_id", %{bot: bot, user: user, preauth: preauth} do
+    test "preauth request links via preauthorization_id", %{
+      bot: bot,
+      user: user,
+      preauth: preauth
+    } do
       {:ok, request} =
         Request.create_request_with_preauth(bot.user.id, user.id, 5, "Linked")
 

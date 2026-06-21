@@ -56,7 +56,10 @@ defmodule StackCoin.Core.Idempotency do
             {code, Jason.decode!(body)}
 
           :timeout ->
-            Logger.warning("Idempotency poll timeout for bot_id=#{bot_id} key=#{key}, executing as fallback")
+            Logger.warning(
+              "Idempotency poll timeout for bot_id=#{bot_id} key=#{key}, executing as fallback"
+            )
+
             {status, response_body} = fun.()
 
             if status >= 200 and status < 300 do

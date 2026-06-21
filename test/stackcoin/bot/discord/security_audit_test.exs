@@ -305,9 +305,9 @@ defmodule StackCoinTest.Bot.Discord.SecurityAudit do
          [
            create_interaction_response: fn _interaction, response ->
              assert response.type == 4
-              # Now correctly blocked — guild/channel validation required
-              assert response.data.content != nil
-              assert String.contains?(response.data.content, "only be used in a server")
+             # Now correctly blocked — guild/channel validation required
+             assert response.data.content != nil
+             assert String.contains?(response.data.content, "only be used in a server")
              {:ok}
            end
          ]}

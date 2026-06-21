@@ -5,13 +5,18 @@ defmodule StackCoin.MixProject do
     [
       app: :stackcoin,
       version: "0.1.0",
-      elixir: "~> 1.18",
+      elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
+      test_coverage: [tool: ExCoveralls]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -32,16 +37,17 @@ defmodule StackCoin.MixProject do
 
   defp deps do
     [
-      {:ecto_sql, "~> 3.13"},
-      {:ecto_sqlite3, "~> 0.21"},
+      {:ecto_sql, "~> 3.14"},
+      {:ecto_sqlite3, "~> 0.24"},
       {:ecto_sqlite3_extras, "~> 1.2.0"},
       {:nostrum, github: "Kraigie/nostrum", branch: "master"},
       {:dotenvy, "~> 1.1.0"},
       {:vega_lite, "~> 0.1.11"},
       {:vega_lite_convert, "~> 1.0"},
       {:mock, "~> 0.3.0", only: :test},
+      {:meck, "~> 1.2", only: :test, override: true},
       {:excoveralls, "~> 0.18", only: :test},
-      {:phoenix, "~> 1.7.21"},
+      {:phoenix, "~> 1.8"},
       {:phoenix_ecto, "~> 4.5"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -50,7 +56,7 @@ defmodule StackCoin.MixProject do
       {:lazy_html, ">= 0.1.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
+      {:tailwind, "~> 0.5", runtime: Mix.env() == :dev},
       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.1.1",
@@ -61,10 +67,10 @@ defmodule StackCoin.MixProject do
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:jason, "~> 1.2"},
-      {:dns_cluster, "~> 0.1.1"},
+      {:dns_cluster, "~> 0.2"},
       {:plug_cowboy, "~> 2.7"},
       {:open_api_spex, "~> 3.22"},
-      {:req, "~> 0.5"}
+      {:req, "~> 0.6"}
     ]
   end
 
