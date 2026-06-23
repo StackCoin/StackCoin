@@ -4133,3 +4133,214 @@ class TestDailyDrawReentry:
         # Bot balance: 1010 - 10 paid out = 1000 (back to seed)
         bot_after = await stk.get_bot_balance()
         assert bot_after == 1000
+
+
+@pytest.mark.asyncio
+class TestAlembicMigrations:
+    """Tests for the alembic migration system.
+
+    Verifies:
+    - Fresh DBs are created at the latest schema version
+    - Legacy pre-alembic prod-shaped DBs are stamped + upgraded cleanly
+    - Existing data survives a legacy -> upgraded migration
+    - init_database is idempotent across multiple invocations
+    """
+
+    async def test_fresh_db_at_head_revision(self, tmp_path):
+        """A fresh LUCKYPOT_DB_PATH is migrated to the latest alembic head."""
+        from luckypot.config import settings
+
+        db_path = str(tmp_path / "fresh.db")
+        settings.db_path = db_path
+        try:
+            db.init_database()
+
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            try:
+                # alembic_version table exists and is at the head
+                row = conn.execute("SELECT version_num FROM alembic_version").fetchone()
+                assert row is not None
+
+                # expected schema post-migration
+                assert "current_round" in [
+                    r["name"] for r in conn.execute("PRAGMA table_info(pots)")
+                ]
+                assert "entry_round" in [
+                    r["name"] for r in conn.execute("PRAGMA table_info(pot_entries)")
+                ]
+                idxs = [
+                    r["name"]
+                    for r in conn.execute("PRAGMA index_list('pot_entries')")
+                ]
+                assert "idx_pot_entries_one_per_round" in idxs
+            finally:
+                conn.close()
+        finally:
+            settings.db_path = "luckypot.db"  # restore default
+
+    async def test_legacy_db_is_stamped_and_upgraded(self, tmp_path):
+        """A legacy pre-alembic DB (matches prod shape as of 2026-06-22) is
+        detected, stamped to 0001_initial, and upgraded to head, preserving
+        existing rows.
+        """
+        from luckypot.config import settings
+
+        db_path = str(tmp_path / "legacy.db")
+        settings.db_path = db_path
+        try:
+            # Seed a legacy pre-alembic DB with the exact pre-migration
+            # schema (no current_round, no entry_round, no alembic_version)
+            conn = sqlite3.connect(db_path)
+            conn.executescript(
+                """
+                CREATE TABLE pots (
+                    pot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    guild_id TEXT NOT NULL,
+                    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    ended_at TIMESTAMP,
+                    winner_discord_id TEXT,
+                    winning_amount INTEGER,
+                    win_type TEXT
+                );
+                CREATE TABLE pot_entries (
+                    entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    pot_id INTEGER NOT NULL,
+                    discord_id TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    stackcoin_request_id TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (pot_id) REFERENCES pots(pot_id)
+                );
+                CREATE TABLE gateway_state (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX idx_pots_one_active_per_guild
+                    ON pots(guild_id) WHERE is_active = TRUE;
+                CREATE INDEX idx_pots_guild_active ON pots(guild_id, is_active);
+                CREATE INDEX idx_pot_entries_pot_id ON pot_entries(pot_id);
+                CREATE INDEX idx_pot_entries_request_id ON pot_entries(stackcoin_request_id);
+                CREATE UNIQUE INDEX idx_pot_entries_active_request_id_unique
+                    ON pot_entries(stackcoin_request_id)
+                    WHERE stackcoin_request_id IS NOT NULL
+                      AND status IN ('pending', 'confirmed');
+                CREATE TABLE user_bans (
+                    ban_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    discord_id TEXT NOT NULL,
+                    guild_id TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    banned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL
+                );
+                CREATE INDEX idx_user_bans_lookup
+                    ON user_bans(discord_id, guild_id, expires_at);
+                CREATE TABLE auto_enter_users (
+                    discord_id TEXT NOT NULL,
+                    guild_id   TEXT NOT NULL,
+                    enabled_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    PRIMARY KEY (discord_id, guild_id)
+                );
+                CREATE INDEX idx_auto_enter_guild ON auto_enter_users(guild_id);
+
+                -- Simulate real prod data
+                INSERT INTO pots (guild_id) VALUES ('legacy_guild');
+                INSERT INTO pot_entries (pot_id, discord_id, amount, status)
+                    VALUES (1, 'legacy_user', 5, 'confirmed');
+                INSERT INTO gateway_state (key, value)
+                    VALUES ('last_event_id', '7831');
+                """
+            )
+            conn.commit()
+            conn.close()
+
+            # Now run init_database -- should detect legacy DB, stamp, and upgrade
+            db.init_database()
+
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            try:
+                # At head revision
+                row = conn.execute("SELECT version_num FROM alembic_version").fetchone()
+                assert row is not None
+                assert row["version_num"] == "0002_rounds"
+
+                # Schema has the new columns
+                pots_cols = [r["name"] for r in conn.execute("PRAGMA table_info(pots)")]
+                assert "current_round" in pots_cols
+                entries_cols = [
+                    r["name"] for r in conn.execute("PRAGMA table_info(pot_entries)")
+                ]
+                assert "entry_round" in entries_cols
+
+                # New unique index exists
+                idxs = [
+                    r["name"]
+                    for r in conn.execute("PRAGMA index_list('pot_entries')")
+                ]
+                assert "idx_pot_entries_one_per_round" in idxs
+
+                # Legacy rows are preserved with correct defaults
+                pot = conn.execute(
+                    "SELECT * FROM pots WHERE guild_id = ?",
+                    ("legacy_guild",),
+                ).fetchone()
+                assert pot is not None
+                assert pot["current_round"] == 1  # server_default applied
+
+                entry = conn.execute(
+                    "SELECT * FROM pot_entries WHERE discord_id = ?",
+                    ("legacy_user",),
+                ).fetchone()
+                assert entry is not None
+                assert entry["entry_round"] == 1  # server_default applied
+                assert entry["status"] == "confirmed"  # original value preserved
+
+                # gateway_state preserved
+                gs = conn.execute(
+                    "SELECT * FROM gateway_state WHERE key = 'last_event_id'"
+                ).fetchone()
+                assert gs is not None
+                assert gs["value"] == "7831"
+            finally:
+                conn.close()
+        finally:
+            settings.db_path = "luckypot.db"
+
+    async def test_init_database_is_idempotent(self, tmp_path):
+        """Calling init_database multiple times in succession is safe."""
+        from luckypot.config import settings
+
+        db_path = str(tmp_path / "idem.db")
+        settings.db_path = db_path
+        try:
+            db.init_database()
+            db.init_database()
+            db.init_database()
+
+            # Sanity: the pot_entries unique index still works after multiple inits
+            conn = db.get_connection()
+            try:
+                pot = db.create_pot(conn, "idem_guild")
+                db.add_entry(
+                    conn,
+                    pot_id=pot["pot_id"],
+                    discord_id="idem_user",
+                    amount=5,
+                    stackcoin_request_id="req_idem_1",
+                    entry_round=1,
+                )
+                with pytest.raises(sqlite3.IntegrityError):
+                    conn.execute(
+                        """INSERT INTO pot_entries
+                             (pot_id, discord_id, amount, status,
+                              stackcoin_request_id, entry_round)
+                           VALUES (?, ?, ?, 'pending', 'force-dup', 1)""",
+                        (pot["pot_id"], "idem_user", 5),
+                    )
+            finally:
+                conn.close()
+        finally:
+            settings.db_path = "luckypot.db"
