@@ -130,26 +130,23 @@ class TestLuckyPotInstantWin:
     """Tests for the instant win path -- random.random is mocked to always trigger it."""
 
     @patch("luckypot.game.secrets.randbelow", return_value=0)
-    async def test_instant_win_on_empty_pot_gives_free_entry(
+    async def test_instant_win_does_not_roll_before_payment(
         self, _mock_random, luckypot_db, configure_luckypot_stk, test_context
     ):
-        """An instant win on an empty pot gives a free confirmed entry (no payment)."""
+        """A user cannot get a free instant-win attempt before paying."""
         result = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
             guild_id="test_guild_iw",
         )
-        assert result["status"] == "instant_win_free_entry"
+        assert result["status"] == "pending"
         assert "entry_id" in result
 
-        # Entry should be confirmed with amount=0 (free)
         conn = db.get_connection()
         try:
             entry = db.get_entry_by_id(conn, result["entry_id"])
             assert entry is not None
-            assert entry["status"] == "confirmed"
-            assert entry["amount"] == 0
-
-            # Pot should still be active (not ended — nothing to win)
+            assert entry["status"] == "pending"
+            assert entry["amount"] == game.POT_ENTRY_COST
             assert db.get_active_pot(conn, "test_guild_iw") is not None
         finally:
             conn.close()
@@ -171,21 +168,31 @@ class TestLuckyPotInstantWin:
             request_id=int(result1["request_id"]),
             status="accepted",
             transaction_id=0,
-            amount=0,
+            amount=5,
         )
-        await game.on_request_accepted(event_data)
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
+            await game.on_request_accepted(event_data)
 
-        # Now user2 enters and rolls instant win — should win the pot
+        result2 = await game.enter_pot(
+            discord_id=test_context["user2_discord_id"],
+            guild_id="test_guild_iw",
+        )
+        assert result2["status"] == "pending"
+
         with patch("luckypot.game.secrets.randbelow", return_value=0):
-            result2 = await game.enter_pot(
-                discord_id=test_context["user2_discord_id"],
-                guild_id="test_guild_iw",
+            await game.on_request_accepted(
+                RequestAcceptedData(
+                    request_id=int(result2["request_id"]),
+                    status="accepted",
+                    transaction_id=0,
+                    amount=5,
+                )
             )
-        assert result2["status"] == "instant_win"
-        assert result2["winning_amount"] == 5  # user1's 5 STK entry
 
         conn = db.get_connection()
         try:
+            history = db.get_pot_history(conn, "test_guild_iw")
+            assert history[0]["winning_amount"] == 10
             # Pot should be ended
             assert db.get_active_pot(conn, "test_guild_iw") is None
         finally:
@@ -206,17 +213,25 @@ class TestLuckyPotInstantWin:
             request_id=int(result1["request_id"]),
             status="accepted",
             transaction_id=0,
-            amount=0,
+            amount=5,
         )
-        await game.on_request_accepted(event_data)
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
+            await game.on_request_accepted(event_data)
 
-        # User2 instant wins
+        result2 = await game.enter_pot(
+            discord_id=test_context["user2_discord_id"],
+            guild_id="test_guild_iw",
+        )
+        assert result2["status"] == "pending"
         with patch("luckypot.game.secrets.randbelow", return_value=0):
-            result2 = await game.enter_pot(
-                discord_id=test_context["user2_discord_id"],
-                guild_id="test_guild_iw",
+            await game.on_request_accepted(
+                RequestAcceptedData(
+                    request_id=int(result2["request_id"]),
+                    status="accepted",
+                    transaction_id=0,
+                    amount=5,
+                )
             )
-        assert result2["status"] == "instant_win"
 
         # User1 should be able to enter a new pot
         with patch("luckypot.game.secrets.randbelow", return_value=9999):
@@ -291,9 +306,10 @@ class TestLuckyPotMultiGuildIsolation:
             request_id=int(result_a1["request_id"]),
             status="accepted",
             transaction_id=0,
-            amount=0,
+            amount=5,
         )
-        await game.on_request_accepted(event_data)
+        with patch("luckypot.game.secrets.randbelow", return_value=9999):
+            await game.on_request_accepted(event_data)
 
         # User2 enters guild_B normally
         with patch("luckypot.game.secrets.randbelow", return_value=9999):
@@ -303,13 +319,20 @@ class TestLuckyPotMultiGuildIsolation:
             )
         assert result_b["status"] == "pending"
 
-        # User2 instant wins guild_A's pot — ends it
+        result_a2 = await game.enter_pot(
+            discord_id=test_context["user2_discord_id"],
+            guild_id="guild_A",
+        )
+        assert result_a2["status"] == "pending"
         with patch("luckypot.game.secrets.randbelow", return_value=0):
-            result_a2 = await game.enter_pot(
-                discord_id=test_context["user2_discord_id"],
-                guild_id="guild_A",
+            await game.on_request_accepted(
+                RequestAcceptedData(
+                    request_id=int(result_a2["request_id"]),
+                    status="accepted",
+                    transaction_id=0,
+                    amount=5,
+                )
             )
-        assert result_a2["status"] == "instant_win"
 
         conn = db.get_connection()
         try:
@@ -329,13 +352,13 @@ class TestLuckyPotMultiGuildIsolation:
         self, luckypot_db, configure_luckypot_stk, test_context
     ):
         """Same user can instant win in guild A and enter guild B normally."""
-        # On an empty pot, instant win gives a free entry
+        # On an empty pot, instant-win RNG does not bypass payment.
         with patch("luckypot.game.secrets.randbelow", return_value=0):
             result_a = await game.enter_pot(
                 discord_id=test_context["user1_discord_id"],
                 guild_id="guild_A",
             )
-        assert result_a["status"] == "instant_win_free_entry"
+        assert result_a["status"] == "pending"
 
         # Same user enters guild_B normally
         with patch("luckypot.game.secrets.randbelow", return_value=9999):
@@ -404,7 +427,7 @@ class TestLuckyPotMultiGuildIsolation:
                 request_id=int(result["request_id"]),
                 status="accepted",
                 transaction_id=0,
-                amount=0,
+                amount=5,
             )
             await game.on_request_accepted(event_data)
 
@@ -454,6 +477,71 @@ class TestLuckyPotPayout:
             999999,
         )
         assert success is False
+
+    async def test_failed_payout_reopens_claimed_pot(self, luckypot_db):
+        """Claim-before-send should not leave a pot inactive if no payout was sent."""
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild_payout_fail")
+            db.add_entry(
+                conn,
+                pot["pot_id"],
+                "winner",
+                5,
+                "req_1",
+                status="confirmed",
+            )
+        finally:
+            conn.close()
+
+        with patch("luckypot.game.send_winnings_to_user", AsyncMock(return_value=False)):
+            won = await game.end_pot_with_winner("guild_payout_fail")
+
+        assert won is False
+        conn = db.get_connection()
+        try:
+            pot = db.get_active_pot(conn, "guild_payout_fail")
+            assert pot is not None
+            assert pot["winner_discord_id"] is None
+            assert pot["ended_at"] is None
+        finally:
+            conn.close()
+
+    async def test_duplicate_payout_attempt_sends_once(self, luckypot_db):
+        """A second processor cannot pay a pot after the first one claimed it."""
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild_payout_once")
+            pot_id = pot["pot_id"]
+            db.add_entry(
+                conn,
+                pot_id,
+                "winner",
+                5,
+                "req_1",
+                status="confirmed",
+            )
+        finally:
+            conn.close()
+
+        send = AsyncMock(return_value=True)
+        with patch("luckypot.game.send_winnings_to_user", send):
+            conn1 = db.get_connection()
+            conn2 = db.get_connection()
+            try:
+                won1 = await game.process_pot_win(
+                    conn1, "guild_payout_once", "winner", 5
+                )
+                won2 = await game.process_pot_win(
+                    conn2, "guild_payout_once", "winner", 5
+                )
+            finally:
+                conn1.close()
+                conn2.close()
+
+        assert won1 is True
+        assert won2 is False
+        assert send.await_count == 1
 
 
 class TestLuckyPotDb:
@@ -598,7 +686,7 @@ class TestLuckyPotEventHandlers:
             conn.close()
 
         event_data = RequestAcceptedData(
-            request_id=request_id, status="accepted", transaction_id=0, amount=0
+            request_id=request_id, status="accepted", transaction_id=0, amount=5
         )
         await game.on_request_accepted(event_data)
 
@@ -606,6 +694,60 @@ class TestLuckyPotEventHandlers:
         try:
             entry = db.get_entry_by_id(conn, entry_id)
             assert entry["status"] == "confirmed"
+        finally:
+            conn.close()
+
+    async def test_on_request_accepted_rejects_wrong_amount(
+        self, luckypot_db, configure_luckypot_stk
+    ):
+        """An accepted event must match the local entry amount before confirmation."""
+        request_id = 12346
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild1")
+            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, str(request_id))
+        finally:
+            conn.close()
+
+        await game.on_request_accepted(
+            RequestAcceptedData(
+                request_id=request_id, status="accepted", transaction_id=0, amount=0
+            )
+        )
+
+        conn = db.get_connection()
+        try:
+            entry = db.get_entry_by_id(conn, entry_id)
+            assert entry["status"] == "pending"
+        finally:
+            conn.close()
+
+    async def test_denied_after_accepted_does_not_unconfirm_or_ban(
+        self, luckypot_db, configure_luckypot_stk
+    ):
+        """A stale denied event must not overwrite a confirmed paid entry."""
+        request_id = 12347
+        conn = db.get_connection()
+        try:
+            pot = db.create_pot(conn, "guild1")
+            entry_id = db.add_entry(conn, pot["pot_id"], "user1", 5, str(request_id))
+        finally:
+            conn.close()
+
+        await game.on_request_accepted(
+            RequestAcceptedData(
+                request_id=request_id, status="accepted", transaction_id=0, amount=5
+            )
+        )
+        await game.on_request_denied(
+            RequestDeniedData(request_id=request_id, status="denied", denied_by_id=0)
+        )
+
+        conn = db.get_connection()
+        try:
+            entry = db.get_entry_by_id(conn, entry_id)
+            assert entry["status"] == "confirmed"
+            assert db.get_active_ban(conn, "user1", "guild1") is None
         finally:
             conn.close()
 
@@ -1094,7 +1236,7 @@ class TestAutoEnterTrigger:
                 request_id=int(result1["request_id"]),
                 status="accepted",
                 transaction_id=0,
-                amount=0,
+                amount=5,
             )
         )
 
@@ -1140,7 +1282,7 @@ class TestAutoEnterTrigger:
                 request_id=int(result1["request_id"]),
                 status="accepted",
                 transaction_id=0,
-                amount=0,
+                amount=5,
             )
         )
 
@@ -1188,7 +1330,7 @@ class TestAutoEnterTrigger:
                 request_id=int(result1["request_id"]),
                 status="accepted",
                 transaction_id=0,
-                amount=0,
+                amount=5,
             )
         )
 
@@ -3706,11 +3848,11 @@ class TestDailyDrawReentry:
         select_random_winner weights by entry row, so 3 entries from one user
         vs 1 from another gives a 3:1 split in expected winners.
 
-        total_weight = 4 entries x 5 STK = 20. roll in [0, 20] (21 values).
-        - rolls 0..5 -> user1 entry 1 (cumulative 5)
-        - rolls 6..10 -> user1 entry 2 (cumulative 10)
-        - rolls 11..15 -> user1 entry 3 (cumulative 15)
-        - rolls 16..20 -> user2 entry 1 (cumulative 20)
+        total_weight = 4 entries x 5 STK = 20. roll in [0, 19].
+        - rolls 0..4 -> user1 entry 1
+        - rolls 5..9 -> user1 entry 2
+        - rolls 10..14 -> user1 entry 3
+        - rolls 15..19 -> user2 entry 1
         """
         conn = db.get_connection()
         try:
@@ -3736,16 +3878,15 @@ class TestDailyDrawReentry:
             participants = db.get_pot_participants(conn, pot_id)
             assert len(participants) == 4
 
-            # Total weight = 20 (4 entries x 5). roll range is [0, 20] inclusive
-            # (21 values) because select_random_winner uses randbelow(total_weight + 1).
+            # Total weight = 20 (4 entries x 5). roll range is [0, 19].
             from collections import Counter
             counts = Counter()
-            for roll in range(21):
+            for roll in range(20):
                 with patch("luckypot.game.secrets.randbelow", return_value=roll):
                     w = game.select_random_winner(participants)
                     counts[w["discord_id"]] += 1
 
-            assert counts[test_context["user1_discord_id"]] == 16
+            assert counts[test_context["user1_discord_id"]] == 15
             assert counts[test_context["user2_discord_id"]] == 5
         finally:
             conn.close()
@@ -3804,10 +3945,10 @@ class TestDailyDrawReentry:
         assert any("20 STK" in m for m in announces)
 
     @patch("luckypot.game.secrets.randbelow", return_value=9999)
-    async def test_late_round1_acceptance_during_round2(
+    async def test_late_round1_acceptance_during_round2_refunds(
         self, _mock_rng, luckypot_db, configure_luckypot_stk, test_context
     ):
-        """A round-1 pending entry accepted during round 2 confirms as round-1."""
+        """A round-1 pending entry accepted during round 2 is refunded."""
         result = await game.enter_pot(
             discord_id=test_context["user1_discord_id"],
             guild_id="test_guild_reentry",
@@ -3817,20 +3958,28 @@ class TestDailyDrawReentry:
 
         await game.daily_pot_draw(announce=None, edit_announce=None)
 
-        await game.on_request_accepted(
-            RequestAcceptedData(
-                request_id=request_id,
-                status="accepted",
-                transaction_id=0,
-                amount=5,
-            ),
-            announce=None,
+        refund = AsyncMock(return_value=True)
+        with patch("luckypot.game.send_winnings_to_user", refund):
+            await game.on_request_accepted(
+                RequestAcceptedData(
+                    request_id=request_id,
+                    status="accepted",
+                    transaction_id=0,
+                    amount=5,
+                ),
+                announce=None,
+            )
+
+        refund.assert_awaited_once_with(
+            test_context["user1_discord_id"],
+            5,
+            idempotency_key=f"pot_refund:stale_round:{request_id}",
         )
 
         conn = db.get_connection()
         try:
             entry = db.get_entry_by_request_id(conn, str(request_id))
-            assert entry["status"] == "confirmed"
+            assert entry["status"] == "denied"
             assert entry["entry_round"] == 1
             assert entry["pot_is_active"] == 1
         finally:
