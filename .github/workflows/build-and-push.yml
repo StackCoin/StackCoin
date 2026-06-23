@@ -2,7 +2,8 @@ name: Build and Push Docker Image to ghcr.io
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # GHCR and Docker image refs must be lowercase.
+  IMAGE_NAME: stackcoin/stackcoin
 
 on:
   push:
